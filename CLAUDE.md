@@ -9,6 +9,7 @@ pnpm dev        # Vite dev server
 pnpm test       # Vitest
 pnpm typecheck  # TypeScript check
 pnpm build      # Production build
+bash scripts/deploy.sh  # Deploy to CF Pages
 ```
 
 ## Architecture
