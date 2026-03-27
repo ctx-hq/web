@@ -68,6 +68,12 @@ jobs:
   deploy:
     name: Deploy
     needs: ci
+    # Skip deploy for fork PRs and Dependabot — secrets are not available
+    if: >-
+      github.event_name == 'push' ||
+      (github.event_name == 'pull_request'
+      && github.event.pull_request.head.repo.full_name == github.repository
+      && github.actor != 'dependabot[bot]')
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
@@ -93,11 +99,15 @@ jobs:
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
         continue-on-error: true
         run: |
-          curl -s -X POST \
+          response=$(curl -s --fail-with-body -X POST \
             "https://api.cloudflare.com/client/v4/zones/${{ env.CLOUDFLARE_ZONE_ID }}/purge_cache" \
             -H "Authorization: Bearer ${{ secrets.CLOUDFLARE_API_TOKEN }}" \
             -H "Content-Type: application/json" \
-            -d '{"purge_everything":true}'
+            -d '{"purge_everything":true}')
+          # jq is pre-installed on ubuntu-latest runners
+          if ! echo "$response" | jq -e '.success' > /dev/null 2>&1; then
+            echo "::warning::CDN cache purge failed: $response"
+          fi
 
       # ── PR: comment preview URL ──
       - name: Comment preview URL on PR
@@ -106,7 +116,7 @@ jobs:
         with:
           script: |
             const marker = '<!-- cf-pages-preview -->';
-            const deployUrl = '${{ steps.deploy.outputs.deployment-url }}';
+            const deployUrl = '${{ steps.deploy.outputs.pages-deployment-alias-url }}';
             const body = [
               marker,
               `### Preview Deployment`,
