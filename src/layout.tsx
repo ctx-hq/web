@@ -5,9 +5,9 @@ import { Header } from "./components/header";
 import { Footer } from "./components/footer";
 // CSS is built separately via `vite build --mode client` → /static/client.css
 
-type LayoutProps = PropsWithChildren<{ meta: SeoMeta }>;
+type LayoutProps = PropsWithChildren<{ meta: SeoMeta; currentPath?: string }>;
 
-export const Layout: FC<LayoutProps> = ({ meta, children }) => {
+export const Layout: FC<LayoutProps> = ({ meta, currentPath, children }) => {
   return (
     <html lang="en">
       <head>
@@ -31,13 +31,29 @@ export const Layout: FC<LayoutProps> = ({ meta, children }) => {
         <meta name="twitter:description" content={meta.description} />
         <meta name="twitter:image" content={meta.ogImage} />
 
+        {/* Fonts — JetBrains Mono (heading/mono) + Roboto Slab (body), non-blocking */}
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="" />
+        <link
+          href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Roboto+Slab:wght@300;400;500;600;700&display=swap"
+          rel="stylesheet"
+          media="print"
+          onload="this.media='all'"
+        />
+        <noscript>
+          <link
+            href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Roboto+Slab:wght@300;400;500;600;700&display=swap"
+            rel="stylesheet"
+          />
+        </noscript>
+
         {/* Styles */}
         <link rel="stylesheet" href="/static/client.css" />
         <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
       </head>
       <body class="bg-background text-foreground font-sans text-xs antialiased">
-        <Header />
-        <main class="min-h-[calc(100vh-5rem)]">{children}</main>
+        <Header currentPath={currentPath} />
+        <main class="min-h-[calc(100vh-3rem)]">{children}</main>
         <Footer />
         <ClientScript />
       </body>
@@ -49,39 +65,74 @@ const ClientScript: FC = () => (
   <script
     dangerouslySetInnerHTML={{
       __html: `
-// Theme
+/* --- Theme --- */
 (function(){
-  var t=localStorage.getItem('theme');
-  if(t==='dark'||(!t&&matchMedia('(prefers-color-scheme:dark)').matches))
-    document.documentElement.classList.add('dark');
+  try {
+    var t=localStorage.getItem('theme');
+    if(t==='dark'||(!t&&matchMedia('(prefers-color-scheme:dark)').matches))
+      document.documentElement.classList.add('dark');
+  } catch(e){}
 })();
-document.getElementById('theme-toggle')?.addEventListener('click',function(){
+function toggleTheme(){
   document.documentElement.classList.toggle('dark');
-  localStorage.setItem('theme',document.documentElement.classList.contains('dark')?'dark':'light');
+  try{localStorage.setItem('theme',document.documentElement.classList.contains('dark')?'dark':'light')}catch(e){}
+}
+document.getElementById('theme-toggle')?.addEventListener('click',toggleTheme);
+document.getElementById('theme-toggle-mobile')?.addEventListener('click',toggleTheme);
+
+/* --- Mobile nav --- */
+document.getElementById('mobile-nav-toggle')?.addEventListener('click',function(){
+  document.getElementById('mobile-nav')?.classList.toggle('hidden');
 });
 
-// Copy buttons
+/* --- Copy buttons (swap only the text label, keep SVG icons) --- */
 document.addEventListener('click',function(e){
-  var btn=e.target.closest('[data-copy]');
+  var btn=e.target&&e.target.closest?e.target.closest('[data-copy]'):null;
   if(!btn)return;
-  navigator.clipboard.writeText(btn.dataset.copy).then(function(){
-    var o=btn.textContent;btn.textContent='Copied!';
-    setTimeout(function(){btn.textContent=o},1500);
-  });
+  if(navigator.clipboard&&navigator.clipboard.writeText){
+    navigator.clipboard.writeText(btn.dataset.copy).then(function(){
+      var label=null;
+      for(var i=btn.childNodes.length-1;i>=0;i--){
+        if(btn.childNodes[i].nodeType===3){label=btn.childNodes[i];break;}
+      }
+      if(label){var o=label.textContent;label.textContent='Copied!';setTimeout(function(){label.textContent=o},1500);}
+    }).catch(function(){});
+  }
 });
 
-// Install tabs
+/* --- Install tabs --- */
 document.addEventListener('click',function(e){
-  var btn=e.target.closest('[data-tab]');
+  var btn=e.target&&e.target.closest?e.target.closest('[data-tab]'):null;
   if(!btn||!btn.closest('.install-tabs'))return;
   var tab=btn.dataset.tab,container=btn.closest('.install-tabs');
   container.querySelectorAll('[data-tab]').forEach(function(b){
     b.classList.toggle('border-b-foreground',b.dataset.tab===tab);
+    b.classList.toggle('border-b-transparent',b.dataset.tab!==tab);
     b.classList.toggle('text-muted-foreground',b.dataset.tab!==tab);
   });
   container.querySelectorAll('[data-panel]').forEach(function(p){
     p.classList.toggle('hidden',p.dataset.panel!==tab);
   });
+});
+
+/* --- Copy code blocks in prose (read from <code>, not <pre>) --- */
+document.querySelectorAll('.prose pre').forEach(function(pre){
+  var code=pre.querySelector('code');
+  var btn=document.createElement('button');
+  btn.textContent='Copy';
+  btn.className='absolute top-2 right-2 px-2 py-0.5 text-xs bg-background border border-border text-muted-foreground hover:text-foreground';
+  btn.setAttribute('data-copy-btn','');
+  btn.onclick=function(){
+    var text=code?code.textContent:pre.textContent||'';
+    if(navigator.clipboard&&navigator.clipboard.writeText){
+      navigator.clipboard.writeText(text||'').then(function(){
+        btn.textContent='Copied!';
+        setTimeout(function(){btn.textContent='Copy'},1500);
+      }).catch(function(){});
+    }
+  };
+  pre.style.position='relative';
+  pre.appendChild(btn);
 });
 `,
     }}

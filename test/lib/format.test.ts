@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { formatNumber, formatDate } from "../../src/lib/format";
+import { formatNumber, formatDownloads, formatDate } from "../../src/lib/format";
 
 describe("formatNumber", () => {
   it("formats small numbers without commas", () => {
@@ -17,6 +17,25 @@ describe("formatNumber", () => {
   it("adds commas for millions", () => {
     expect(formatNumber(1000000)).toBe("1,000,000");
     expect(formatNumber(1234567)).toBe("1,234,567");
+  });
+});
+
+describe("formatDownloads", () => {
+  it("returns raw number for small values", () => {
+    expect(formatDownloads(0)).toBe("0");
+    expect(formatDownloads(42)).toBe("42");
+    expect(formatDownloads(999)).toBe("999");
+  });
+
+  it("formats thousands with k suffix", () => {
+    expect(formatDownloads(1000)).toBe("1.0k");
+    expect(formatDownloads(1500)).toBe("1.5k");
+    expect(formatDownloads(45000)).toBe("45.0k");
+  });
+
+  it("formats millions with M suffix", () => {
+    expect(formatDownloads(1000000)).toBe("1.0M");
+    expect(formatDownloads(2500000)).toBe("2.5M");
   });
 });
 

@@ -10,7 +10,8 @@ describe("docs section validation", () => {
   });
 
   it("rejects unknown sections", () => {
-    expect(VALID_DOC_SECTIONS.includes("nonexistent")).toBe(false);
-    expect(VALID_DOC_SECTIONS.includes("<script>")).toBe(false);
+    const sections: readonly string[] = VALID_DOC_SECTIONS;
+    expect(sections.includes("nonexistent")).toBe(false);
+    expect(sections.includes("<script>")).toBe(false);
   });
 });

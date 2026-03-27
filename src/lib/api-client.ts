@@ -3,11 +3,12 @@ import type { PackageSummary, PackageDetail, SearchResult, VersionDetail } from 
 export class ApiClient {
   constructor(private baseUrl: string) {}
 
-  async search(query: string, opts?: { type?: string; platform?: string; limit?: number }): Promise<SearchResult> {
+  async search(query: string, opts?: { type?: string; platform?: string; limit?: number; offset?: number }): Promise<SearchResult> {
     const params = new URLSearchParams({ q: query });
     if (opts?.type) params.set("type", opts.type);
     if (opts?.platform) params.set("platform", opts.platform);
     if (opts?.limit) params.set("limit", String(opts.limit));
+    if (opts?.offset) params.set("offset", String(opts.offset));
     return this.get(`/v1/search?${params}`);
   }
 

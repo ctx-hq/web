@@ -1,24 +1,32 @@
 import type { FC } from "hono/jsx";
+import { Container } from "../components/ui/container";
 
-export const VALID_DOC_SECTIONS = ["getting-started", "spec", "api", "publish"];
+export const VALID_DOC_SECTIONS = ["getting-started", "spec", "api", "publish"] as const;
+export type DocSection = (typeof VALID_DOC_SECTIONS)[number];
 
 export const DocsPage: FC<{ section?: string }> = ({ section }) => (
-  <div class="mx-auto max-w-3xl px-4 py-8">
-    <h1 class="mb-6 text-lg font-semibold">Documentation</h1>
+  <Container size="narrow" class="py-8">
+    <h1 class="mb-6 text-base font-semibold font-heading">Documentation</h1>
 
-    <nav class="mb-8 flex gap-4 border-b border-border pb-3">
-      <a href="/docs" class={`text-xs font-medium ${!section ? "text-foreground" : "text-muted-foreground hover:text-foreground"}`}>
-        Getting Started
-      </a>
-      <a href="/docs/spec" class={`text-xs font-medium ${section === "spec" ? "text-foreground" : "text-muted-foreground hover:text-foreground"}`}>
-        ctx.yaml Spec
-      </a>
-      <a href="/docs/api" class={`text-xs font-medium ${section === "api" ? "text-foreground" : "text-muted-foreground hover:text-foreground"}`}>
-        API Reference
-      </a>
-      <a href="/docs/publish" class={`text-xs font-medium ${section === "publish" ? "text-foreground" : "text-muted-foreground hover:text-foreground"}`}>
-        Publishing
-      </a>
+    <nav class="mb-8 flex gap-1 border-b border-border">
+      {([
+        { href: "/docs", label: "Getting Started", active: !section },
+        { href: "/docs/spec", label: "ctx.yaml Spec", active: section === "spec" },
+        { href: "/docs/api", label: "API Reference", active: section === "api" },
+        { href: "/docs/publish", label: "Publishing", active: section === "publish" },
+      ] as const).map((tab) => (
+        <a
+          href={tab.href}
+          class={`px-3 py-2 text-xs font-medium transition-colors ${
+            tab.active
+              ? "border-b-2 border-foreground text-foreground"
+              : "border-b-2 border-transparent text-muted-foreground hover:text-foreground"
+          }`}
+          {...(tab.active ? { "aria-current": "page" } : {})}
+        >
+          {tab.label}
+        </a>
+      ))}
     </nav>
 
     <div class="prose">
@@ -27,7 +35,7 @@ export const DocsPage: FC<{ section?: string }> = ({ section }) => (
       {section === "api" && <ApiReference />}
       {section === "publish" && <Publishing />}
     </div>
-  </div>
+  </Container>
 );
 
 const GettingStarted: FC = () => (

@@ -1,35 +1,65 @@
 import { describe, it, expect } from "vitest";
+import type { PackageType } from "../../src/lib/types";
 
-// Test badge rendering logic (pure function, no JSX runtime needed)
+// Test badge variant resolution logic (pure function, no JSX runtime needed)
 describe("badge", () => {
-  const typeStyles: Record<string, string> = {
-    skill: "bg-type-skill-bg text-type-skill border-type-skill/20",
-    mcp: "bg-type-mcp-bg text-type-mcp border-type-mcp/20",
-    cli: "bg-type-cli-bg text-type-cli border-type-cli/20",
-  };
+  // Mirror the logic from badge.tsx
+  function resolveVariant(opts: { variant?: string; type?: PackageType }): string {
+    return opts.variant ?? (opts.type ? `type-${opts.type}` : "default");
+  }
 
-  it("returns correct style for skill type", () => {
-    expect(typeStyles["skill"]).toContain("skill");
-    expect(typeStyles["skill"]).toContain("bg-type-skill-bg");
+  function buildClasses(opts: {
+    variant?: string;
+    type?: PackageType;
+    active?: boolean;
+    className?: string;
+  }): string {
+    const resolvedVariant = resolveVariant(opts);
+    return [
+      "cn-badge",
+      `cn-badge-variant-${resolvedVariant}`,
+      opts.active ? "cn-badge-active" : "",
+      opts.className,
+    ]
+      .filter(Boolean)
+      .join(" ");
+  }
+
+  it("resolves type shorthand to variant", () => {
+    expect(resolveVariant({ type: "skill" })).toBe("type-skill");
+    expect(resolveVariant({ type: "mcp" })).toBe("type-mcp");
+    expect(resolveVariant({ type: "cli" })).toBe("type-cli");
   });
 
-  it("returns correct style for mcp type", () => {
-    expect(typeStyles["mcp"]).toContain("mcp");
-    expect(typeStyles["mcp"]).toContain("bg-type-mcp-bg");
+  it("uses explicit variant over type", () => {
+    expect(resolveVariant({ variant: "secondary", type: "skill" })).toBe("secondary");
   });
 
-  it("returns correct style for cli type", () => {
-    expect(typeStyles["cli"]).toContain("cli");
-    expect(typeStyles["cli"]).toContain("bg-type-cli-bg");
+  it("defaults to 'default' variant when neither type nor variant given", () => {
+    expect(resolveVariant({})).toBe("default");
   });
 
-  it("each type has distinct colors", () => {
-    const values = Object.values(typeStyles);
-    const unique = new Set(values);
-    expect(unique.size).toBe(3);
+  it("builds correct class string with active state", () => {
+    const classes = buildClasses({ type: "skill", active: true });
+    expect(classes).toContain("cn-badge");
+    expect(classes).toContain("cn-badge-variant-type-skill");
+    expect(classes).toContain("cn-badge-active");
   });
 
-  it("handles unknown type gracefully", () => {
-    expect(typeStyles["unknown"]).toBeUndefined();
+  it("builds correct class string without active state", () => {
+    const classes = buildClasses({ type: "mcp" });
+    expect(classes).toContain("cn-badge-variant-type-mcp");
+    expect(classes).not.toContain("cn-badge-active");
+  });
+
+  it("each type produces distinct variant class", () => {
+    const types: PackageType[] = ["skill", "mcp", "cli"];
+    const variants = types.map((t) => resolveVariant({ type: t }));
+    expect(new Set(variants).size).toBe(3);
+  });
+
+  it("appends custom className", () => {
+    const classes = buildClasses({ variant: "outline", className: "px-3 py-1" });
+    expect(classes).toContain("px-3 py-1");
   });
 });

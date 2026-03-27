@@ -1,5 +1,7 @@
 import type { FC } from "hono/jsx";
 import type { PackageDetail as PackageDetailType } from "../lib/types";
+import { Container } from "../components/ui/container";
+import { Icon } from "../components/ui/icon";
 import { Badge } from "../components/badge";
 import { InstallTabs } from "../components/install-tabs";
 import { VersionList } from "../components/version-list";
@@ -17,22 +19,30 @@ export const PackageDetailPage: FC<{
   pkg: PackageDetailType;
   readmeHtml: string;
 }> = ({ pkg, readmeHtml }) => (
-  <div class="mx-auto max-w-5xl px-4 py-8">
+  <Container class="py-8">
     {/* Header */}
     <div class="mb-6">
       <div class="mb-2 flex items-center gap-3">
-        <h1 class="text-lg font-semibold">@{pkg.full_name}</h1>
+        <h1 class="text-base font-semibold font-heading">@{pkg.full_name}</h1>
         <Badge type={pkg.type} />
       </div>
-      <p class="mb-3 text-sm text-muted-foreground">{pkg.description}</p>
+      <p class="mb-3 text-xs text-muted-foreground">{pkg.description}</p>
       <div class="flex flex-wrap gap-4 text-[10px] text-muted-foreground">
         {pkg.versions.length > 0 && (
           <span>v{pkg.versions[0].version}</span>
         )}
         {pkg.license && <span>{pkg.license}</span>}
-        <span>↓ {formatNumber(pkg.downloads)}</span>
+        <span class="inline-flex items-center gap-0.5">
+          <Icon name="download" class="size-3" />
+          {formatNumber(pkg.downloads)}
+        </span>
         {pkg.repository && safeRepoUrl(pkg.repository) && (
-          <a href={safeRepoUrl(pkg.repository)!} rel="noopener noreferrer" class="underline underline-offset-2 hover:text-foreground">
+          <a
+            href={safeRepoUrl(pkg.repository)!}
+            rel="noopener noreferrer"
+            class="inline-flex items-center gap-0.5 underline underline-offset-2 hover:text-foreground"
+          >
+            <Icon name="github-logo" class="size-3" />
             Repository
           </a>
         )}
@@ -51,7 +61,7 @@ export const PackageDetailPage: FC<{
         {readmeHtml ? (
           <div class="prose" dangerouslySetInnerHTML={{ __html: readmeHtml }} />
         ) : (
-          <p class="text-muted-foreground">No README available.</p>
+          <p class="text-xs text-muted-foreground">No README available.</p>
         )}
       </div>
 
@@ -63,15 +73,15 @@ export const PackageDetailPage: FC<{
 
         {pkg.keywords.length > 0 && (
           <div>
-            <h3 class="mb-2 text-sm font-semibold">Keywords</h3>
+            <h3 class="mb-2 text-xs font-semibold font-heading">Keywords</h3>
             <div class="flex flex-wrap gap-1">
               {pkg.keywords.map((kw) => (
-                <a
+                <Badge
+                  variant="secondary"
                   href={`/search?q=${encodeURIComponent(kw)}`}
-                  class="cn-badge bg-secondary text-secondary-foreground"
                 >
                   {kw}
-                </a>
+                </Badge>
               ))}
             </div>
           </div>
@@ -79,15 +89,15 @@ export const PackageDetailPage: FC<{
 
         {pkg.platforms.length > 0 && (
           <div>
-            <h3 class="mb-2 text-sm font-semibold">Platforms</h3>
+            <h3 class="mb-2 text-xs font-semibold font-heading">Platforms</h3>
             <div class="flex flex-wrap gap-1">
               {pkg.platforms.map((p) => (
-                <span class="cn-badge bg-muted text-muted-foreground">{p}</span>
+                <Badge variant="outline">{p}</Badge>
               ))}
             </div>
           </div>
         )}
       </aside>
     </div>
-  </div>
+  </Container>
 );

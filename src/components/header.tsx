@@ -1,29 +1,108 @@
 import type { FC } from "hono/jsx";
+import { Icon } from "./ui/icon";
+import { Button } from "./ui/button";
 
-export const Header: FC = () => (
+const NAV_LINKS: Array<{ href: string; label: string }> = [
+  { href: "/search", label: "Search" },
+  { href: "/docs", label: "Docs" },
+];
+
+export const Header: FC<{ currentPath?: string }> = ({ currentPath = "" }) => (
   <header class="border-b border-border">
-    <div class="mx-auto flex h-10 max-w-5xl items-center justify-between px-4">
-      <a href="/" class="text-sm font-semibold tracking-tight">
+    <div class="mx-auto flex h-12 max-w-5xl items-center justify-between px-4 sm:px-6">
+      <a href="/" class="text-sm font-semibold font-heading tracking-tight">
         getctx<span class="text-muted-foreground">.org</span>
       </a>
-      <nav class="flex items-center gap-4">
-        <a href="/search" class="text-muted-foreground hover:text-foreground">
-          Search
-        </a>
-        <a href="/docs" class="text-muted-foreground hover:text-foreground">
-          Docs
-        </a>
-        <button
+
+      {/* Desktop nav */}
+      <nav class="hidden items-center gap-4 md:flex">
+        {NAV_LINKS.map((link) => {
+          const isActive =
+            currentPath === link.href ||
+            (link.href !== "/" && currentPath.startsWith(link.href));
+          return (
+            <a
+              href={link.href}
+              class={`text-xs transition-colors ${
+                isActive
+                  ? "text-foreground font-medium"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+              {...(isActive ? { "aria-current": "page" } : {})}
+            >
+              {link.label}
+            </a>
+          );
+        })}
+        <Button
+          variant="ghost"
+          size="icon-xs"
           id="theme-toggle"
-          class="cn-button-ghost px-2 py-1"
           aria-label="Toggle dark mode"
         >
-          ◐
-        </button>
-        <a href="/login" class="cn-button">
+          <span class="dark-hidden">
+            <Icon name="moon" class="size-4" />
+          </span>
+          <span class="light-hidden">
+            <Icon name="sun" class="size-4" />
+          </span>
+        </Button>
+        <Button variant="default" size="sm" href="/login">
+          Sign in
+        </Button>
+      </nav>
+
+      {/* Mobile nav toggle */}
+      <div class="md:hidden">
+        <Button
+          variant="ghost"
+          size="icon-xs"
+          id="mobile-nav-toggle"
+          aria-label="Open menu"
+        >
+          <Icon name="list" class="size-4" />
+        </Button>
+      </div>
+    </div>
+
+    {/* Mobile nav drawer */}
+    <nav id="mobile-nav" class="hidden border-t border-border px-4 py-3 md:!hidden">
+      <div class="flex flex-col gap-3">
+        {NAV_LINKS.map((link) => {
+          const isActive =
+            currentPath === link.href ||
+            (link.href !== "/" && currentPath.startsWith(link.href));
+          return (
+            <a
+              href={link.href}
+              class={`text-xs ${
+                isActive
+                  ? "text-foreground font-medium"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+              {...(isActive ? { "aria-current": "page" } : {})}
+            >
+              {link.label}
+            </a>
+          );
+        })}
+        <a href="/login" class="text-xs text-muted-foreground hover:text-foreground">
           Sign in
         </a>
-      </nav>
-    </div>
+        <button
+          id="theme-toggle-mobile"
+          class="flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground"
+        >
+          <span class="dark-hidden">
+            <Icon name="moon" class="size-3.5" />
+          </span>
+          <span class="light-hidden">
+            <Icon name="sun" class="size-3.5" />
+          </span>
+          <span class="dark-hidden">Dark mode</span>
+          <span class="light-hidden">Light mode</span>
+        </button>
+      </div>
+    </nav>
   </header>
 );

@@ -1,14 +1,9 @@
 import { describe, it, expect } from "vitest";
 import type { PackageSummary } from "../../src/lib/types";
+import { formatDownloads } from "../../src/lib/format";
 
 describe("package-card", () => {
-  function formatDownloads(n: number): string {
-    if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
-    if (n >= 1_000) return `${(n / 1_000).toFixed(1)}k`;
-    return String(n);
-  }
-
-  it("formats downloads correctly", () => {
+  it("formats downloads correctly via shared utility", () => {
     expect(formatDownloads(0)).toBe("0");
     expect(formatDownloads(42)).toBe("42");
     expect(formatDownloads(999)).toBe("999");
@@ -42,7 +37,6 @@ describe("package-card", () => {
       repository: "",
     };
     expect(pkg.description).toBe("");
-    // Component should render gracefully without crashing
   });
 
   it("handles missing version", () => {
@@ -55,6 +49,5 @@ describe("package-card", () => {
       repository: "",
     };
     expect(`v${pkg.version}`).toBe("v");
-    // Should not crash
   });
 });

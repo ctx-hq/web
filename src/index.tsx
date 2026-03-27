@@ -1,4 +1,5 @@
 import { Hono } from "hono";
+import { getCookie } from "hono/cookie";
 import { Marked } from "marked";
 import { Layout } from "./layout";
 import { ApiClient, ApiError } from "./lib/api-client";
@@ -17,6 +18,7 @@ type Env = {
   Bindings: {
     API_BASE_URL: string;
     GITHUB_CLIENT_ID?: string;
+    GITHUB_CLIENT_SECRET?: string;
   };
 };
 
@@ -71,8 +73,9 @@ app.get("/", async (c) => {
     // API unavailable — render with empty list
   }
   const meta = defaultMeta();
+  c.header("Cache-Control", "public, s-maxage=60, stale-while-revalidate=120");
   return c.html(
-    <Layout meta={meta}>
+    <Layout meta={meta} currentPath="/">
       <HomePage trending={trending.packages} />
     </Layout>
   );
@@ -87,26 +90,51 @@ app.get("/search", async (c) => {
     ? (rawType as PackageType)
     : undefined;
 
+  const PAGE_SIZE = 30;
+  const rawPage = parseInt(c.req.query("page") ?? "1", 10);
+  const page = Number.isFinite(rawPage) && rawPage >= 1 ? rawPage : 1;
+  const offset = (page - 1) * PAGE_SIZE;
+
   let result: SearchResult = { packages: [], total: 0 };
   if (query) {
     try {
-      result = await api(c).search(query, { type, limit: 30 });
+      result = await api(c).search(query, { type, limit: PAGE_SIZE, offset });
     } catch {
       // API unavailable
     }
   } else if (type) {
     try {
-      const listed = await api(c).listPackages({ type, limit: 30 });
+      const listed = await api(c).listPackages({ type, limit: PAGE_SIZE, offset });
       result = { packages: listed.packages, total: listed.total };
     } catch {
       // API unavailable
     }
   }
 
+  const totalPages = Math.max(1, Math.ceil(result.total / PAGE_SIZE));
+
+  // Clamp: if page exceeds totalPages (and there are results), redirect to last valid page
+  if (page > totalPages && result.total > 0) {
+    const params = new URLSearchParams();
+    if (query) params.set("q", query);
+    if (type) params.set("type", type);
+    if (totalPages > 1) params.set("page", String(totalPages));
+    const qs = params.toString();
+    return c.redirect(qs ? `/search?${qs}` : "/search");
+  }
+
   const meta = searchMeta(query || (type ? `type:${type}` : "all"));
+  c.header("Cache-Control", "public, s-maxage=30, stale-while-revalidate=60");
   return c.html(
-    <Layout meta={meta}>
-      <SearchPage query={query} type={type} packages={result.packages} total={result.total} />
+    <Layout meta={meta} currentPath="/search">
+      <SearchPage
+        query={query}
+        type={type}
+        packages={result.packages}
+        total={result.total}
+        page={page}
+        totalPages={totalPages}
+      />
     </Layout>
   );
 });
@@ -131,8 +159,9 @@ app.get("/:fullName{@[^/]+/[^/]+}", async (c) => {
     }
 
     const meta = packageMeta(pkg);
+    c.header("Cache-Control", "public, s-maxage=300, stale-while-revalidate=600");
     return c.html(
-      <Layout meta={meta}>
+      <Layout meta={meta} currentPath={`/@${fullName}`}>
         <PackageDetailPage pkg={pkg} readmeHtml={readmeHtml} />
       </Layout>
     );
@@ -141,8 +170,8 @@ app.get("/:fullName{@[^/]+/[^/]+}", async (c) => {
       return c.html(
         <Layout meta={{ ...defaultMeta(), title: `Not Found — ${SITE_NAME}` }}>
           <div class="mx-auto max-w-5xl px-4 py-16 text-center">
-            <h1 class="mb-2 text-lg font-semibold">Package not found</h1>
-            <p class="text-muted-foreground">@{fullName} does not exist.</p>
+            <h1 class="mb-2 text-base font-semibold font-heading">Package not found</h1>
+            <p class="text-xs text-muted-foreground">@{fullName} does not exist.</p>
           </div>
         </Layout>,
         404
@@ -155,8 +184,9 @@ app.get("/:fullName{@[^/]+/[^/]+}", async (c) => {
 // Docs
 app.get("/docs", (c) => {
   const meta = docsMeta();
+  c.header("Cache-Control", "public, s-maxage=3600, stale-while-revalidate=7200");
   return c.html(
-    <Layout meta={meta}>
+    <Layout meta={meta} currentPath="/docs">
       <DocsPage />
     </Layout>
   );
@@ -164,12 +194,13 @@ app.get("/docs", (c) => {
 
 app.get("/docs/:section", (c) => {
   const section = c.req.param("section");
-  if (!VALID_DOC_SECTIONS.includes(section)) {
+  if (!VALID_DOC_SECTIONS.includes(section as typeof VALID_DOC_SECTIONS[number])) {
     return c.notFound();
   }
   const meta = docsMeta(section);
+  c.header("Cache-Control", "public, s-maxage=3600, stale-while-revalidate=7200");
   return c.html(
-    <Layout meta={meta}>
+    <Layout meta={meta} currentPath={`/docs/${section}`}>
       <DocsPage section={section} />
     </Layout>
   );
@@ -181,21 +212,163 @@ app.get("/login", (c) => {
   c.header("Set-Cookie", `oauth_state=${state}; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=600`);
   const meta = { ...defaultMeta(), title: `Sign in — ${SITE_NAME}` };
   return c.html(
-    <Layout meta={meta}>
+    <Layout meta={meta} currentPath="/login">
       <LoginPage githubClientId={c.env.GITHUB_CLIENT_ID} oauthState={state} />
     </Layout>
   );
 });
 
-// Dashboard
+// OAuth callback — exchange GitHub code for user session
+app.get("/login/callback", async (c) => {
+  const code = c.req.query("code");
+  const state = c.req.query("state");
+
+  if (!code || !state) {
+    return c.redirect("/login");
+  }
+
+  // Verify state matches cookie
+  const savedState = getCookie(c, "oauth_state");
+  if (!savedState || savedState !== state) {
+    return c.redirect("/login");
+  }
+
+  const clientId = c.env.GITHUB_CLIENT_ID;
+  const clientSecret = c.env.GITHUB_CLIENT_SECRET;
+  if (!clientId || !clientSecret) {
+    return c.redirect("/login");
+  }
+
+  try {
+    // Exchange code for GitHub access token
+    const tokenResp = await fetch("https://github.com/login/oauth/access_token", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+      body: JSON.stringify({
+        client_id: clientId,
+        client_secret: clientSecret,
+        code,
+      }),
+    });
+
+    const tokenData = await tokenResp.json() as { access_token?: string; error?: string };
+    if (!tokenData.access_token) {
+      return c.redirect("/login");
+    }
+
+    // Get user profile from GitHub (including email)
+    const userResp = await fetch("https://api.github.com/user", {
+      headers: {
+        Authorization: `Bearer ${tokenData.access_token}`,
+        Accept: "application/json",
+        "User-Agent": "getctx.org",
+      },
+    });
+    const ghUser = await userResp.json() as {
+      id: number;
+      login: string;
+      email: string | null;
+      avatar_url: string;
+    };
+
+    // If email not public, fetch from /user/emails
+    let email = ghUser.email ?? "";
+    if (!email) {
+      const emailsResp = await fetch("https://api.github.com/user/emails", {
+        headers: {
+          Authorization: `Bearer ${tokenData.access_token}`,
+          Accept: "application/json",
+          "User-Agent": "getctx.org",
+        },
+      });
+      const emails = await emailsResp.json() as Array<{ email: string; primary: boolean; verified: boolean }>;
+      const primary = emails.find((e) => e.primary && e.verified);
+      email = primary?.email ?? emails[0]?.email ?? "";
+    }
+
+    // Register/login user via our API
+    const apiBase = c.env.API_BASE_URL || "https://api.getctx.org";
+    const registerResp = await fetch(`${apiBase}/v1/auth/github`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        github_id: String(ghUser.id),
+        username: ghUser.login,
+        email,
+        avatar_url: ghUser.avatar_url,
+      }),
+    });
+
+    const session = await registerResp.json() as { token?: string; error?: string };
+    if (!session.token) {
+      return c.redirect("/login");
+    }
+
+    // Set session cookie and clear oauth_state
+    c.header("Set-Cookie", [
+      `ctx_session=${session.token}; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=2592000`,
+      `oauth_state=; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=0`,
+    ].join(", "));
+
+    return c.redirect("/dashboard");
+  } catch {
+    return c.redirect("/login");
+  }
+});
+
+// Dashboard (auth required — session validated server-side via API)
 app.get("/dashboard", async (c) => {
-  // TODO: check auth cookie, redirect to /login if absent
-  const meta = { ...defaultMeta(), title: `Dashboard — ${SITE_NAME}` };
-  return c.html(
-    <Layout meta={meta}>
-      <DashboardPage username="guest" packages={[]} />
-    </Layout>
-  );
+  const sessionToken = getCookie(c, "ctx_session");
+  if (!sessionToken) {
+    return c.redirect("/login");
+  }
+
+  const apiBase = c.env.API_BASE_URL || "https://api.getctx.org";
+  const authHeaders = {
+    Accept: "application/json",
+    Authorization: `Bearer ${sessionToken}`,
+  };
+
+  // Validate the session token against the API.
+  // If the token is invalid/expired, the API returns 401 and we redirect to login.
+  try {
+    const resp = await fetch(`${apiBase}/v1/me`, {
+      headers: authHeaders,
+      signal: AbortSignal.timeout(5_000),
+    });
+    if (!resp.ok) {
+      return c.redirect("/login");
+    }
+    const user = (await resp.json()) as { username: string };
+
+    // Fetch the user's published packages
+    let packages: PackageSummary[] = [];
+    try {
+      const pkgResp = await fetch(`${apiBase}/v1/users/${encodeURIComponent(user.username)}/packages?limit=50`, {
+        headers: authHeaders,
+        signal: AbortSignal.timeout(5_000),
+      });
+      if (pkgResp.ok) {
+        const data = (await pkgResp.json()) as { packages: PackageSummary[] };
+        packages = data.packages;
+      }
+    } catch {
+      // Non-critical — show dashboard with empty list
+    }
+
+    const meta = { ...defaultMeta(), title: `Dashboard — ${SITE_NAME}` };
+    return c.html(
+      <Layout meta={meta} currentPath="/dashboard">
+        <DashboardPage username={user.username} packages={packages} />
+      </Layout>
+    );
+  } catch {
+    // API unavailable or invalid session — redirect to login
+    return c.redirect("/login");
+  }
 });
 
 // Search suggest API proxy (avoids CORS)
@@ -249,8 +422,8 @@ app.onError((err, c) => {
   return c.html(
     <Layout meta={{ ...defaultMeta(), title: `Error — ${SITE_NAME}` }}>
       <div class="mx-auto max-w-5xl px-4 py-16 text-center">
-        <h1 class="mb-2 text-lg font-semibold">Something went wrong</h1>
-        <p class="text-muted-foreground">Please try again later.</p>
+        <h1 class="mb-2 text-base font-semibold font-heading">Something went wrong</h1>
+        <p class="text-xs text-muted-foreground">Please try again later.</p>
       </div>
     </Layout>,
     500

@@ -1,12 +1,41 @@
 import type { FC } from "hono/jsx";
 import type { PackageType } from "../lib/types";
 
-const typeStyles: Record<PackageType, string> = {
-  skill: "bg-type-skill-bg text-type-skill border-type-skill/20",
-  mcp: "bg-type-mcp-bg text-type-mcp border-type-mcp/20",
-  cli: "bg-type-cli-bg text-type-cli border-type-cli/20",
-};
+type BadgeVariant =
+  | "default"
+  | "secondary"
+  | "outline"
+  | "destructive"
+  | `type-${PackageType}`;
 
-export const Badge: FC<{ type: PackageType }> = ({ type }) => (
-  <span class={`cn-badge ${typeStyles[type] ?? ""}`}>{type}</span>
-);
+export const Badge: FC<{
+  variant?: BadgeVariant;
+  active?: boolean;
+  class?: string;
+  href?: string;
+  children?: unknown;
+  /** Shorthand: sets variant to `type-${type}` */
+  type?: PackageType;
+}> = ({ variant, active, class: className, href, children, type }) => {
+  const resolvedVariant = variant ?? (type ? `type-${type}` : "default");
+  const classes = [
+    "cn-badge",
+    `cn-badge-variant-${resolvedVariant}`,
+    active ? "cn-badge-active" : "",
+    className,
+  ]
+    .filter(Boolean)
+    .join(" ");
+
+  const content = children ?? type;
+
+  if (href) {
+    return (
+      <a href={href} class={classes}>
+        {content}
+      </a>
+    );
+  }
+
+  return <span class={classes}>{content}</span>;
+};
