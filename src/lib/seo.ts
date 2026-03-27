@@ -35,7 +35,7 @@ export function packageMeta(pkg: PackageDetail): SeoMeta {
   return {
     title: `${pkg.full_name} — ${SITE_NAME}`,
     description: desc || `${pkg.full_name} on ${SITE_NAME}`,
-    url: `${SITE_URL}/@${encodeURIComponent(pkg.full_name)}`,
+    url: `${SITE_URL}/@${pkg.full_name}`,
     ogImage: DEFAULT_OG_IMAGE,
     type: "article",
   };

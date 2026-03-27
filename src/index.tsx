@@ -26,12 +26,38 @@ function api(c: { env: Env["Bindings"] }) {
   return new ApiClient(c.env.API_BASE_URL || "https://api.getctx.org");
 }
 
-/** Marked instance with raw HTML escaped to prevent XSS. */
+/** Only allow safe URL schemes in markdown links/images. */
+function sanitizeUrl(href: string): string {
+  try {
+    const url = new URL(href, "https://placeholder.invalid");
+    if (url.protocol === "https:" || url.protocol === "http:" || url.protocol === "mailto:") {
+      return href;
+    }
+  } catch { /* invalid URL */ }
+  return "";
+}
+
+/** Marked instance with raw HTML escaped and dangerous URL schemes stripped. */
 const safeMarked = new Marked();
 safeMarked.use({
   renderer: {
     html(token) {
       return escapeHtml(token.text);
+    },
+    link(token) {
+      const href = sanitizeUrl(token.href);
+      const title = token.title ? ` title="${escapeHtml(token.title)}"` : "";
+      return href
+        ? `<a href="${escapeHtml(href)}"${title}>${token.text}</a>`
+        : escapeHtml(token.text);
+    },
+    image(token) {
+      const src = sanitizeUrl(token.href);
+      const alt = escapeHtml(token.text);
+      const title = token.title ? ` title="${escapeHtml(token.title)}"` : "";
+      return src
+        ? `<img src="${escapeHtml(src)}" alt="${alt}"${title} />`
+        : alt;
     },
   },
 });
@@ -68,9 +94,16 @@ app.get("/search", async (c) => {
     } catch {
       // API unavailable
     }
+  } else if (type) {
+    try {
+      const listed = await api(c).listPackages({ type, limit: 30 });
+      result = { packages: listed.packages, total: listed.total };
+    } catch {
+      // API unavailable
+    }
   }
 
-  const meta = searchMeta(query || "all");
+  const meta = searchMeta(query || (type ? `type:${type}` : "all"));
   return c.html(
     <Layout meta={meta}>
       <SearchPage query={query} type={type} packages={result.packages} total={result.total} />

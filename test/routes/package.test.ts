@@ -1,57 +1,81 @@
-import { describe, it, expect } from "vitest";
-import { Hono } from "hono";
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import app from "../../src/index";
 
-describe("package routes", () => {
-  function createApp() {
-    const app = new Hono();
+const mockFetch = vi.fn();
+vi.stubGlobal("fetch", mockFetch);
 
-    // Simulate the actual routing pattern
-    app.get("/:fullName{@[^/]+/[^/]+}", (c) => {
-      const fullName = c.req.param("fullName").slice(1);
-      // Simulate API lookup
-      if (fullName === "test/existing") {
-        return c.html(`<html><body>package: ${fullName}</body></html>`);
-      }
-      return c.html(`<html><body>not found: ${fullName}</body></html>`, 404);
-    });
+function apiJson(data: unknown) {
+  return new Response(JSON.stringify(data), {
+    status: 200,
+    headers: { "Content-Type": "application/json" },
+  });
+}
 
-    // Profile route: /@identifier
-    app.get("/:id{@[^/]+$}", (c) => {
-      const id = c.req.param("id").slice(1);
-      return c.html(`<html><body>profile: ${id}</body></html>`);
-    });
+function api404() {
+  return new Response("Not Found", { status: 404 });
+}
 
-    return app;
-  }
+const ENV = { API_BASE_URL: "https://api.test", GITHUB_CLIENT_ID: "test-id" };
 
+function req(path: string) {
+  return app.request(path, {}, ENV);
+}
+
+const fakePkg = {
+  full_name: "test/existing",
+  type: "skill",
+  description: "A test package",
+  license: "MIT",
+  repository: "https://github.com/test/existing",
+  downloads: 42,
+  keywords: [],
+  platforms: [],
+  versions: [{ version: "1.0.0", created_at: "2025-01-01" }],
+  owner: "test",
+  created_at: "2025-01-01",
+  updated_at: "2025-01-01",
+};
+
+beforeEach(() => {
+  mockFetch.mockReset();
+});
+
+describe("package routes (real app)", () => {
   it("resolves /@scope/name as package detail", async () => {
-    const app = createApp();
-    const res = await app.request("/@test/existing");
+    mockFetch
+      .mockResolvedValueOnce(apiJson(fakePkg))
+      .mockResolvedValueOnce(apiJson({ ...fakePkg.versions[0], readme: "# Hello" }));
+
+    const res = await req("/@test/existing");
     expect(res.status).toBe(200);
     const html = await res.text();
-    expect(html).toContain("package: test/existing");
+    expect(html).toContain("test/existing");
   });
 
   it("returns 404 for missing packages", async () => {
-    const app = createApp();
-    const res = await app.request("/@test/nonexistent");
+    mockFetch.mockResolvedValueOnce(api404());
+
+    const res = await req("/@test/nonexistent");
     expect(res.status).toBe(404);
     const html = await res.text();
     expect(html).toContain("not found");
   });
 
-  it("handles special characters in scope/name", async () => {
-    const app = createApp();
-    // Package names only allow lowercase + hyphens, so this should 404
-    const res = await app.request("/@test/existing");
-    expect(res.status).toBe(200);
+  it("canonical URL uses unencoded scope/name", async () => {
+    mockFetch
+      .mockResolvedValueOnce(apiJson(fakePkg))
+      .mockResolvedValueOnce(apiJson({ ...fakePkg.versions[0], readme: "" }));
+
+    const res = await req("/@test/existing");
+    const html = await res.text();
+    // canonical should be /@test/existing, NOT /@test%2Fexisting
+    expect(html).toContain("/@test/existing");
+    expect(html).not.toContain("%2F");
   });
 
-  it("handles URL-encoded package names", async () => {
-    const app = createApp();
-    const encoded = encodeURIComponent("@test/existing");
-    // Direct encoded path may not match — verify the decoding approach
-    const decoded = decodeURIComponent(encoded);
-    expect(decoded).toBe("@test/existing");
+  it("URL-encoded /@scope%2Fname does NOT match package route (returns 404)", async () => {
+    const res = await req("/@test%2Fexisting");
+    // The route pattern requires a literal / between scope and name
+    expect(res.status).toBe(404);
   });
 });
