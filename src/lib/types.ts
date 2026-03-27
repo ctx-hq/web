@@ -1,3 +1,5 @@
+export type SessionUser = { username: string; avatar_url?: string };
+
 export type PackageType = "skill" | "mcp" | "cli";
 
 export interface PackageSummary {

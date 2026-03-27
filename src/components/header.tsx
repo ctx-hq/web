@@ -1,4 +1,5 @@
 import type { FC } from "hono/jsx";
+import type { SessionUser } from "../lib/types";
 import { Icon } from "./ui/icon";
 import { Button } from "./ui/button";
 
@@ -7,7 +8,10 @@ const NAV_LINKS: Array<{ href: string; label: string }> = [
   { href: "/docs", label: "Docs" },
 ];
 
-export const Header: FC<{ currentPath?: string }> = ({ currentPath = "" }) => (
+export const Header: FC<{ currentPath?: string; user?: SessionUser | null }> = ({
+  currentPath = "",
+  user,
+}) => (
   <header class="border-b border-border">
     <div class="mx-auto flex h-12 max-w-5xl items-center justify-between px-4 sm:px-6">
       <a href="/" class="text-sm font-semibold font-heading tracking-tight">
@@ -47,9 +51,41 @@ export const Header: FC<{ currentPath?: string }> = ({ currentPath = "" }) => (
             <Icon name="sun" class="size-4" />
           </span>
         </Button>
-        <Button variant="default" size="sm" href="/login">
-          Sign in
-        </Button>
+        {user ? (
+          <div class="flex items-center gap-3">
+            <a
+              href="/dashboard"
+              class={`flex items-center gap-2 text-xs transition-colors ${
+                currentPath === "/dashboard"
+                  ? "text-foreground font-medium"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              {user.avatar_url ? (
+                <img
+                  src={user.avatar_url}
+                  alt={user.username}
+                  class="size-5 border border-border"
+                  loading="lazy"
+                />
+              ) : (
+                <Icon name="user" class="size-4" />
+              )}
+              {user.username}
+            </a>
+            <a
+              href="/logout"
+              class="text-xs text-muted-foreground hover:text-foreground transition-colors"
+              title="Sign out"
+            >
+              <Icon name="sign-out" class="size-4" />
+            </a>
+          </div>
+        ) : (
+          <Button variant="default" size="sm" href="/login">
+            Sign in
+          </Button>
+        )}
       </nav>
 
       {/* Mobile nav toggle */}
@@ -86,9 +122,25 @@ export const Header: FC<{ currentPath?: string }> = ({ currentPath = "" }) => (
             </a>
           );
         })}
-        <a href="/login" class="text-xs text-muted-foreground hover:text-foreground">
-          Sign in
-        </a>
+        {user ? (
+          <>
+            <a href="/dashboard" class="flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground">
+              {user.avatar_url ? (
+                <img src={user.avatar_url} alt={user.username} class="size-4 border border-border" loading="lazy" />
+              ) : (
+                <Icon name="user" class="size-3.5" />
+              )}
+              {user.username}
+            </a>
+            <a href="/logout" class="text-xs text-muted-foreground hover:text-foreground">
+              Sign out
+            </a>
+          </>
+        ) : (
+          <a href="/login" class="text-xs text-muted-foreground hover:text-foreground">
+            Sign in
+          </a>
+        )}
         <button
           id="theme-toggle-mobile"
           class="flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground"

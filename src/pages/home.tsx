@@ -2,11 +2,11 @@ import type { FC } from "hono/jsx";
 import type { PackageSummary } from "../lib/types";
 import { SITE_TAGLINE, SITE_DESCRIPTION } from "../lib/constants";
 import { Container } from "../components/ui/container";
-import { Button } from "../components/ui/button";
 import { Icon } from "../components/ui/icon";
 import { SearchBox } from "../components/search-box";
 import { PackageCard } from "../components/package-card";
 import { Badge } from "../components/badge";
+import { GetStarted } from "../components/get-started";
 
 export const HomePage: FC<{ trending: PackageSummary[] }> = ({ trending }) => (
   <Container>
@@ -26,35 +26,8 @@ export const HomePage: FC<{ trending: PackageSummary[] }> = ({ trending }) => (
       </div>
     </section>
 
-    {/* Install guide */}
-    <section class="mb-12 grid gap-4 md:grid-cols-2">
-      <div class="cn-card flex flex-col justify-between p-4">
-        <h2 class="mb-3 text-xs font-semibold font-heading">Install ctx</h2>
-        <div class="flex items-center gap-2">
-          <code class="flex-1 bg-muted px-3 py-2 font-mono text-xs">
-            curl -fsSL https://getctx.org/install.sh | sh
-          </code>
-          <Button
-            variant="outline"
-            size="xs"
-            data-copy="curl -fsSL https://getctx.org/install.sh | sh"
-          >
-            <Icon name="copy" class="size-3" />
-            Copy
-          </Button>
-        </div>
-      </div>
-      <div class="cn-card flex flex-col justify-between p-4">
-        <h2 class="mb-3 text-xs font-semibold font-heading">Then use it</h2>
-        <code class="block bg-muted px-3 py-2 font-mono text-xs leading-relaxed">
-          ctx search "code review"
-          <br />
-          ctx install @scope/name
-          <br />
-          ctx serve
-        </code>
-      </div>
-    </section>
+    {/* Get Started */}
+    <GetStarted />
 
     {/* Browse by type */}
     <section class="mb-12">

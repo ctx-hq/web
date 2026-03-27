@@ -1,13 +1,14 @@
 import type { FC, PropsWithChildren } from "hono/jsx";
 import type { SeoMeta } from "./lib/seo";
+import type { SessionUser } from "./lib/types";
 import { SITE_NAME } from "./lib/constants";
 import { Header } from "./components/header";
 import { Footer } from "./components/footer";
 // CSS is built separately via `vite build --mode client` → /static/client.css
 
-type LayoutProps = PropsWithChildren<{ meta: SeoMeta; currentPath?: string }>;
+type LayoutProps = PropsWithChildren<{ meta: SeoMeta; currentPath?: string; user?: SessionUser | null }>;
 
-export const Layout: FC<LayoutProps> = ({ meta, currentPath, children }) => {
+export const Layout: FC<LayoutProps> = ({ meta, currentPath, user, children }) => {
   return (
     <html lang="en">
       <head>
@@ -50,9 +51,16 @@ export const Layout: FC<LayoutProps> = ({ meta, currentPath, children }) => {
         {/* Styles */}
         <link rel="stylesheet" href="/static/client.css" />
         <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+
+        {/* Theme init — must be in <head> to prevent FOUC */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var t=localStorage.getItem('theme');if(t==='dark'||(!t&&matchMedia('(prefers-color-scheme:dark)').matches))document.documentElement.classList.add('dark')}catch(e){}})();`,
+          }}
+        />
       </head>
       <body class="bg-background text-foreground font-sans text-xs antialiased">
-        <Header currentPath={currentPath} />
+        <Header currentPath={currentPath} user={user} />
         <main class="min-h-[calc(100vh-3rem)]">{children}</main>
         <Footer />
         <ClientScript />
@@ -65,14 +73,7 @@ const ClientScript: FC = () => (
   <script
     dangerouslySetInnerHTML={{
       __html: `
-/* --- Theme --- */
-(function(){
-  try {
-    var t=localStorage.getItem('theme');
-    if(t==='dark'||(!t&&matchMedia('(prefers-color-scheme:dark)').matches))
-      document.documentElement.classList.add('dark');
-  } catch(e){}
-})();
+/* --- Theme toggle --- */
 function toggleTheme(){
   document.documentElement.classList.toggle('dark');
   try{localStorage.setItem('theme',document.documentElement.classList.contains('dark')?'dark':'light')}catch(e){}
@@ -112,6 +113,34 @@ document.addEventListener('click',function(e){
   });
   container.querySelectorAll('[data-panel]').forEach(function(p){
     p.classList.toggle('hidden',p.dataset.panel!==tab);
+  });
+});
+
+/* --- OS detection + toggle --- */
+(function(){
+  var os=/Win/.test(navigator.platform)?'windows':'unix';
+  document.querySelectorAll('[data-os-panel]').forEach(function(p){
+    p.classList.toggle('hidden',p.dataset.osPanel!==os);
+  });
+  document.querySelectorAll('[data-os-toggle]').forEach(function(b){
+    b.classList.toggle('text-muted-foreground',b.dataset.osToggle!==os);
+    b.classList.toggle('font-medium',b.dataset.osToggle===os);
+  });
+})();
+
+document.addEventListener('click',function(e){
+  var btn=e.target&&e.target.closest?e.target.closest('[data-os-toggle]'):null;
+  if(!btn)return;
+  var os=btn.dataset.osToggle;
+  var container=btn.closest('.os-toggle');
+  if(!container||!container.parentElement)return;
+  var scope=container.parentElement;
+  scope.querySelectorAll('[data-os-panel]').forEach(function(p){
+    p.classList.toggle('hidden',p.dataset.osPanel!==os);
+  });
+  container.querySelectorAll('[data-os-toggle]').forEach(function(b){
+    b.classList.toggle('text-muted-foreground',b.dataset.osToggle!==os);
+    b.classList.toggle('font-medium',b.dataset.osToggle===os);
   });
 });
 

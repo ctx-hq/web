@@ -1,11 +1,11 @@
 import { Hono } from "hono";
-import { getCookie } from "hono/cookie";
+import { getCookie, setCookie, deleteCookie } from "hono/cookie";
 import { Marked } from "marked";
 import { Layout } from "./layout";
 import { ApiClient, ApiError } from "./lib/api-client";
 import { defaultMeta, searchMeta, packageMeta, docsMeta, escapeHtml } from "./lib/seo";
 import { SITE_NAME, SITE_URL } from "./lib/constants";
-import type { PackageSummary, PackageType, SearchResult } from "./lib/types";
+import type { SessionUser, PackageSummary, PackageType, SearchResult } from "./lib/types";
 
 import { HomePage } from "./pages/home";
 import { SearchPage } from "./pages/search";
@@ -26,6 +26,27 @@ const app = new Hono<Env>();
 
 function api(c: { env: Env["Bindings"] }) {
   return new ApiClient(c.env.API_BASE_URL || "https://api.getctx.org");
+}
+
+/** Resolve session user from cookie. Only call in auth-required routes. */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function resolveUser(c: any): Promise<{ user: SessionUser; token: string } | null> {
+  const token = getCookie(c, "ctx_session") as string | undefined;
+  if (!token) return null;
+  try {
+    const apiBase: string = c.env.API_BASE_URL || "https://api.getctx.org";
+    const resp = await fetch(`${apiBase}/v1/me`, {
+      headers: { Authorization: `Bearer ${token}`, Accept: "application/json" },
+      signal: AbortSignal.timeout(3_000),
+    });
+    if (resp.ok) {
+      const data = (await resp.json()) as SessionUser;
+      return { user: data, token };
+    }
+  } catch {
+    // Session invalid or API down — treat as logged out
+  }
+  return null;
 }
 
 /** Only allow safe URL schemes in markdown links/images. */
@@ -206,10 +227,20 @@ app.get("/docs/:section", (c) => {
   );
 });
 
-// Login
-app.get("/login", (c) => {
+// Login — redirect to dashboard if already signed in
+app.get("/login", async (c) => {
+  const session = await resolveUser(c);
+  if (session) {
+    return c.redirect("/dashboard");
+  }
   const state = crypto.randomUUID();
-  c.header("Set-Cookie", `oauth_state=${state}; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=600`);
+  setCookie(c, "oauth_state", state, {
+    httpOnly: true,
+    secure: true,
+    sameSite: "Lax",
+    path: "/",
+    maxAge: 600,
+  });
   const meta = { ...defaultMeta(), title: `Sign in — ${SITE_NAME}` };
   return c.html(
     <Layout meta={meta} currentPath="/login">
@@ -308,10 +339,14 @@ app.get("/login/callback", async (c) => {
     }
 
     // Set session cookie and clear oauth_state
-    c.header("Set-Cookie", [
-      `ctx_session=${session.token}; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=2592000`,
-      `oauth_state=; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=0`,
-    ].join(", "));
+    setCookie(c, "ctx_session", session.token, {
+      httpOnly: true,
+      secure: true,
+      sameSite: "Lax",
+      path: "/",
+      maxAge: 2592000,
+    });
+    deleteCookie(c, "oauth_state", { path: "/" });
 
     return c.redirect("/dashboard");
   } catch {
@@ -319,56 +354,43 @@ app.get("/login/callback", async (c) => {
   }
 });
 
-// Dashboard (auth required — session validated server-side via API)
+// Logout — clear session cookie and redirect
+app.get("/logout", (c) => {
+  deleteCookie(c, "ctx_session", { path: "/" });
+  return c.redirect("/");
+});
+
+// Dashboard (auth required)
 app.get("/dashboard", async (c) => {
-  const sessionToken = getCookie(c, "ctx_session");
-  if (!sessionToken) {
+  const session = await resolveUser(c);
+  if (!session) {
     return c.redirect("/login");
   }
 
+  const { user, token: sessionToken } = session;
   const apiBase = c.env.API_BASE_URL || "https://api.getctx.org";
-  const authHeaders = {
-    Accept: "application/json",
-    Authorization: `Bearer ${sessionToken}`,
-  };
 
-  // Validate the session token against the API.
-  // If the token is invalid/expired, the API returns 401 and we redirect to login.
+  // Fetch the user's published packages
+  let packages: PackageSummary[] = [];
   try {
-    const resp = await fetch(`${apiBase}/v1/me`, {
-      headers: authHeaders,
+    const pkgResp = await fetch(`${apiBase}/v1/users/${encodeURIComponent(user.username)}/packages?limit=50`, {
+      headers: { Accept: "application/json", Authorization: `Bearer ${sessionToken}` },
       signal: AbortSignal.timeout(5_000),
     });
-    if (!resp.ok) {
-      return c.redirect("/login");
+    if (pkgResp.ok) {
+      const data = (await pkgResp.json()) as { packages: PackageSummary[] };
+      packages = data.packages;
     }
-    const user = (await resp.json()) as { username: string };
-
-    // Fetch the user's published packages
-    let packages: PackageSummary[] = [];
-    try {
-      const pkgResp = await fetch(`${apiBase}/v1/users/${encodeURIComponent(user.username)}/packages?limit=50`, {
-        headers: authHeaders,
-        signal: AbortSignal.timeout(5_000),
-      });
-      if (pkgResp.ok) {
-        const data = (await pkgResp.json()) as { packages: PackageSummary[] };
-        packages = data.packages;
-      }
-    } catch {
-      // Non-critical — show dashboard with empty list
-    }
-
-    const meta = { ...defaultMeta(), title: `Dashboard — ${SITE_NAME}` };
-    return c.html(
-      <Layout meta={meta} currentPath="/dashboard">
-        <DashboardPage username={user.username} packages={packages} />
-      </Layout>
-    );
   } catch {
-    // API unavailable or invalid session — redirect to login
-    return c.redirect("/login");
+    // Non-critical — show dashboard with empty list
   }
+
+  const meta = { ...defaultMeta(), title: `Dashboard — ${SITE_NAME}` };
+  return c.html(
+    <Layout meta={meta} currentPath="/dashboard" user={user}>
+      <DashboardPage username={user.username} packages={packages} />
+    </Layout>
+  );
 });
 
 // Search suggest API proxy (avoids CORS)
