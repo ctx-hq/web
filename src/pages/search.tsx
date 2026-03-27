@@ -29,7 +29,7 @@ const SortSelect: FC<{
     <select
       name="sort"
       id="sort-select"
-      class="cn-input h-7 w-auto cursor-pointer px-2 py-0 text-xs"
+      class="cn-input cn-input-size-default w-auto cursor-pointer px-2 text-xs"
       onchange="this.form.submit()"
     >
       {SORT_OPTIONS.map((o) => (
