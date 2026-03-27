@@ -1,0 +1,101 @@
+@import "tailwindcss";
+
+/* Lyra Design Tokens — Sharp geometric, zero radius */
+@theme inline {
+  --color-background: oklch(1 0 0);
+  --color-foreground: oklch(0.145 0 0);
+  --color-card: oklch(1 0 0);
+  --color-card-foreground: oklch(0.145 0 0);
+  --color-primary: oklch(0.205 0 0);
+  --color-primary-foreground: oklch(0.985 0 0);
+  --color-secondary: oklch(0.97 0 0);
+  --color-secondary-foreground: oklch(0.205 0 0);
+  --color-muted: oklch(0.97 0 0);
+  --color-muted-foreground: oklch(0.556 0 0);
+  --color-accent: oklch(0.97 0 0);
+  --color-accent-foreground: oklch(0.205 0 0);
+  --color-destructive: oklch(0.577 0.245 27.325);
+  --color-border: oklch(0.922 0 0);
+  --color-input: oklch(0.922 0 0);
+  --color-ring: oklch(0.708 0 0);
+
+  /* Badge type colors */
+  --color-type-skill: oklch(0.623 0.214 259.815);
+  --color-type-skill-bg: oklch(0.97 0.014 254.604);
+  --color-type-mcp: oklch(0.627 0.265 303.9);
+  --color-type-mcp-bg: oklch(0.977 0.014 308.299);
+  --color-type-cli: oklch(0.637 0.194 149.214);
+  --color-type-cli-bg: oklch(0.982 0.018 155.826);
+
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "Geist Mono", ui-monospace, monospace;
+}
+
+/* Dark mode */
+.dark {
+  --color-background: oklch(0.145 0 0);
+  --color-foreground: oklch(0.985 0 0);
+  --color-card: oklch(0.17 0 0);
+  --color-card-foreground: oklch(0.985 0 0);
+  --color-primary: oklch(0.985 0 0);
+  --color-primary-foreground: oklch(0.205 0 0);
+  --color-secondary: oklch(0.205 0 0);
+  --color-secondary-foreground: oklch(0.985 0 0);
+  --color-muted: oklch(0.205 0 0);
+  --color-muted-foreground: oklch(0.708 0 0);
+  --color-accent: oklch(0.205 0 0);
+  --color-accent-foreground: oklch(0.985 0 0);
+  --color-border: oklch(0.25 0 0);
+  --color-input: oklch(0.25 0 0);
+  --color-ring: oklch(0.556 0 0);
+
+  --color-type-skill-bg: oklch(0.25 0.06 254.604);
+  --color-type-mcp-bg: oklch(0.25 0.06 308.299);
+  --color-type-cli-bg: oklch(0.25 0.06 155.826);
+}
+
+/* Lyra component utilities */
+.cn-button {
+  @apply inline-flex items-center justify-center rounded-none border border-transparent bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground transition-colors hover:bg-primary/90 focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:opacity-50;
+}
+
+.cn-button-outline {
+  @apply inline-flex items-center justify-center rounded-none border border-border bg-transparent px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-accent focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none;
+}
+
+.cn-button-ghost {
+  @apply inline-flex items-center justify-center rounded-none border border-transparent bg-transparent px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-accent focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none;
+}
+
+.cn-badge {
+  @apply inline-flex items-center rounded-none border border-transparent px-1.5 py-0.5 text-[10px] font-medium;
+}
+
+.cn-card {
+  @apply rounded-none border border-border bg-card p-4 text-card-foreground;
+}
+
+.cn-input {
+  @apply w-full rounded-none border border-input bg-background px-3 py-1.5 text-xs text-foreground outline-none transition-shadow placeholder:text-muted-foreground focus:ring-1 focus:ring-ring;
+}
+
+/* Prose for README rendering */
+.prose {
+  @apply text-xs leading-relaxed text-foreground;
+}
+.prose h1 { @apply mb-3 mt-6 text-lg font-semibold; }
+.prose h2 { @apply mb-2 mt-5 text-sm font-semibold; }
+.prose h3 { @apply mb-2 mt-4 text-xs font-semibold; }
+.prose p { @apply mb-3; }
+.prose a { @apply text-foreground underline underline-offset-2; }
+.prose code { @apply rounded-none bg-muted px-1 py-0.5 text-[11px] font-mono; }
+.prose pre { @apply mb-3 overflow-x-auto rounded-none border border-border bg-muted p-3 text-[11px]; }
+.prose pre code { @apply bg-transparent p-0; }
+.prose ul { @apply mb-3 list-disc pl-5; }
+.prose ol { @apply mb-3 list-decimal pl-5; }
+.prose li { @apply mb-1; }
+.prose blockquote { @apply mb-3 border-l-2 border-border pl-3 text-muted-foreground; }
+.prose img { @apply max-w-full; }
+.prose table { @apply mb-3 w-full border-collapse; }
+.prose th { @apply border border-border bg-muted px-2 py-1 text-left text-[10px] font-medium; }
+.prose td { @apply border border-border px-2 py-1 text-[11px]; }

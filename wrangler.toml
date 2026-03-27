@@ -1,0 +1,7 @@
+name = "ctx-web"
+compatibility_date = "2025-03-27"
+compatibility_flags = ["nodejs_compat"]
+pages_build_output_dir = "dist"
+
+[vars]
+API_BASE_URL = "https://api.getctx.org"
