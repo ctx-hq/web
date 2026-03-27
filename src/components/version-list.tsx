@@ -3,19 +3,16 @@ import type { VersionSummary } from "../lib/types";
 import { formatDate } from "../lib/format";
 
 export const VersionList: FC<{ versions: VersionSummary[] }> = ({ versions }) => (
-  <div>
-    <h3 class="mb-2 text-sm font-semibold">Versions</h3>
-    <ul class="space-y-1">
-      {versions.map((v) => (
-        <li class="flex items-center justify-between text-[11px]">
-          <span class={v.yanked ? "line-through text-muted-foreground" : ""}>
-            {v.version}
-          </span>
-          <span class="text-muted-foreground">
-            {formatDate(v.created_at)}
-          </span>
-        </li>
-      ))}
-    </ul>
-  </div>
+  <ul class="space-y-1">
+    {versions.map((v) => (
+      <li class="flex items-center justify-between text-[11px]">
+        <span class={v.yanked ? "line-through text-muted-foreground" : ""}>
+          {v.version}
+        </span>
+        <span class="text-muted-foreground">
+          {formatDate(v.created_at)}
+        </span>
+      </li>
+    ))}
+  </ul>
 );

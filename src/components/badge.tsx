@@ -16,7 +16,9 @@ export const Badge: FC<{
   children?: unknown;
   /** Shorthand: sets variant to `type-${type}` */
   type?: PackageType;
-}> = ({ variant, active, class: className, href, children, type }) => {
+  [key: `data-${string}`]: string | undefined;
+  "aria-current"?: string;
+}> = ({ variant, active, class: className, href, children, type, ...rest }) => {
   const resolvedVariant = variant ?? (type ? `type-${type}` : "default");
   const classes = [
     "cn-badge",
@@ -31,11 +33,11 @@ export const Badge: FC<{
 
   if (href) {
     return (
-      <a href={href} class={classes}>
+      <a href={href} class={classes} {...rest}>
         {content}
       </a>
     );
   }
 
-  return <span class={classes}>{content}</span>;
+  return <span class={classes} {...rest}>{content}</span>;
 };

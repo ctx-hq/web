@@ -8,6 +8,10 @@ const NAV_LINKS: Array<{ href: string; label: string }> = [
   { href: "/docs", label: "Docs" },
 ];
 
+function avatarUrl(username: string, size: number = 40): string {
+  return `https://source.boringavatars.com/beam/${size}/${encodeURIComponent(username)}?colors=264653,2a9d8f,e9c46a,f4a261,e76f51`;
+}
+
 export const Header: FC<{ currentPath?: string; user?: SessionUser | null }> = ({
   currentPath = "",
   user,
@@ -61,16 +65,13 @@ export const Header: FC<{ currentPath?: string; user?: SessionUser | null }> = (
                   : "text-muted-foreground hover:text-foreground"
               }`}
             >
-              {user.avatar_url ? (
-                <img
-                  src={user.avatar_url}
-                  alt={user.username}
-                  class="size-5 border border-border"
-                  loading="lazy"
-                />
-              ) : (
-                <Icon name="user" class="size-4" />
-              )}
+              <img
+                src={user.avatar_url || avatarUrl(user.username, 20)}
+                alt=""
+                class="size-5 rounded-full border border-border bg-muted"
+                loading="lazy"
+                data-avatar-fallback
+              />
               {user.username}
             </a>
             <a
@@ -125,11 +126,13 @@ export const Header: FC<{ currentPath?: string; user?: SessionUser | null }> = (
         {user ? (
           <>
             <a href="/dashboard" class="flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground">
-              {user.avatar_url ? (
-                <img src={user.avatar_url} alt={user.username} class="size-4 border border-border" loading="lazy" />
-              ) : (
-                <Icon name="user" class="size-3.5" />
-              )}
+              <img
+                src={user.avatar_url || avatarUrl(user.username, 16)}
+                alt=""
+                class="size-4 rounded-full border border-border bg-muted"
+                loading="lazy"
+                data-avatar-fallback
+              />
               {user.username}
             </a>
             <a href="/logout" class="text-xs text-muted-foreground hover:text-foreground">
