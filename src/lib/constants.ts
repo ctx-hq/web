@@ -5,3 +5,15 @@ export const SITE_DESCRIPTION =
 export const SITE_URL = "https://getctx.org";
 export const DEFAULT_OG_IMAGE = "https://getctx.org/og-default.png";
 export const PACKAGE_TYPES = ["skill", "mcp", "cli"] as const;
+
+export const SORT_OPTIONS = [
+  { value: "downloads", label: "Downloads" },
+  { value: "newest", label: "Newest" },
+] as const;
+
+export const PLACEHOLDER_BY_TYPE: Record<string, string> = {
+  "": "Search skills, MCP servers, CLI tools...",
+  skill: "Search skills...",
+  mcp: "Search MCP servers...",
+  cli: "Search CLI tools...",
+};

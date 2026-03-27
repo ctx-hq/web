@@ -12,8 +12,13 @@ function apiJson(data: unknown) {
   });
 }
 
-function api404() {
-  return new Response("Not Found", { status: 404 });
+function makePkg(overrides: Partial<{
+  full_name: string; type: string; description: string; downloads: number; version: string; repository: string;
+}> = {}) {
+  return {
+    full_name: "a/b", type: "skill", description: "d", downloads: 0, version: "1.0.0", repository: "",
+    ...overrides,
+  };
 }
 
 beforeEach(() => {
@@ -36,9 +41,17 @@ describe("real app routes", () => {
     expect(html).toContain("getctx");
   });
 
+  it("home page has fused tabbed-input control", async () => {
+    const res = await req("/");
+    const html = await res.text();
+    expect(html).toContain("cn-tabbed-input");
+    expect(html).toContain("data-home-tab");
+    expect(html).toContain('aria-label="Package type filter"');
+  });
+
   it("search with q param calls API search", async () => {
     mockFetch.mockResolvedValueOnce(
-      apiJson({ packages: [{ full_name: "a/b", type: "skill", description: "test", downloads: 0 }], total: 1 })
+      apiJson({ packages: [makePkg()], total: 1 })
     );
 
     const res = await req("/search?q=test");
@@ -55,14 +68,14 @@ describe("real app routes", () => {
 
   it("search with type-only calls listPackages and shows results", async () => {
     mockFetch.mockResolvedValueOnce(
-      apiJson({ packages: [{ full_name: "x/y", type: "skill", description: "d", downloads: 5 }], total: 1 })
+      apiJson({ packages: [makePkg({ full_name: "x/y", downloads: 5 })], total: 1 })
     );
 
     const res = await req("/search?type=skill");
     expect(res.status).toBe(200);
     const html = await res.text();
     // Should NOT show empty state
-    expect(html).not.toContain('No packages found');
+    expect(html).not.toContain("No packages found");
     // Should call listPackages with type, not search
     expect(mockFetch).toHaveBeenCalledWith(
       expect.stringContaining("/v1/packages?type=skill"),
@@ -73,7 +86,7 @@ describe("real app routes", () => {
   it("search meta uses type when no query", async () => {
     const res = await req("/search?type=mcp");
     const html = await res.text();
-    expect(html).toContain("type:mcp");
+    expect(html).toContain("Browse mcp packages");
   });
 
   it("sitemap returns XML", async () => {
@@ -124,9 +137,7 @@ describe("real app routes", () => {
   it("search shows pagination when total exceeds page size", async () => {
     mockFetch.mockResolvedValueOnce(
       apiJson({
-        packages: Array.from({ length: 30 }, (_, i) => ({
-          full_name: `a/pkg${i}`, type: "skill", description: "d", downloads: 0, version: "1.0.0", repository: "",
-        })),
+        packages: Array.from({ length: 30 }, (_, i) => makePkg({ full_name: `a/pkg${i}` })),
         total: 60,
       })
     );
@@ -139,7 +150,7 @@ describe("real app routes", () => {
 
   it("search page=1 has disabled Prev", async () => {
     mockFetch.mockResolvedValueOnce(
-      apiJson({ packages: [{ full_name: "a/b", type: "skill", description: "d", downloads: 0, version: "1.0.0", repository: "" }], total: 60 })
+      apiJson({ packages: [makePkg()], total: 60 })
     );
 
     const res = await req("/search?q=test&page=1");
@@ -196,9 +207,6 @@ describe("real app routes", () => {
   });
 
   it("dashboard with fake session redirects to login (API rejects)", async () => {
-    // The /v1/me call will use our default mock which returns 200 with {packages:[],total:0}
-    // That won't have a username field, but the route should still try.
-    // Let's mock a 401 response for the /v1/me call.
     mockFetch.mockResolvedValueOnce(
       new Response("Unauthorized", { status: 401 })
     );
@@ -221,5 +229,166 @@ describe("real app routes", () => {
     expect(res.status).toBe(200);
     const html = await res.text();
     expect(html).toContain("hong");
+  });
+});
+
+describe("browse & sort", () => {
+  it("search with no params calls listPackages (browse mode)", async () => {
+    mockFetch.mockResolvedValueOnce(
+      apiJson({ packages: Array.from({ length: 5 }, (_, i) => makePkg({ full_name: `a/pkg${i}` })), total: 5 })
+    );
+
+    const res = await req("/search");
+    expect(res.status).toBe(200);
+    expect(mockFetch).toHaveBeenCalledWith(
+      expect.stringContaining("/v1/packages"),
+      expect.anything()
+    );
+    const html = await res.text();
+    expect(html).toContain("5 packages");
+    // Should not show old empty state
+    expect(html).not.toContain("Search for packages");
+  });
+
+  it("search with sort=newest passes sort to API", async () => {
+    mockFetch.mockResolvedValueOnce(apiJson({ packages: [], total: 0 }));
+    await req("/search?sort=newest");
+    expect(mockFetch).toHaveBeenCalledWith(
+      expect.stringContaining("sort=created_at"),
+      expect.anything()
+    );
+  });
+
+  it("search with sort=downloads omits sort param (API default)", async () => {
+    mockFetch.mockResolvedValueOnce(apiJson({ packages: [], total: 0 }));
+    await req("/search?sort=downloads");
+    const call = mockFetch.mock.calls[0][0] as string;
+    expect(call).not.toContain("sort=");
+  });
+
+  it("search with q ignores sort param (uses search API)", async () => {
+    mockFetch.mockResolvedValueOnce(apiJson({ packages: [], total: 0 }));
+    await req("/search?q=test&sort=newest");
+    // Should call search API, not listPackages
+    expect(mockFetch).toHaveBeenCalledWith(
+      expect.stringContaining("/v1/search?q=test"),
+      expect.anything()
+    );
+  });
+
+  it("invalid sort defaults to downloads (omits sort param)", async () => {
+    mockFetch.mockResolvedValueOnce(apiJson({ packages: [], total: 0 }));
+    await req("/search?sort=invalid");
+    const call = mockFetch.mock.calls[0][0] as string;
+    expect(call).not.toContain("sort=");
+  });
+
+  it("sort with type passes both to API", async () => {
+    mockFetch.mockResolvedValueOnce(apiJson({ packages: [], total: 0 }));
+    await req("/search?type=skill&sort=newest");
+    const call = mockFetch.mock.calls[0][0] as string;
+    expect(call).toContain("type=skill");
+    expect(call).toContain("sort=created_at");
+  });
+
+  it("page beyond total preserves sort in redirect", async () => {
+    mockFetch.mockResolvedValueOnce(apiJson({ packages: [], total: 10 }));
+    const res = await req("/search?sort=newest&page=999");
+    expect(res.status).toBe(302);
+    const location = res.headers.get("Location");
+    expect(location).toContain("sort=newest");
+  });
+
+  it("shows type-specific count text", async () => {
+    mockFetch.mockResolvedValueOnce(
+      apiJson({ packages: [makePkg()], total: 1 })
+    );
+    const res = await req("/search?type=skill");
+    const html = await res.text();
+    expect(html).toContain("1 skill package");
+  });
+
+  it("browse mode with 0 API results shows empty state (no mock fallback)", async () => {
+    mockFetch.mockResolvedValueOnce(apiJson({ packages: [], total: 0 }));
+    const res = await req("/search");
+    const html = await res.text();
+    // API returned empty — should show empty CTA, not mock data
+    expect(html).toContain("No packages yet");
+  });
+
+  it("browse mode falls back to mock data when API is unavailable and ENABLE_MOCK_DATA is set", async () => {
+    // TODO: Remove this test when mock fallback is removed before production launch
+    mockFetch.mockRejectedValueOnce(new Error("network error"));
+    const res = await app.request("/search", {}, { ...ENV, ENABLE_MOCK_DATA: "true" });
+    const html = await res.text();
+    expect(html).toContain("18 packages");
+    expect(html).not.toContain("No packages yet");
+  });
+
+  it("search page has filter navigation", async () => {
+    mockFetch.mockResolvedValueOnce(
+      apiJson({ packages: [makePkg()], total: 1 })
+    );
+    const res = await req("/search?type=skill");
+    const html = await res.text();
+    expect(html).toContain('aria-label="Filter by type"');
+    expect(html).toContain('aria-current="page"');
+  });
+
+  it("search page has sort dropdown in browse mode", async () => {
+    mockFetch.mockResolvedValueOnce(
+      apiJson({ packages: [makePkg()], total: 1 })
+    );
+    const res = await req("/search");
+    const html = await res.text();
+    expect(html).toContain("sort-select");
+    expect(html).toContain("Downloads");
+    expect(html).toContain("Newest");
+  });
+
+  it("search page hides sort dropdown when query present", async () => {
+    mockFetch.mockResolvedValueOnce(
+      apiJson({ packages: [makePkg()], total: 1 })
+    );
+    const res = await req("/search?q=test");
+    const html = await res.text();
+    expect(html).not.toContain("sort-select");
+  });
+
+  it("invalid type param treated as all", async () => {
+    mockFetch.mockResolvedValueOnce(
+      apiJson({ packages: [makePkg()], total: 1 })
+    );
+    const res = await req("/search?type=invalid");
+    expect(res.status).toBe(200);
+    // Should call listPackages without type filter
+    expect(mockFetch).toHaveBeenCalledWith(
+      expect.stringContaining("/v1/packages?"),
+      expect.anything()
+    );
+  });
+});
+
+describe("search result text", () => {
+  it("query with no results shows helpful message", async () => {
+    mockFetch.mockResolvedValueOnce(apiJson({ packages: [], total: 0 }));
+    const res = await req("/search?q=nonexistent");
+    const html = await res.text();
+    expect(html).toContain("No packages found");
+    expect(html).toContain("browse all packages");
+  });
+
+  it("pagination preserves all params", async () => {
+    mockFetch.mockResolvedValueOnce(
+      apiJson({
+        packages: Array.from({ length: 30 }, (_, i) => makePkg({ full_name: `a/pkg${i}` })),
+        total: 60,
+      })
+    );
+    const res = await req("/search?type=mcp&sort=newest");
+    const html = await res.text();
+    // Next link should preserve type and sort
+    expect(html).toContain("type=mcp");
+    expect(html).toContain("sort=newest");
   });
 });

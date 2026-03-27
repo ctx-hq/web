@@ -81,6 +81,11 @@ function toggleTheme(){
 document.getElementById('theme-toggle')?.addEventListener('click',toggleTheme);
 document.getElementById('theme-toggle-mobile')?.addEventListener('click',toggleTheme);
 
+/* --- Avatar fallback (CSP-safe alternative to inline onerror) --- */
+document.querySelectorAll('img[data-avatar-fallback]').forEach(function(img){
+  img.addEventListener('error',function(){img.style.display='none'});
+});
+
 /* --- Mobile nav --- */
 document.getElementById('mobile-nav-toggle')?.addEventListener('click',function(){
   document.getElementById('mobile-nav')?.classList.toggle('hidden');
@@ -143,6 +148,35 @@ document.addEventListener('click',function(e){
     b.classList.toggle('font-medium',b.dataset.osToggle===os);
   });
 });
+
+/* --- Home page type tabs (progressive enhancement) --- */
+(function(){
+  var tabs=document.querySelectorAll('[data-home-tab]');
+  if(!tabs.length)return;
+  var form=document.getElementById('search-form');
+  if(!form)return;
+  var searchInput=document.getElementById('search-input');
+  if(!searchInput)return;
+  var typeInput=form.querySelector('[data-search-type-input]');
+  if(!typeInput){
+    typeInput=document.createElement('input');
+    typeInput.type='hidden';typeInput.name='type';typeInput.value='';
+    typeInput.setAttribute('data-search-type-input','');
+    form.prepend(typeInput);
+  }
+  tabs.forEach(function(tab){
+    tab.addEventListener('click',function(e){
+      var t=tab.getAttribute('data-home-tab')||'';
+      var q=searchInput.value.trim();
+      if(q){
+        e.preventDefault();
+        typeInput.value=t;
+        form.requestSubmit?form.requestSubmit():form.submit();
+      }
+      /* When input is empty, let the browser follow the native href (/search?type=X) */
+    });
+  });
+})();
 
 /* --- Copy code blocks in prose (read from <code>, not <pre>) --- */
 document.querySelectorAll('.prose pre').forEach(function(pre){

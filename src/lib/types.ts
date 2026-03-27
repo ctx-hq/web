@@ -2,6 +2,8 @@ export type SessionUser = { username: string; avatar_url?: string };
 
 export type PackageType = "skill" | "mcp" | "cli";
 
+export type SortOption = "downloads" | "newest";
+
 export interface PackageSummary {
   full_name: string;
   type: PackageType;

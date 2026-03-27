@@ -223,6 +223,32 @@ html:not(.dark) .light-hidden { display: none; }
   @apply h-10 text-sm;
 }
 
+/* --- Tabbed Input (fused tabs + search) --- */
+.cn-tabbed-input nav {
+  @apply border-b border-input;
+}
+
+.cn-tabbed-input .cn-input {
+  @apply border-t-0;
+}
+
+.cn-tabbed-input-tab {
+  @apply relative inline-block border border-input border-b-0 px-3 py-1.5 text-xs font-medium text-muted-foreground hover:bg-muted hover:text-foreground -mb-px;
+}
+
+.cn-tabbed-input-tab-active,
+.cn-tabbed-input-tab-active:hover {
+  @apply bg-foreground text-background border-foreground;
+}
+
+.cn-tabbed-input-tab:first-child {
+  @apply border-l border-t;
+}
+
+.cn-tabbed-input-tab + .cn-tabbed-input-tab {
+  @apply border-l-0;
+}
+
 /* --- Prose for README rendering --- */
 .prose {
   @apply text-xs leading-relaxed text-foreground;

@@ -22,7 +22,7 @@ describe("seo", () => {
     it("returns raw query (JSX handles escaping at render time)", () => {
       const meta = searchMeta('<script>alert("xss")</script>');
       expect(meta.title).toContain("<script>");
-      expect(meta.url).toContain(encodeURIComponent('<script>alert("xss")</script>'));
+      expect(meta.url).toContain("q=%3Cscript%3Ealert");
     });
 
     it("truncates very long queries", () => {

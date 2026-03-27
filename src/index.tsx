@@ -5,7 +5,13 @@ import { Layout } from "./layout";
 import { ApiClient, ApiError } from "./lib/api-client";
 import { defaultMeta, searchMeta, packageMeta, docsMeta, escapeHtml } from "./lib/seo";
 import { SITE_NAME, SITE_URL } from "./lib/constants";
-import type { SessionUser, PackageSummary, PackageType, SearchResult } from "./lib/types";
+import type { SessionUser, PackageSummary, PackageType, SortOption, SearchResult } from "./lib/types";
+import { validateSort } from "./lib/search-url";
+// Lazy-load mock data so it's tree-shaken from production builds when unused.
+// TODO: Remove before production launch.
+async function loadMock() {
+  return import("./lib/mock-data");
+}
 
 import { HomePage } from "./pages/home";
 import { SearchPage } from "./pages/search";
@@ -19,6 +25,7 @@ type Env = {
     API_BASE_URL: string;
     GITHUB_CLIENT_ID?: string;
     GITHUB_CLIENT_SECRET?: string;
+    ENABLE_MOCK_DATA?: string; // Set to "true" in dev/staging only
   };
 };
 
@@ -88,10 +95,14 @@ safeMarked.use({
 // Home
 app.get("/", async (c) => {
   let trending: { packages: PackageSummary[]; total: number } = { packages: [], total: 0 };
+  let apiAvailable = true;
   try {
     trending = await api(c).listPackages({ sort: "downloads", limit: 12 });
   } catch {
-    // API unavailable — render with empty list
+    apiAvailable = false;
+  }
+  if (!apiAvailable && trending.packages.length === 0 && c.env.ENABLE_MOCK_DATA === "true") {
+    trending = (await loadMock()).queryMockPackages({ sort: "downloads", limit: 12 });
   }
   const meta = defaultMeta();
   c.header("Cache-Control", "public, s-maxage=60, stale-while-revalidate=120");
@@ -102,7 +113,7 @@ app.get("/", async (c) => {
   );
 });
 
-// Search
+// Search & Browse
 app.get("/search", async (c) => {
   const query = c.req.query("q") ?? "";
   const rawType = c.req.query("type");
@@ -110,6 +121,7 @@ app.get("/search", async (c) => {
   const type: PackageType | undefined = validTypes.includes(rawType as PackageType)
     ? (rawType as PackageType)
     : undefined;
+  const sort: SortOption = validateSort(c.req.query("sort"));
 
   const PAGE_SIZE = 30;
   const rawPage = parseInt(c.req.query("page") ?? "1", 10);
@@ -117,19 +129,27 @@ app.get("/search", async (c) => {
   const offset = (page - 1) * PAGE_SIZE;
 
   let result: SearchResult = { packages: [], total: 0 };
+  let searchApiAvailable = true;
   if (query) {
+    // Search API (relevance-ranked, sort not supported)
     try {
       result = await api(c).search(query, { type, limit: PAGE_SIZE, offset });
     } catch {
-      // API unavailable
+      searchApiAvailable = false;
     }
-  } else if (type) {
+  } else {
+    // Browse mode: list all packages with optional type filter and sort
     try {
-      const listed = await api(c).listPackages({ type, limit: PAGE_SIZE, offset });
+      const sortParam = sort === "newest" ? "created_at" : undefined;
+      const listed = await api(c).listPackages({ type, sort: sortParam, limit: PAGE_SIZE, offset });
       result = { packages: listed.packages, total: listed.total };
     } catch {
-      // API unavailable
+      searchApiAvailable = false;
     }
+  }
+  if (!searchApiAvailable && c.env.ENABLE_MOCK_DATA === "true") {
+    const sortParam = sort === "newest" ? "newest" : undefined;
+    result = (await loadMock()).queryMockPackages({ q: query || undefined, type, sort: sortParam, limit: PAGE_SIZE, offset });
   }
 
   const totalPages = Math.max(1, Math.ceil(result.total / PAGE_SIZE));
@@ -139,18 +159,20 @@ app.get("/search", async (c) => {
     const params = new URLSearchParams();
     if (query) params.set("q", query);
     if (type) params.set("type", type);
+    if (sort !== "downloads") params.set("sort", sort);
     if (totalPages > 1) params.set("page", String(totalPages));
     const qs = params.toString();
     return c.redirect(qs ? `/search?${qs}` : "/search");
   }
 
-  const meta = searchMeta(query || (type ? `type:${type}` : "all"));
+  const meta = searchMeta(query, { type });
   c.header("Cache-Control", "public, s-maxage=30, stale-while-revalidate=60");
   return c.html(
     <Layout meta={meta} currentPath="/search">
       <SearchPage
         query={query}
         type={type}
+        sort={sort}
         packages={result.packages}
         total={result.total}
         page={page}
@@ -187,6 +209,20 @@ app.get("/:fullName{@[^/]+/[^/]+}", async (c) => {
       </Layout>
     );
   } catch (err) {
+    // Try mock fallback for both 404 and network errors when mock data is enabled
+    if (c.env.ENABLE_MOCK_DATA === "true") {
+      const mock = (await loadMock()).getMockPackageDetail(fullName);
+      if (mock) {
+        const readmeHtml = mock.readme ? await safeMarked.parse(mock.readme) : "";
+        const meta = packageMeta(mock.pkg);
+        c.header("Cache-Control", "public, s-maxage=300, stale-while-revalidate=600");
+        return c.html(
+          <Layout meta={meta} currentPath={`/@${fullName}`}>
+            <PackageDetailPage pkg={mock.pkg} readmeHtml={readmeHtml} />
+          </Layout>
+        );
+      }
+    }
     if (err instanceof ApiError && err.status === 404) {
       return c.html(
         <Layout meta={{ ...defaultMeta(), title: `Not Found — ${SITE_NAME}` }}>

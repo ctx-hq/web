@@ -19,12 +19,34 @@ export function defaultMeta(): SeoMeta {
   };
 }
 
-export function searchMeta(query: string): SeoMeta {
-  const truncated = query.slice(0, 100);
+export function searchMeta(query: string, opts?: { type?: string; sort?: string }): SeoMeta {
+  if (!query && !opts?.type) {
+    // Pure browse mode — canonical is /search
+    return {
+      title: `Browse packages — ${SITE_NAME}`,
+      description: `Browse all packages on ${SITE_NAME}`,
+      url: `${SITE_URL}/search`,
+      ogImage: DEFAULT_OG_IMAGE,
+      type: "website",
+    };
+  }
+
+  const params = new URLSearchParams();
+  if (query) params.set("q", query);
+  if (opts?.type) params.set("type", opts.type);
+
+  const truncated = query ? query.slice(0, 100) : opts?.type ?? "";
+  const title = query
+    ? `Search: ${truncated} — ${SITE_NAME}`
+    : `Browse ${opts?.type} packages — ${SITE_NAME}`;
+  const description = query
+    ? `Search results for "${truncated}" on ${SITE_NAME}`
+    : `Browse ${opts?.type} packages on ${SITE_NAME}`;
+
   return {
-    title: `Search: ${truncated} — ${SITE_NAME}`,
-    description: `Search results for "${truncated}" on ${SITE_NAME}`,
-    url: `${SITE_URL}/search?q=${encodeURIComponent(query)}`,
+    title,
+    description,
+    url: `${SITE_URL}/search${params.toString() ? `?${params}` : ""}`,
     ogImage: DEFAULT_OG_IMAGE,
     type: "website",
   };

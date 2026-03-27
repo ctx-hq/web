@@ -1,14 +1,5 @@
 import { describe, it, expect } from "vitest";
-
-// Mirror the searchUrl logic from search.tsx
-function searchUrl(query: string, type: string | undefined, page: number): string {
-  const params = new URLSearchParams();
-  if (query) params.set("q", query);
-  if (type) params.set("type", type);
-  if (page > 1) params.set("page", String(page));
-  const qs = params.toString();
-  return qs ? `/search?${qs}` : "/search";
-}
+import { searchUrl } from "../../src/lib/search-url";
 
 describe("search pagination", () => {
   it("page 1 omits page param from URL", () => {
@@ -30,6 +21,14 @@ describe("search pagination", () => {
 
   it("no query no type page 1 returns bare /search", () => {
     expect(searchUrl("", undefined, 1)).toBe("/search");
+  });
+
+  it("preserves sort across pages", () => {
+    expect(searchUrl("", "skill", 2, "newest")).toBe("/search?type=skill&sort=newest&page=2");
+  });
+
+  it("omits default sort from pagination URLs", () => {
+    expect(searchUrl("test", undefined, 2, "downloads")).toBe("/search?q=test&page=2");
   });
 
   describe("pagination math", () => {
