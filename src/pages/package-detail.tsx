@@ -1,5 +1,5 @@
 import type { FC, PropsWithChildren } from "hono/jsx";
-import type { PackageDetail as PackageDetailType } from "../lib/types";
+import type { PackageDetail as PackageDetailType, ManifestInfo } from "../lib/types";
 import { Container } from "../components/ui/container";
 import { Icon } from "../components/ui/icon";
 import { Badge } from "../components/badge";
@@ -16,12 +16,25 @@ const SidebarSection: FC<PropsWithChildren<{ title: string }>> = ({ title, child
   </div>
 );
 
+/** Inline key-value row for metadata. */
+const MetaRow: FC<{ label: string; value: string | undefined }> = ({ label, value }) =>
+  value ? (
+    <div class="flex items-center justify-between">
+      <dt class="text-muted-foreground">{label}</dt>
+      <dd class="font-medium">{value}</dd>
+    </div>
+  ) : null;
+
 export const PackageDetailPage: FC<{
   pkg: PackageDetailType;
   readmeHtml: string;
-}> = ({ pkg, readmeHtml }) => {
+  manifest?: ManifestInfo | null;
+}> = ({ pkg, readmeHtml, manifest }) => {
   const repoUrl = safeRepoUrl(pkg.repository);
   const rows = buildMetadataRows(pkg, formatNumber, formatDate);
+  const isAdapter = !!manifest?.source?.github;
+  const sourceGithub = manifest?.source?.github;
+  const sourceRef = manifest?.source?.ref;
 
   return (
     <Container class="py-8">
@@ -36,14 +49,36 @@ export const PackageDetailPage: FC<{
 
       {/* Package header */}
       <div class="mb-6">
-        <div class="mb-2 flex items-center gap-3">
+        <div class="mb-2 flex flex-wrap items-center gap-2">
           <h1 class="break-all text-base font-semibold font-heading">
             @{pkg.full_name}
           </h1>
           <Badge type={pkg.type} />
+          {isAdapter && (
+            <Badge variant="outline">adapter</Badge>
+          )}
         </div>
         {pkg.description && (
           <p class="text-sm text-muted-foreground">{pkg.description}</p>
+        )}
+        {/* Adapter source banner */}
+        {isAdapter && sourceGithub && (
+          <div class="mt-2 flex items-center gap-1.5 rounded border border-border bg-muted/50 px-3 py-1.5 text-xs text-muted-foreground">
+            <Icon name="github-logo" class="size-3.5" />
+            <span>
+              Adapts{" "}
+              <a
+                href={`https://github.com/${sourceGithub}`}
+                rel="noopener noreferrer"
+                class="font-medium text-foreground hover:underline"
+              >
+                {sourceGithub}
+              </a>
+              {sourceRef && (
+                <span class="ml-1 font-mono text-[10px]">@{sourceRef}</span>
+              )}
+            </span>
+          </div>
         )}
       </div>
 
@@ -73,7 +108,7 @@ export const PackageDetailPage: FC<{
         <div class="min-w-0 flex-1">
           {/* Install */}
           <div class="mb-8">
-            <InstallTabs fullName={pkg.full_name} />
+            <InstallTabs fullName={pkg.full_name} pkgType={pkg.type} manifest={manifest} />
           </div>
 
           {/* README */}
@@ -117,6 +152,44 @@ export const PackageDetailPage: FC<{
               </dl>
             </SidebarSection>
           </div>
+
+          {/* Package capabilities — from manifest */}
+          {manifest && (
+            manifest.cli?.binary ||
+            manifest.cli?.compatible ||
+            manifest.mcp?.transport ||
+            (manifest.mcp?.tools && manifest.mcp.tools.length > 0) ||
+            manifest.skill?.compatibility ||
+            manifest.install
+          ) && (
+            <SidebarSection title="Capabilities">
+              <dl class="space-y-2 text-xs">
+                {manifest.cli?.binary && (
+                  <MetaRow label="Binary" value={manifest.cli.binary} />
+                )}
+                {manifest.cli?.compatible && (
+                  <MetaRow label="Compatible" value={manifest.cli.compatible} />
+                )}
+                {manifest.mcp?.transport && (
+                  <MetaRow label="Transport" value={manifest.mcp.transport} />
+                )}
+                {manifest.mcp?.tools && manifest.mcp.tools.length > 0 && (
+                  <MetaRow label="Tools" value={`${manifest.mcp.tools.length} tools`} />
+                )}
+                {manifest.skill?.compatibility && (
+                  <MetaRow label="Agents" value={manifest.skill.compatibility} />
+                )}
+                {manifest.install && (
+                  <div class="mt-2 flex flex-wrap gap-1">
+                    {manifest.install.brew && <Badge variant="outline">brew</Badge>}
+                    {manifest.install.npm && <Badge variant="outline">npm</Badge>}
+                    {manifest.install.pip && <Badge variant="outline">pip</Badge>}
+                    {manifest.install.cargo && <Badge variant="outline">cargo</Badge>}
+                  </div>
+                )}
+              </dl>
+            </SidebarSection>
+          )}
 
           {/* Keywords */}
           {pkg.keywords.length > 0 && (

@@ -2,7 +2,7 @@
  * Mock package data for development preview.
  * TODO: Remove before production launch.
  */
-import type { PackageSummary, PackageDetail, PackageType } from "./types";
+import type { PackageSummary, PackageDetail, PackageType, ManifestInfo } from "./types";
 
 export const MOCK_PACKAGES: PackageSummary[] = [
   // Skills
@@ -200,12 +200,17 @@ export function queryMockPackages(opts: {
 }
 
 /** Metadata enrichment for mock package details. */
-const MOCK_META: Record<string, { keywords: string[]; platforms: string[]; license: string; readme: string }> = {
+const MOCK_META: Record<string, { keywords: string[]; platforms: string[]; license: string; readme: string; manifest?: ManifestInfo }> = {
   "anthropic/code-review": {
     keywords: ["code-review", "ai", "linting", "automation"],
     platforms: ["linux", "macos", "windows"],
     license: "MIT",
     readme: "# Code Review Skill\n\nAutomated code review powered by AI.\n\n## Features\n\n- Multi-language support (TypeScript, Python, Go, Rust)\n- Context-aware feedback based on project conventions\n- Inline suggestions with explanation\n\n## Usage\n\n```bash\nctx install @anthropic/code-review\n```\n\nThen ask your agent to review your code changes.",
+    manifest: {
+      source: { github: "anthropic/code-review-skill", ref: "v1.2.0" },
+      skill: { compatibility: "claude, cursor, copilot", user_invocable: true },
+      install: { npm: "code-review-skill", pip: "code-review-skill" },
+    },
   },
   "openelf/git-commit": {
     keywords: ["git", "commit", "conventional-commits"],
@@ -242,6 +247,10 @@ const MOCK_META: Record<string, { keywords: string[]; platforms: string[]; licen
     platforms: ["linux", "macos", "windows"],
     license: "Apache-2.0",
     readme: "# MCP Postgres\n\nQuery PostgreSQL databases with natural language.\n\n## Features\n\n- Schema introspection and auto-discovery\n- Safe read-only queries by default\n- Write mode with confirmation prompts\n- Connection pooling support\n\n## Configuration\n\nSet your `DATABASE_URL` environment variable to connect.",
+    manifest: {
+      mcp: { transport: "stdio", tools: ["query", "schema", "tables", "describe"] },
+      install: { npm: "@supabase/mcp-postgres" },
+    },
   },
   "vercel/mcp-github": {
     keywords: ["github", "issues", "pull-requests", "code-search"],
@@ -278,6 +287,10 @@ const MOCK_META: Record<string, { keywords: string[]; platforms: string[]; licen
     platforms: ["linux", "macos", "windows"],
     license: "MIT",
     readme: "# ctx-lint\n\nLint your ctx package manifests.\n\n## Features\n\n- Schema validation against ctx spec\n- Dependency resolution checks\n- Convention enforcement (naming, versioning)\n\n## Usage\n\n```bash\nctx-lint check .\n```",
+    manifest: {
+      cli: { binary: "ctx-lint", compatible: "ctx >=0.5" },
+      install: { brew: "astral/tap/ctx-lint", cargo: "ctx-lint" },
+    },
   },
   "openelf/ctx-init": {
     keywords: ["scaffolding", "template", "init", "boilerplate"],
@@ -312,7 +325,7 @@ const MOCK_META: Record<string, { keywords: string[]; platforms: string[]; licen
 };
 
 /** Build a full PackageDetail from a PackageSummary + metadata. */
-function buildMockDetail(summary: PackageSummary): { pkg: PackageDetail; readme: string } {
+function buildMockDetail(summary: PackageSummary): { pkg: PackageDetail; readme: string; manifest: ManifestInfo | null } {
   const meta = MOCK_META[summary.full_name] ?? {
     keywords: [], platforms: ["linux", "macos"], license: "MIT",
     readme: `# ${summary.full_name}\n\n${summary.description}`,
@@ -339,11 +352,12 @@ function buildMockDetail(summary: PackageSummary): { pkg: PackageDetail; readme:
       updated_at: now,
     },
     readme: meta.readme,
+    manifest: meta.manifest ?? null,
   };
 }
 
 /** Get mock detail for a specific package by full_name. Returns null if not found. */
-export function getMockPackageDetail(fullName: string): { pkg: PackageDetail; readme: string } | null {
+export function getMockPackageDetail(fullName: string): { pkg: PackageDetail; readme: string; manifest: ManifestInfo | null } | null {
   const summary = MOCK_PACKAGES.find((p) => p.full_name === fullName);
   if (!summary) return null;
   return buildMockDetail(summary);

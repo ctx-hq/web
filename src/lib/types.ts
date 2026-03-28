@@ -47,3 +47,22 @@ export interface SearchResult {
   packages: PackageSummary[];
   total: number;
 }
+
+/** Parsed manifest metadata for display (extracted from VersionDetail.manifest JSON). */
+export interface ManifestInfo {
+  source?: { github?: string; path?: string; ref?: string };
+  skill?: { entry?: string; tags?: string[]; compatibility?: string; user_invocable?: boolean };
+  mcp?: { transport?: string; command?: string; url?: string; tools?: string[] };
+  cli?: { binary?: string; verify?: string; compatible?: string };
+  install?: { brew?: string; npm?: string; pip?: string; cargo?: string };
+}
+
+/** Try to parse manifest JSON into ManifestInfo. Returns null on failure. */
+export function parseManifest(raw: string | undefined): ManifestInfo | null {
+  if (!raw) return null;
+  try {
+    return JSON.parse(raw) as ManifestInfo;
+  } catch {
+    return null;
+  }
+}

@@ -5,7 +5,8 @@ import { Layout } from "./layout";
 import { ApiClient, ApiError } from "./lib/api-client";
 import { defaultMeta, searchMeta, packageMeta, docsMeta, escapeHtml } from "./lib/seo";
 import { SITE_NAME, SITE_URL } from "./lib/constants";
-import type { SessionUser, PackageSummary, PackageType, SortOption, SearchResult } from "./lib/types";
+import type { SessionUser, PackageSummary, PackageType, SortOption, SearchResult, ManifestInfo } from "./lib/types";
+import { parseManifest } from "./lib/types";
 import { validateSort } from "./lib/search-url";
 // Lazy-load mock data so it's tree-shaken from production builds when unused.
 // TODO: Remove before production launch.
@@ -190,14 +191,16 @@ app.get("/:fullName{@[^/]+/[^/]+}", async (c) => {
     const pkg = await api(c).getPackage(fullName);
 
     let readmeHtml = "";
+    let manifestInfo: ManifestInfo | null = null;
     if (pkg.versions.length > 0) {
       try {
         const ver = await api(c).getVersion(fullName, pkg.versions[0].version);
         if (ver.readme) {
           readmeHtml = await safeMarked.parse(ver.readme);
         }
+        manifestInfo = parseManifest(ver.manifest);
       } catch {
-        // No readme available
+        // No readme/manifest available
       }
     }
 
@@ -205,7 +208,7 @@ app.get("/:fullName{@[^/]+/[^/]+}", async (c) => {
     c.header("Cache-Control", "public, s-maxage=300, stale-while-revalidate=600");
     return c.html(
       <Layout meta={meta} currentPath={`/@${fullName}`}>
-        <PackageDetailPage pkg={pkg} readmeHtml={readmeHtml} />
+        <PackageDetailPage pkg={pkg} readmeHtml={readmeHtml} manifest={manifestInfo} />
       </Layout>
     );
   } catch (err) {
@@ -218,7 +221,7 @@ app.get("/:fullName{@[^/]+/[^/]+}", async (c) => {
         c.header("Cache-Control", "public, s-maxage=300, stale-while-revalidate=600");
         return c.html(
           <Layout meta={meta} currentPath={`/@${fullName}`}>
-            <PackageDetailPage pkg={mock.pkg} readmeHtml={readmeHtml} />
+            <PackageDetailPage pkg={mock.pkg} readmeHtml={readmeHtml} manifest={mock.manifest} />
           </Layout>
         );
       }
@@ -466,6 +469,59 @@ app.get("/sitemap.xml", async (c) => {
     `<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${urls.join("")}</urlset>`
   );
 });
+
+// Install script proxy — serves scripts from GitHub raw with edge caching
+// SSOT: scripts live in ctx/scripts/ (Git), this route is a transparent proxy
+const INSTALL_SCRIPTS: Record<string, string> = {
+  "install.sh": "https://raw.githubusercontent.com/ctx-hq/ctx/main/scripts/install.sh",
+  "install.ps1": "https://raw.githubusercontent.com/ctx-hq/ctx/main/scripts/install.ps1",
+};
+
+async function proxyInstallScript(
+  c: { header: (k: string, v: string) => void; body: (b: string, status?: number) => Response },
+  filename: string,
+): Promise<Response> {
+  const url = INSTALL_SCRIPTS[filename];
+  if (!url) {
+    return c.body("Not found", 404);
+  }
+
+  try {
+    const upstream = await fetch(url, {
+      headers: { "User-Agent": "getctx.org/install-proxy" },
+      signal: AbortSignal.timeout(10_000),
+    });
+
+    if (!upstream.ok) {
+      c.header("Content-Type", "text/plain; charset=utf-8");
+      return c.body(
+        `# Failed to fetch install script (upstream returned ${upstream.status}).\n` +
+        `# Try the direct URL instead:\n` +
+        `#   ${url}\n`,
+        502,
+      );
+    }
+
+    const body = await upstream.text();
+
+    c.header("Content-Type", "text/plain; charset=utf-8");
+    c.header("Cache-Control", "public, s-maxage=3600, stale-while-revalidate=86400");
+    c.header("X-Content-Type-Options", "nosniff");
+    c.header("X-Robots-Tag", "noindex, nofollow");
+    return c.body(body);
+  } catch {
+    c.header("Content-Type", "text/plain; charset=utf-8");
+    return c.body(
+      `# Install script temporarily unavailable.\n` +
+      `# Try the direct URL instead:\n` +
+      `#   ${url}\n`,
+      502,
+    );
+  }
+}
+
+app.get("/install.sh", (c) => proxyInstallScript(c, "install.sh"));
+app.get("/install.ps1", (c) => proxyInstallScript(c, "install.ps1"));
 
 // Robots.txt
 app.get("/robots.txt", (c) => {
