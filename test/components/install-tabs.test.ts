@@ -23,7 +23,7 @@ describe("install-tabs", () => {
   describe("agentPromptPackage", () => {
     it("generates per-package .ctx URL", () => {
       expect(agentPromptPackage("@community/ripgrep")).toBe(
-        "Read https://getctx.org/@community/ripgrep.ctx",
+        "Read https://getctx.org/@community/ripgrep.ctx and follow the instructions to use @community/ripgrep",
       );
     });
 

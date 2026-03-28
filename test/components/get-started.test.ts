@@ -35,7 +35,7 @@ describe("get-started", () => {
 
     it("points to a per-package .ctx URL", () => {
       expect(agentPromptPackage("@mcp/github")).toBe(
-        "Read https://getctx.org/@mcp/github.ctx",
+        "Read https://getctx.org/@mcp/github.ctx and follow the instructions to use @mcp/github",
       );
     });
 
