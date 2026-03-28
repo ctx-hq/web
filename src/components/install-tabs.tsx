@@ -10,7 +10,7 @@ export const InstallTabs: FC<{
   manifest?: ManifestInfo | null;
 }> = ({ fullName, pkgType, manifest }) => {
   const agentCmd = agentPromptPackage(fullName);
-  const installCmd = `ctx install @${fullName}`;
+  const installCmd = `ctx install ${fullName}`;
 
   // Type-specific human install hint
   let humanHint = "";
@@ -64,7 +64,7 @@ export const InstallTabs: FC<{
           </Button>
         </div>
         <p class="mt-2 text-xs text-muted-foreground">
-          Send this to your Agent to use @{fullName}
+          Send this to your Agent to use {fullName}
         </p>
       </div>
       {/* CLI panel */}

@@ -25,23 +25,27 @@ describe("get-started", () => {
   });
 
   describe("agentPromptPackage", () => {
-    it("includes the package full_name with @ prefix", () => {
-      expect(agentPromptPackage("hong/my-skill")).toContain("@hong/my-skill");
+    it("includes the package full_name", () => {
+      expect(agentPromptPackage("@hong/my-skill")).toContain("@hong/my-skill");
     });
 
     it("starts with Read verb", () => {
-      expect(agentPromptPackage("scope/name")).toMatch(/^Read /);
+      expect(agentPromptPackage("@scope/name")).toMatch(/^Read /);
     });
 
-    it("points to a per-package skill.md URL", () => {
-      expect(agentPromptPackage("mcp/github")).toBe(
-        "Read https://getctx.org/@mcp/github/skill.md",
+    it("points to a per-package .ctx URL", () => {
+      expect(agentPromptPackage("@mcp/github")).toBe(
+        "Read https://getctx.org/@mcp/github.ctx",
       );
     });
 
+    it("does not produce double @@ in URL", () => {
+      expect(agentPromptPackage("@community/test")).not.toContain("@@");
+    });
+
     it("handles names with dashes", () => {
-      expect(agentPromptPackage("scope/name-with-dashes")).toContain(
-        "@scope/name-with-dashes/skill.md",
+      expect(agentPromptPackage("@scope/name-with-dashes")).toContain(
+        "@scope/name-with-dashes.ctx",
       );
     });
   });

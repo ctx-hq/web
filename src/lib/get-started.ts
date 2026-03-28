@@ -7,7 +7,7 @@ export function agentPromptGlobal(): string {
 }
 
 export function agentPromptPackage(fullName: string): string {
-  return `Read https://getctx.org/@${fullName}/skill.md`;
+  return `Read https://getctx.org/${fullName}.ctx`;
 }
 
 export function installCommandUnix(): string {

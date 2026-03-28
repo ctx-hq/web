@@ -22,7 +22,7 @@ function req(path: string) {
 }
 
 const fakePkg = {
-  full_name: "test/existing",
+  full_name: "@test/existing",
   type: "skill",
   description: "A test package for automated testing",
   license: "MIT",
@@ -332,5 +332,73 @@ describe("package detail routes", () => {
 
     const res = await req("/@totally/unknown");
     expect(res.status).toBe(404);
+  });
+});
+
+describe(".ctx endpoint", () => {
+  it("proxies .ctx request and returns plain text", async () => {
+    mockFetch.mockResolvedValueOnce(
+      new Response("# skill content", { status: 200 }),
+    );
+
+    const res = await req("/@test/existing.ctx");
+    expect(res.status).toBe(200);
+    const text = await res.text();
+    expect(text).toContain("skill content");
+    expect(res.headers.get("Content-Type")).toContain("text/plain");
+  });
+
+  it("returns 404 when API says not found", async () => {
+    mockFetch.mockResolvedValueOnce(api404());
+
+    const res = await req("/@test/missing.ctx");
+    expect(res.status).toBe(404);
+  });
+
+  it("returns 502 on network error", async () => {
+    mockFetch.mockRejectedValueOnce(new Error("timeout"));
+
+    const res = await req("/@test/existing.ctx");
+    expect(res.status).toBe(502);
+  });
+
+  it("strips .ctx suffix when calling upstream API", async () => {
+    mockFetch.mockResolvedValueOnce(
+      new Response("ok", { status: 200 }),
+    );
+
+    await req("/@test/existing.ctx");
+    const calledUrl = mockFetch.mock.calls[0][0];
+    expect(calledUrl).toBe("https://api.test/@test/existing.ctx");
+  });
+});
+
+describe("/skill.md endpoint", () => {
+  it("proxies skill.md from GitHub", async () => {
+    mockFetch.mockResolvedValueOnce(
+      new Response("# ctx skill", { status: 200 }),
+    );
+
+    const res = await req("/skill.md");
+    expect(res.status).toBe(200);
+    const text = await res.text();
+    expect(text).toContain("# ctx skill");
+    expect(res.headers.get("Content-Type")).toContain("text/plain");
+  });
+
+  it("returns 502 when GitHub is unavailable", async () => {
+    mockFetch.mockResolvedValueOnce(
+      new Response("Not Found", { status: 404 }),
+    );
+
+    const res = await req("/skill.md");
+    expect(res.status).toBe(502);
+  });
+
+  it("returns 502 on network error", async () => {
+    mockFetch.mockRejectedValueOnce(new Error("network"));
+
+    const res = await req("/skill.md");
+    expect(res.status).toBe(502);
   });
 });

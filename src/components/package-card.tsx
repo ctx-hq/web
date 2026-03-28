@@ -7,12 +7,12 @@ import { Icon } from "./ui/icon";
 
 export const PackageCard: FC<{ pkg: PackageSummary }> = ({ pkg }) => (
   <a
-    href={`/@${pkg.full_name}`}
+    href={`/${pkg.full_name}`}
     class="cn-card block transition-all hover:ring-foreground/25"
   >
     <div class="p-4">
       <div class="mb-1 flex items-center justify-between">
-        <span class="text-xs font-medium font-heading">@{pkg.full_name}</span>
+        <span class="text-xs font-medium font-heading">{pkg.full_name}</span>
         <Badge type={pkg.type} />
       </div>
       <p class="mb-2 line-clamp-2 text-xs text-muted-foreground">{pkg.description}</p>

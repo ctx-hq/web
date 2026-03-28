@@ -171,9 +171,26 @@ app.get("/search", async (c) => {
   );
 });
 
+// Agent-readable .ctx endpoint: proxy to API
+app.get("/:fullName{@[^/]+/[^/]+\\.ctx}", async (c) => {
+  const fullName = c.req.param("fullName").replace(/\.ctx$/, "");
+  const apiBase = c.env.API_BASE_URL || "https://api.getctx.org";
+  try {
+    const res = await fetch(`${apiBase}/${fullName}.ctx`, {
+      signal: AbortSignal.timeout(5_000),
+    });
+    if (!res.ok) return c.text(`Package ${fullName} not found`, 404);
+    c.header("Content-Type", "text/plain; charset=utf-8");
+    c.header("Cache-Control", "public, s-maxage=300, stale-while-revalidate=600");
+    return c.text(await res.text());
+  } catch {
+    return c.text("Service temporarily unavailable", 502);
+  }
+});
+
 // Package detail: /@scope/name
 app.get("/:fullName{@[^/]+/[^/]+}", async (c) => {
-  const fullName = c.req.param("fullName").slice(1); // strip leading @
+  const fullName = c.req.param("fullName");
 
   try {
     const pkg = await api(c).getPackage(fullName);
@@ -195,7 +212,7 @@ app.get("/:fullName{@[^/]+/[^/]+}", async (c) => {
     const meta = packageMeta(pkg);
     c.header("Cache-Control", "public, s-maxage=300, stale-while-revalidate=600");
     return c.html(
-      <Layout meta={meta} currentPath={`/@${fullName}`}>
+      <Layout meta={meta} currentPath={`/${fullName}`}>
         <PackageDetailPage pkg={pkg} readmeHtml={readmeHtml} manifest={manifestInfo} />
       </Layout>
     );
@@ -205,7 +222,7 @@ app.get("/:fullName{@[^/]+/[^/]+}", async (c) => {
         <Layout meta={{ ...defaultMeta(), title: `Not Found — ${SITE_NAME}` }}>
           <div class="mx-auto max-w-5xl px-4 py-16 text-center">
             <h1 class="mb-2 text-base font-semibold font-heading">Package not found</h1>
-            <p class="text-xs text-muted-foreground">@{fullName} does not exist.</p>
+            <p class="text-xs text-muted-foreground">{fullName} does not exist.</p>
           </div>
         </Layout>,
         404
@@ -433,7 +450,7 @@ app.get("/sitemap.xml", async (c) => {
     `<url><loc>${SITE_URL}/search</loc><priority>0.8</priority></url>`,
     `<url><loc>${SITE_URL}/docs</loc><priority>0.8</priority></url>`,
     ...packages.map(
-      (p) => `<url><loc>${SITE_URL}/@${escapeHtml(p.full_name)}</loc><priority>0.6</priority></url>`
+      (p) => `<url><loc>${SITE_URL}/${escapeHtml(p.full_name)}</loc><priority>0.6</priority></url>`
     ),
   ];
 
@@ -442,6 +459,24 @@ app.get("/sitemap.xml", async (c) => {
   return c.body(
     `<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">${urls.join("")}</urlset>`
   );
+});
+
+// Global skill.md — ctx's own SKILL.md for agents
+// SSOT: skills/ctx/SKILL.md in the ctx repo
+app.get("/skill.md", async (c) => {
+  const url = "https://raw.githubusercontent.com/ctx-hq/ctx/main/skills/ctx/SKILL.md";
+  c.header("Content-Type", "text/plain; charset=utf-8");
+  try {
+    const upstream = await fetch(url, {
+      headers: { "User-Agent": "getctx.org/skill-proxy" },
+      signal: AbortSignal.timeout(5_000),
+    });
+    if (!upstream.ok) return c.body("# ctx skill temporarily unavailable\n", 502);
+    c.header("Cache-Control", "public, s-maxage=3600, stale-while-revalidate=86400");
+    return c.body(await upstream.text());
+  } catch {
+    return c.body("# ctx skill temporarily unavailable\n", 502);
+  }
 });
 
 // Install script proxy — serves scripts from GitHub raw with edge caching

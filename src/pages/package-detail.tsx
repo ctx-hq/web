@@ -51,7 +51,7 @@ export const PackageDetailPage: FC<{
       <div class="mb-6">
         <div class="mb-2 flex flex-wrap items-center gap-2">
           <h1 class="break-all text-base font-semibold font-heading">
-            @{pkg.full_name}
+            {pkg.full_name}
           </h1>
           <Badge type={pkg.type} />
           {isAdapter && (
