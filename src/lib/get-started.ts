@@ -3,11 +3,11 @@
 export const SITE_SKILL_URL = "https://getctx.org/skill.md";
 
 export function agentPromptGlobal(): string {
-  return `Read ${SITE_SKILL_URL}`;
+  return `Read ${SITE_SKILL_URL} and follow the instructions to use ctx`;
 }
 
 export function agentPromptPackage(fullName: string): string {
-  return `Read https://getctx.org/${fullName}.ctx`;
+  return `Read https://getctx.org/${fullName}.ctx and follow the instructions to use ${fullName}`;
 }
 
 export function installCommandUnix(): string {
