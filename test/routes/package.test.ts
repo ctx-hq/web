@@ -320,44 +320,14 @@ describe("package detail routes", () => {
     expect(cc).toContain("s-maxage=300");
   });
 
-  // === Mock Fallback ===
-
-  it("mock fallback renders for known mock package when ENABLE_MOCK_DATA is set", async () => {
-    // API returns 404 but mock data exists for anthropic/code-review
-    mockFetch.mockResolvedValueOnce(api404());
-
-    const res = await app.request("/@anthropic/code-review", {}, { ...ENV, ENABLE_MOCK_DATA: "true" });
-    expect(res.status).toBe(200);
-    const html = await res.text();
-    expect(html).toContain("anthropic/code-review");
-    expect(html).toContain("Code Review");
-  });
-
-  it("mock fallback renders on network error when ENABLE_MOCK_DATA is set", async () => {
-    // API is completely unreachable (network error, not ApiError 404)
-    mockFetch.mockRejectedValueOnce(new Error("network error"));
-
-    const res = await app.request("/@anthropic/code-review", {}, { ...ENV, ENABLE_MOCK_DATA: "true" });
-    expect(res.status).toBe(200);
-    const html = await res.text();
-    expect(html).toContain("anthropic/code-review");
-  });
-
-  it("network error without ENABLE_MOCK_DATA returns 500", async () => {
+  it("network error returns 500", async () => {
     mockFetch.mockRejectedValueOnce(new Error("network error"));
 
     const res = await req("/@anthropic/code-review");
     expect(res.status).toBe(500);
   });
 
-  it("mock fallback does NOT render when ENABLE_MOCK_DATA is unset", async () => {
-    mockFetch.mockResolvedValueOnce(api404());
-
-    const res = await req("/@anthropic/code-review");
-    expect(res.status).toBe(404);
-  });
-
-  it("real 404 for package not in mock data", async () => {
+  it("404 for unknown package", async () => {
     mockFetch.mockResolvedValueOnce(api404());
 
     const res = await req("/@totally/unknown");

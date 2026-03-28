@@ -8,7 +8,7 @@ import { PackageCard } from "../components/package-card";
 import { Badge } from "../components/badge";
 import { GetStarted } from "../components/get-started";
 
-export const HomePage: FC<{ trending: PackageSummary[] }> = ({ trending }) => (
+export const HomePage: FC<{ trending: PackageSummary[]; apiError?: boolean }> = ({ trending, apiError }) => (
   <Container>
     {/* Hero */}
     <section class="py-20 text-center">
@@ -65,6 +65,13 @@ export const HomePage: FC<{ trending: PackageSummary[] }> = ({ trending }) => (
           {trending.map((pkg) => (
             <PackageCard key={pkg.full_name} pkg={pkg} />
           ))}
+        </div>
+      ) : apiError ? (
+        <div class="cn-card p-12 text-center">
+          <p class="mb-2 text-sm text-muted-foreground">Service temporarily unavailable</p>
+          <p class="text-xs text-muted-foreground">
+            Please try again later.
+          </p>
         </div>
       ) : (
         <div class="cn-card p-12 text-center">

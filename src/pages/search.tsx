@@ -57,7 +57,8 @@ export const SearchPage: FC<{
   total: number;
   page?: number;
   totalPages?: number;
-}> = ({ query, type, sort = "downloads", packages, total, page = 1, totalPages = 1 }) => {
+  apiError?: boolean;
+}> = ({ query, type, sort = "downloads", packages, total, page = 1, totalPages = 1, apiError }) => {
   const countText = resultCountText(total, query, type);
   const hasResults = packages.length > 0;
 
@@ -154,6 +155,13 @@ export const SearchPage: FC<{
             </nav>
           )}
         </>
+      ) : apiError ? (
+        <div class="cn-card p-12 text-center">
+          <p class="mb-2 text-sm text-muted-foreground">Service temporarily unavailable</p>
+          <p class="text-xs text-muted-foreground">
+            Please try again later.
+          </p>
+        </div>
       ) : query ? (
         <div class="py-12 text-center">
           <p class="mb-2 text-sm text-muted-foreground">

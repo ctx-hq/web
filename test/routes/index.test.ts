@@ -83,6 +83,32 @@ describe("real app routes", () => {
     );
   });
 
+  it("home page shows unavailable state when API rejects", async () => {
+    mockFetch.mockRejectedValueOnce(new Error("network error"));
+    const res = await req("/");
+    expect(res.status).toBe(200);
+    const html = await res.text();
+    expect(html).toContain("Service temporarily unavailable");
+    expect(html).not.toContain("No packages yet");
+  });
+
+  it("search page shows unavailable state when search API rejects", async () => {
+    mockFetch.mockRejectedValueOnce(new Error("network error"));
+    const res = await req("/search?q=test");
+    expect(res.status).toBe(200);
+    const html = await res.text();
+    expect(html).toContain("Service temporarily unavailable");
+  });
+
+  it("browse page shows unavailable state when list API rejects", async () => {
+    mockFetch.mockRejectedValueOnce(new Error("network error"));
+    const res = await req("/search");
+    expect(res.status).toBe(200);
+    const html = await res.text();
+    expect(html).toContain("Service temporarily unavailable");
+    expect(html).not.toContain("No packages yet");
+  });
+
   it("search meta uses type when no query", async () => {
     const res = await req("/search?type=mcp");
     const html = await res.text();
@@ -314,15 +340,6 @@ describe("browse & sort", () => {
     const html = await res.text();
     // API returned empty — should show empty CTA, not mock data
     expect(html).toContain("No packages yet");
-  });
-
-  it("browse mode falls back to mock data when API is unavailable and ENABLE_MOCK_DATA is set", async () => {
-    // TODO: Remove this test when mock fallback is removed before production launch
-    mockFetch.mockRejectedValueOnce(new Error("network error"));
-    const res = await app.request("/search", {}, { ...ENV, ENABLE_MOCK_DATA: "true" });
-    const html = await res.text();
-    expect(html).toContain("18 packages");
-    expect(html).not.toContain("No packages yet");
   });
 
   it("search page has filter navigation", async () => {
