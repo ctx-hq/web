@@ -14,6 +14,7 @@ export const Footer: FC = () => (
           <a href="/docs" class="transition-colors hover:text-foreground">Docs</a>
           <a href="/docs/api" class="transition-colors hover:text-foreground">API</a>
           <a href="https://github.com/ctx-hq" class="transition-colors hover:text-foreground">GitHub</a>
+          <a href="/privacy" class="transition-colors hover:text-foreground">Privacy</a>
         </nav>
       </div>
       <div class="mt-6 border-t border-border pt-4 text-xs text-muted-foreground">

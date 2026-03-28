@@ -42,7 +42,7 @@ src/
     └── globals.css    # Lyra design tokens + Tailwind 4
 ```
 
-All data is fetched from the API layer via HTTP (`API_BASE_URL` env var, defaults to `https://api.getctx.org`).
+All data is fetched from the API layer via HTTP (`API_BASE_URL` env var, required).
 
 ## Tech Stack
 
@@ -54,7 +54,8 @@ All data is fetched from the API layer via HTTP (`API_BASE_URL` env var, default
 
 ## Environment Variables
 
-| Variable         | Description        | Default                    |
-| ---------------- | ------------------ | -------------------------- |
-| `API_BASE_URL`   | Backend API origin | `https://api.getctx.org`   |
-| `GITHUB_CLIENT_ID` | GitHub OAuth app ID | _(optional)_            |
+| Variable              | Description        | Required |
+| --------------------- | ------------------ | -------- |
+| `API_BASE_URL`        | Backend API origin | Yes      |
+| `GITHUB_CLIENT_ID`    | GitHub OAuth app ID | No      |
+| `GITHUB_CLIENT_SECRET` | GitHub OAuth secret | No      |

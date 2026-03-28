@@ -42,7 +42,7 @@ src/
     └── globals.css    # Lyra 设计令牌 + Tailwind 4
 ```
 
-所有数据通过 HTTP 从 API 层获取（`API_BASE_URL` 环境变量，默认 `https://api.getctx.org`）。
+所有数据通过 HTTP 从 API 层获取（`API_BASE_URL` 环境变量，必填）。
 
 ## 技术栈
 
@@ -54,7 +54,8 @@ src/
 
 ## 环境变量
 
-| 变量               | 说明              | 默认值                     |
-| ------------------ | ----------------- | -------------------------- |
-| `API_BASE_URL`     | 后端 API 地址     | `https://api.getctx.org`   |
-| `GITHUB_CLIENT_ID` | GitHub OAuth 应用 ID | _（可选）_              |
+| 变量                   | 说明               | 必填 |
+| ---------------------- | ------------------ | ---- |
+| `API_BASE_URL`         | 后端 API 地址      | 是   |
+| `GITHUB_CLIENT_ID`     | GitHub OAuth 应用 ID | 否 |
+| `GITHUB_CLIENT_SECRET` | GitHub OAuth Secret  | 否 |

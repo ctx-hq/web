@@ -14,6 +14,7 @@ import { PackageDetailPage } from "./pages/package-detail";
 import { DocsPage, VALID_DOC_SECTIONS } from "./pages/docs";
 import { LoginPage } from "./pages/login";
 import { DashboardPage } from "./pages/dashboard";
+import { PrivacyPage } from "./pages/privacy";
 
 type Env = {
   Bindings: {
@@ -26,17 +27,40 @@ type Env = {
 
 const app = new Hono<Env>();
 
+// ── Security headers middleware ──────────────────────────────────────────────
+app.use("*", async (c, next) => {
+  await next();
+  c.header("X-Content-Type-Options", "nosniff");
+  c.header("X-Frame-Options", "DENY");
+  c.header("Referrer-Policy", "strict-origin-when-cross-origin");
+  c.header("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
+  c.header(
+    "Content-Security-Policy",
+    [
+      "default-src 'self'",
+      "script-src 'self'",
+      "style-src 'self' 'unsafe-inline'",
+      "img-src 'self' https: data:",
+      "font-src 'self'",
+      "connect-src 'self'",
+      "frame-ancestors 'none'",
+    ].join("; "),
+  );
+});
+
 function api(c: { env: Env["Bindings"] }) {
-  return new ApiClient(c.env.API_BASE_URL || "https://api.getctx.org");
+  const base = c.env.API_BASE_URL;
+  if (!base) throw new Error("API_BASE_URL environment variable is required");
+  return new ApiClient(base);
 }
 
 /** Resolve session user from cookie. Only call in auth-required routes. */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function resolveUser(c: any): Promise<{ user: SessionUser; token: string } | null> {
-  const token = getCookie(c, "ctx_session") as string | undefined;
+  const token = getCookie(c, "__Host-ctx_session") as string | undefined;
   if (!token) return null;
   try {
-    const apiBase: string = c.env.API_BASE_URL || "https://api.getctx.org";
+    const apiBase: string = c.env.API_BASE_URL;
     const resp = await fetch(`${apiBase}/v1/me`, {
       headers: { Authorization: `Bearer ${token}`, Accept: "application/json" },
       signal: AbortSignal.timeout(3_000),
@@ -174,7 +198,7 @@ app.get("/search", async (c) => {
 // Agent-readable .ctx endpoint: proxy to API
 app.get("/:fullName{@[^/]+/[^/]+\\.ctx}", async (c) => {
   const fullName = c.req.param("fullName").replace(/\.ctx$/, "");
-  const apiBase = c.env.API_BASE_URL || "https://api.getctx.org";
+  const apiBase = c.env.API_BASE_URL;
   try {
     const res = await fetch(`${apiBase}/${fullName}.ctx`, {
       signal: AbortSignal.timeout(5_000),
@@ -264,7 +288,7 @@ app.get("/login", async (c) => {
     return c.redirect("/dashboard");
   }
   const state = crypto.randomUUID();
-  setCookie(c, "oauth_state", state, {
+  setCookie(c, "__Host-oauth_state", state, {
     httpOnly: true,
     secure: true,
     sameSite: "Lax",
@@ -289,7 +313,7 @@ app.get("/login/callback", async (c) => {
   }
 
   // Verify state matches cookie
-  const savedState = getCookie(c, "oauth_state");
+  const savedState = getCookie(c, "__Host-oauth_state");
   if (!savedState || savedState !== state) {
     return c.redirect("/login");
   }
@@ -350,8 +374,22 @@ app.get("/login/callback", async (c) => {
       email = primary?.email ?? emails[0]?.email ?? "";
     }
 
+    // Revoke GitHub access token — best-effort, fire-and-forget
+    try {
+      await fetch(`https://api.github.com/applications/${clientId}/token`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Basic ${btoa(`${clientId}:${clientSecret}`)}`,
+          Accept: "application/vnd.github+json",
+          "User-Agent": "getctx.org",
+        },
+        body: JSON.stringify({ access_token: tokenData.access_token }),
+        signal: AbortSignal.timeout(5_000),
+      });
+    } catch { /* best-effort — token may already be single-use */ }
+
     // Register/login user via our API
-    const apiBase = c.env.API_BASE_URL || "https://api.getctx.org";
+    const apiBase = c.env.API_BASE_URL;
     const registerResp = await fetch(`${apiBase}/v1/auth/github`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -369,14 +407,14 @@ app.get("/login/callback", async (c) => {
     }
 
     // Set session cookie and clear oauth_state
-    setCookie(c, "ctx_session", session.token, {
+    setCookie(c, "__Host-ctx_session", session.token, {
       httpOnly: true,
       secure: true,
       sameSite: "Lax",
       path: "/",
       maxAge: 2592000,
     });
-    deleteCookie(c, "oauth_state", { path: "/" });
+    deleteCookie(c, "__Host-oauth_state", { path: "/", secure: true });
 
     return c.redirect("/dashboard");
   } catch {
@@ -386,7 +424,7 @@ app.get("/login/callback", async (c) => {
 
 // Logout — clear session cookie and redirect
 app.get("/logout", (c) => {
-  deleteCookie(c, "ctx_session", { path: "/" });
+  deleteCookie(c, "__Host-ctx_session", { path: "/", secure: true });
   return c.redirect("/");
 });
 
@@ -398,7 +436,7 @@ app.get("/dashboard", async (c) => {
   }
 
   const { user, token: sessionToken } = session;
-  const apiBase = c.env.API_BASE_URL || "https://api.getctx.org";
+  const apiBase = c.env.API_BASE_URL;
 
   // Fetch the user's published packages
   let packages: PackageSummary[] = [];
@@ -419,6 +457,17 @@ app.get("/dashboard", async (c) => {
   return c.html(
     <Layout meta={meta} currentPath="/dashboard" user={user}>
       <DashboardPage username={user.username} packages={packages} />
+    </Layout>
+  );
+});
+
+// Privacy policy
+app.get("/privacy", (c) => {
+  const meta = { ...defaultMeta(), title: `Privacy Policy — ${SITE_NAME}` };
+  c.header("Cache-Control", "public, s-maxage=86400, stale-while-revalidate=86400");
+  return c.html(
+    <Layout meta={meta} currentPath="/privacy">
+      <PrivacyPage />
     </Layout>
   );
 });
@@ -539,9 +588,9 @@ app.get("/robots.txt", (c) => {
   return c.body(`User-agent: *\nAllow: /\nSitemap: ${SITE_URL}/sitemap.xml\n`);
 });
 
-// Error handler
+// Error handler — log message only (no stack traces / internal URLs in production logs)
 app.onError((err, c) => {
-  console.error("Unhandled error:", err);
+  console.error("Unhandled error:", err instanceof Error ? err.message : "unknown");
   return c.html(
     <Layout meta={{ ...defaultMeta(), title: `Error — ${SITE_NAME}` }}>
       <div class="mx-auto max-w-5xl px-4 py-16 text-center">

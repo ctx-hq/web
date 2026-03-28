@@ -19,7 +19,7 @@ permissions:
 env:
   NODE_VERSION: "22"
   PAGES_PROJECT: ctx-web
-  CLOUDFLARE_ZONE_ID: REDACTED_ZONE_ID
+  CLOUDFLARE_ZONE_ID: ${{ secrets.CLOUDFLARE_ZONE_ID }}
 
 jobs:
   # ──────────────────────────────────────────────

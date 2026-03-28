@@ -1,3 +1,9 @@
+# ===== Secrets =====
+.envrc
+.env
+.env.*
+!.env.example
+
 # ===== IDE =====
 .idea/
 .vscode/

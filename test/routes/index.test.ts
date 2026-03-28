@@ -238,7 +238,7 @@ describe("real app routes", () => {
     );
 
     const res = await app.request("/dashboard", {
-      headers: { Cookie: "ctx_session=fake-token" },
+      headers: { Cookie: "__Host-ctx_session=fake-token" },
     }, ENV);
     expect(res.status).toBe(302);
     expect(res.headers.get("Location")).toContain("/login");
@@ -250,7 +250,7 @@ describe("real app routes", () => {
     );
 
     const res = await app.request("/dashboard", {
-      headers: { Cookie: "ctx_session=valid-token" },
+      headers: { Cookie: "__Host-ctx_session=valid-token" },
     }, ENV);
     expect(res.status).toBe(200);
     const html = await res.text();
@@ -407,5 +407,75 @@ describe("search result text", () => {
     // Next link should preserve type and sort
     expect(html).toContain("type=mcp");
     expect(html).toContain("sort=newest");
+  });
+});
+
+describe("security headers", () => {
+  it("all responses include security headers", async () => {
+    const res = await req("/");
+    expect(res.headers.get("X-Content-Type-Options")).toBe("nosniff");
+    expect(res.headers.get("X-Frame-Options")).toBe("DENY");
+    expect(res.headers.get("Referrer-Policy")).toBe("strict-origin-when-cross-origin");
+    expect(res.headers.get("Permissions-Policy")).toBe("camera=(), microphone=(), geolocation=()");
+    expect(res.headers.get("Content-Security-Policy")).toContain("default-src 'self'");
+    expect(res.headers.get("Content-Security-Policy")).toContain("frame-ancestors 'none'");
+  });
+
+  it("security headers on API proxy route", async () => {
+    const res = await req("/api/search-suggest?q=ab");
+    expect(res.headers.get("X-Frame-Options")).toBe("DENY");
+  });
+
+  it("security headers on docs route", async () => {
+    const res = await req("/docs");
+    expect(res.headers.get("X-Content-Type-Options")).toBe("nosniff");
+  });
+});
+
+describe("privacy page", () => {
+  it("privacy route responds with 200", async () => {
+    const res = await req("/privacy");
+    expect(res.status).toBe(200);
+    const html = await res.text();
+    expect(html).toContain("Privacy Policy");
+  });
+
+  it("privacy page lists cookies used", async () => {
+    const res = await req("/privacy");
+    const html = await res.text();
+    expect(html).toContain("__Host-ctx_session");
+    expect(html).toContain("__Host-oauth_state");
+  });
+
+  it("privacy page mentions no analytics", async () => {
+    const res = await req("/privacy");
+    const html = await res.text();
+    expect(html).toContain("No analytics or tracking scripts");
+  });
+});
+
+describe("cookie security", () => {
+  it("login page sets __Host-oauth_state cookie", async () => {
+    const res = await req("/login");
+    const setCookieHeader = res.headers.get("Set-Cookie") ?? "";
+    expect(setCookieHeader).toContain("__Host-oauth_state=");
+    expect(setCookieHeader).toContain("HttpOnly");
+    expect(setCookieHeader).toContain("Secure");
+  });
+
+  it("logout clears __Host-ctx_session cookie", async () => {
+    const res = await req("/logout");
+    expect(res.status).toBe(302);
+    const setCookieHeader = res.headers.get("Set-Cookie") ?? "";
+    expect(setCookieHeader).toContain("__Host-ctx_session");
+  });
+});
+
+describe("no third-party font requests", () => {
+  it("layout does not reference Google Fonts", async () => {
+    const res = await req("/");
+    const html = await res.text();
+    expect(html).not.toContain("fonts.googleapis.com");
+    expect(html).not.toContain("fonts.gstatic.com");
   });
 });
