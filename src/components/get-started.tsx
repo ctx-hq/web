@@ -57,14 +57,17 @@ export const GetStarted: FC = () => {
           <div class="os-toggle mb-3 flex gap-3 text-xs" data-os-container>
             <button
               data-os-toggle="unix"
-              class="font-medium"
+              class="flex items-center gap-1.5 font-medium"
             >
+              <Icon name="apple-logo" class="size-3.5" />
+              <Icon name="linux-logo" class="size-3.5" />
               macOS / Linux
             </button>
             <button
               data-os-toggle="windows"
-              class="text-muted-foreground"
+              class="flex items-center gap-1.5 text-muted-foreground"
             >
+              <Icon name="windows-logo" class="size-3.5" />
               Windows
             </button>
           </div>
