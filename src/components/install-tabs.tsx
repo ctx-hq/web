@@ -51,7 +51,7 @@ export const InstallTabs: FC<{
           class="cn-install-tab"
         >
           <Icon name="terminal" class="size-3.5" />
-          CLI
+          Human
         </button>
       </nav>
       {/* Agent panel */}
@@ -69,7 +69,7 @@ export const InstallTabs: FC<{
           Send this to your Agent to use {fullName}
         </p>
       </div>
-      {/* CLI panel */}
+      {/* Human panel */}
       <div data-panel="human" class="hidden p-3">
         <div class="flex items-center gap-2">
           <code class="flex-1 bg-muted px-2 py-1 font-mono text-xs">

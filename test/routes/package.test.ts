@@ -157,7 +157,7 @@ describe("package detail routes", () => {
     expect(html).toContain('data-icon="terminal"');
   });
 
-  it("install-tabs labels are Agent and CLI (not Human)", async () => {
+  it("install-tabs labels are Agent and Human", async () => {
     mockFetch
       .mockResolvedValueOnce(apiJson(fakePkg))
       .mockResolvedValueOnce(apiJson(fakeVersion));
@@ -168,9 +168,8 @@ describe("package detail routes", () => {
       html.indexOf('class="install-tabs'),
       html.indexOf('data-panel="agent"'),
     );
-    expect(installTabsSection).toContain(">Agent<");
-    expect(installTabsSection).toContain(">CLI<");
-    expect(installTabsSection).not.toContain(">Human<");
+    expect(installTabsSection).toMatch(/>\s*Agent\s*</);
+    expect(installTabsSection).toMatch(/>\s*Human\s*</);
   });
 
   // === README ===

@@ -163,28 +163,22 @@ describe("real app routes", () => {
     expect(mcpIdx).toBeGreaterThan(cliIdx);
   });
 
-  it("home page get-started uses cn-tabbed-input-tab style (not underline)", async () => {
+  it("home page get-started uses cn-install-tab underline style", async () => {
     const res = await req("/");
     const html = await res.text();
-    // Get-started tabs should use the unified tab style
-    expect(html).toContain("cn-tabbed-input-tab");
-    expect(html).toContain("cn-tabbed-input-tab-active");
-    // Should NOT contain old underline-style classes on tab buttons
-    expect(html).not.toMatch(/data-tab="agent"[^>]*border-b-foreground/);
-    expect(html).not.toMatch(/data-tab="human"[^>]*border-b-transparent/);
+    expect(html).toContain("cn-install-tab");
+    expect(html).toContain("cn-install-tab-active");
   });
 
-  it("get-started tab labels are Agent and CLI (not Human)", async () => {
+  it("get-started tab labels are Agent and Human", async () => {
     const res = await req("/");
     const html = await res.text();
-    // The install-tabs area should have Agent and CLI labels
     const installTabsSection = html.slice(
       html.indexOf('class="install-tabs'),
       html.indexOf('data-panel="agent"'),
     );
-    expect(installTabsSection).toContain(">Agent<");
-    expect(installTabsSection).toContain(">CLI<");
-    expect(installTabsSection).not.toContain(">Human<");
+    expect(installTabsSection).toMatch(/>\s*Agent\s*</);
+    expect(installTabsSection).toMatch(/>\s*Human\s*</);
   });
 
   it("search with q param calls API search", async () => {
