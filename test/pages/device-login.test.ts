@@ -30,7 +30,7 @@ describe("DeviceLoginPage", () => {
   it("contains informational text about granting access", () => {
     const html = DeviceLoginPage({})!.toString();
     expect(html).toContain("ctx");
-    expect(html).toContain("access to your getctx.org account");
+    expect(html).toContain("access to your account");
   });
 
   it("contains data-device-form for client JS", () => {

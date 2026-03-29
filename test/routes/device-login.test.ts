@@ -81,7 +81,7 @@ describe("GET /login/device — authenticated", () => {
     const res = await reqWithSession("/login/device");
     const html = await res.text();
     expect(html).toContain("ctx");
-    expect(html).toContain("access to your getctx.org account");
+    expect(html).toContain("access to your account");
   });
 });
 

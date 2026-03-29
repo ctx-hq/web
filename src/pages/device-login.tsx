@@ -5,17 +5,16 @@ import { Icon } from "../components/ui/icon";
 
 export const DeviceLoginPage: FC<{ code?: string }> = ({ code }) => (
   <Container size="narrow" class="py-20 text-center">
-    <div class="mx-auto max-w-sm">
-      <div class="mb-6">
-        <Icon name="robot" class="mx-auto size-8 text-muted-foreground" />
+    <div class="mx-auto max-w-xs">
+      <div class="mb-5">
+        <Icon name="terminal-window" class="mx-auto size-10 text-muted-foreground" />
       </div>
-      <h1 class="mb-3 text-lg font-semibold font-heading">Authorize Device</h1>
-      <p class="mb-8 text-xs text-muted-foreground">
-        Enter the code shown in your terminal to grant ctx CLI access to your account.
+      <h1 class="mb-2 text-lg font-semibold font-heading">Authorize Device</h1>
+      <p class="mb-6 text-xs text-muted-foreground">
+        Enter the code shown in your terminal to grant <code class="bg-muted px-1 py-0.5 font-mono">ctx</code> CLI access to your account.
       </p>
 
-      <form data-device-form class="space-y-4">
-        {/* Code input */}
+      <form data-device-form="" class="space-y-3">
         <div>
           <label for="device-code" class="sr-only">
             Device code
@@ -33,17 +32,17 @@ export const DeviceLoginPage: FC<{ code?: string }> = ({ code }) => (
             autocapitalize="characters"
             spellcheck={false}
             required
+            autofocus
             value={code ?? ""}
           />
         </div>
 
-        {/* Authorize button */}
         <Button variant="default" size="lg" class="w-full" type="submit">
           Authorize
         </Button>
 
         {/* Status messages (managed by client JS) */}
-        <div data-device-status class="text-xs" aria-live="polite">
+        <div data-device-status="" class="text-xs" aria-live="polite">
           <p data-device-msg="loading" class="hidden text-muted-foreground">
             Authorizing...
           </p>
@@ -56,9 +55,8 @@ export const DeviceLoginPage: FC<{ code?: string }> = ({ code }) => (
         </div>
       </form>
 
-      <p class="mt-8 text-xs text-muted-foreground leading-relaxed">
-        By authorizing, you grant <code class="bg-muted px-1.5 py-0.5 font-mono">ctx</code> CLI
-        read and write access to your getctx.org account.
+      <p class="mt-6 text-xs text-muted-foreground">
+        This grants <code class="bg-muted px-1 py-0.5 font-mono">ctx</code> CLI read and write access to your account.
       </p>
     </div>
   </Container>
