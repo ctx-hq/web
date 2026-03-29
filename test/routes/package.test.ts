@@ -371,6 +371,91 @@ describe(".ctx endpoint", () => {
     const calledUrl = mockFetch.mock.calls[0][0];
     expect(calledUrl).toBe("https://api.test/@test/existing.ctx");
   });
+
+  it("anonymous: uses public cache headers", async () => {
+    mockFetch.mockResolvedValueOnce(
+      new Response("# content", { status: 200 }),
+    );
+
+    const res = await req("/@test/existing.ctx");
+    expect(res.status).toBe(200);
+    const cc = res.headers.get("Cache-Control") ?? "";
+    expect(cc).toContain("public");
+    expect(cc).toContain("s-maxage=300");
+  });
+
+  it("anonymous: does NOT pass Authorization header to API", async () => {
+    mockFetch.mockResolvedValueOnce(
+      new Response("# content", { status: 200 }),
+    );
+
+    await req("/@test/existing.ctx");
+    // Find the .ctx API call (not /v1/me)
+    const ctxCall = mockFetch.mock.calls.find(
+      (call) => typeof call[0] === "string" && call[0].includes(".ctx"),
+    );
+    expect(ctxCall).toBeDefined();
+    const headers = ctxCall![1]?.headers as Record<string, string> | undefined;
+    expect(headers?.Authorization).toBeUndefined();
+  });
+
+  it("authenticated: passes Authorization header to API", async () => {
+    mockFetch.mockImplementation((url: string) => {
+      if (typeof url === "string" && url.includes("/v1/me")) {
+        return Promise.resolve(apiJson({ username: "hong" }));
+      }
+      return Promise.resolve(new Response("# content", { status: 200 }));
+    });
+
+    const res = await app.request("/@test/existing.ctx", {
+      headers: { Cookie: "__Host-ctx_session=valid-token" },
+    }, ENV);
+    expect(res.status).toBe(200);
+
+    // Find the .ctx API call
+    const ctxCall = mockFetch.mock.calls.find(
+      (call) => typeof call[0] === "string" && call[0].includes(".ctx"),
+    );
+    expect(ctxCall).toBeDefined();
+    const headers = ctxCall![1]?.headers as Record<string, string>;
+    expect(headers.Authorization).toBe("Bearer valid-token");
+  });
+
+  it("authenticated: uses private cache headers", async () => {
+    mockFetch.mockImplementation((url: string) => {
+      if (typeof url === "string" && url.includes("/v1/me")) {
+        return Promise.resolve(apiJson({ username: "hong" }));
+      }
+      return Promise.resolve(new Response("# content", { status: 200 }));
+    });
+
+    const res = await app.request("/@test/existing.ctx", {
+      headers: { Cookie: "__Host-ctx_session=valid-token" },
+    }, ENV);
+    const cc = res.headers.get("Cache-Control") ?? "";
+    expect(cc).toContain("private");
+    expect(cc).toContain("no-store");
+    expect(cc).not.toContain("s-maxage");
+  });
+
+  it("auth middleware resolves user for .ctx routes (not skipped)", async () => {
+    mockFetch.mockImplementation((url: string) => {
+      if (typeof url === "string" && url.includes("/v1/me")) {
+        return Promise.resolve(apiJson({ username: "hong" }));
+      }
+      return Promise.resolve(new Response("# content", { status: 200 }));
+    });
+
+    await app.request("/@test/existing.ctx", {
+      headers: { Cookie: "__Host-ctx_session=valid-token" },
+    }, ENV);
+
+    // /v1/me SHOULD be called (auth middleware runs for .ctx)
+    const meCall = mockFetch.mock.calls.find(
+      (call) => typeof call[0] === "string" && call[0].includes("/v1/me"),
+    );
+    expect(meCall).toBeDefined();
+  });
 });
 
 describe("/skill.md endpoint", () => {
