@@ -265,6 +265,16 @@ html:not(.dark) .light-hidden { display: none; }
   @apply flex items-center gap-2 border border-destructive/30 bg-destructive/5 px-3 py-2.5 text-xs text-destructive;
 }
 
+/* --- Install Tabs (underline style, lighter weight than search tabs) --- */
+.cn-install-tab {
+  @apply inline-flex cursor-pointer items-center gap-1.5 pb-2 pt-2.5 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground -mb-px border-b-2 border-transparent;
+}
+
+.cn-install-tab-active,
+.cn-install-tab-active:hover {
+  @apply text-foreground border-foreground;
+}
+
 /* --- Tabbed Input (fused tabs + search) --- */
 .cn-tabbed-input nav {
   @apply border-b border-input;

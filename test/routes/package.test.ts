@@ -144,18 +144,17 @@ describe("package detail routes", () => {
     expect(html).toContain("ctx install @test/existing");
   });
 
-  it("install-tabs uses cn-tabbed-input-tab style (not underline)", async () => {
+  it("install-tabs uses cn-install-tab underline style with icons", async () => {
     mockFetch
       .mockResolvedValueOnce(apiJson(fakePkg))
       .mockResolvedValueOnce(apiJson(fakeVersion));
 
     const res = await req("/@test/existing");
     const html = await res.text();
-    expect(html).toContain("cn-tabbed-input-tab");
-    expect(html).toContain("cn-tabbed-input-tab-active");
-    // Should NOT contain old underline-style classes on tab buttons
-    expect(html).not.toMatch(/data-tab="agent"[^>]*border-b-foreground/);
-    expect(html).not.toMatch(/data-tab="human"[^>]*border-b-transparent/);
+    expect(html).toContain("cn-install-tab");
+    expect(html).toContain("cn-install-tab-active");
+    expect(html).toContain('data-icon="robot"');
+    expect(html).toContain('data-icon="terminal"');
   });
 
   it("install-tabs labels are Agent and CLI (not Human)", async () => {

@@ -38,17 +38,19 @@ export const InstallTabs: FC<{
 
   return (
     <div class="install-tabs cn-card">
-      <nav class="flex border-b border-input">
+      <nav class="flex gap-4 border-b border-input px-3" aria-label="Installation method">
         <button
           data-tab="agent"
-          class="cn-tabbed-input-tab cn-tabbed-input-tab-active"
+          class="cn-install-tab cn-install-tab-active"
         >
+          <Icon name="robot" class="size-3.5" />
           Agent
         </button>
         <button
           data-tab="human"
-          class="cn-tabbed-input-tab"
+          class="cn-install-tab"
         >
+          <Icon name="terminal" class="size-3.5" />
           CLI
         </button>
       </nav>
