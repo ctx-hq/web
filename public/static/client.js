@@ -39,7 +39,9 @@ document.addEventListener('click',function(e){
   container.querySelectorAll('[data-tab]').forEach(function(b){
     var isInstall=b.classList.contains('cn-install-tab');
     var cls=isInstall?'cn-install-tab-active':'cn-tabbed-input-tab-active';
-    b.classList.toggle(cls,b.dataset.tab===tab);
+    var isActive=b.dataset.tab===tab;
+    b.classList.toggle(cls,isActive);
+    if(b.hasAttribute('role'))b.setAttribute('aria-selected',String(isActive));
   });
   container.querySelectorAll('[data-panel]').forEach(function(p){
     p.classList.toggle('hidden',p.dataset.panel!==tab);

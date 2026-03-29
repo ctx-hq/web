@@ -170,6 +170,17 @@ describe("real app routes", () => {
     expect(html).toContain("cn-install-tab-active");
   });
 
+  it("get-started tabs have ARIA tablist/tab/tabpanel roles", async () => {
+    const res = await req("/");
+    const html = await res.text();
+    expect(html).toContain('role="tablist"');
+    expect(html).toContain('role="tab"');
+    expect(html).toContain('role="tabpanel"');
+    expect(html).toContain('aria-selected="true"');
+    expect(html).toContain('aria-controls="panel-agent"');
+    expect(html).toContain('aria-labelledby="tab-agent"');
+  });
+
   it("get-started tab labels are Agent and Human", async () => {
     const res = await req("/");
     const html = await res.text();

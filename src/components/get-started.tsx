@@ -18,9 +18,13 @@ export const GetStarted: FC = () => {
     <section class="mb-12">
       <div class="install-tabs cn-card mx-auto max-w-lg">
         {/* Tab bar — Agent default */}
-        <nav class="flex gap-4 border-b border-input px-3" aria-label="Getting started method">
+        <nav class="flex gap-4 border-b border-input px-3" role="tablist" aria-label="Getting started method">
           <button
             data-tab="agent"
+            id="tab-agent"
+            role="tab"
+            aria-selected="true"
+            aria-controls="panel-agent"
             class="cn-install-tab cn-install-tab-active"
           >
             <Icon name="robot" class="size-3.5" />
@@ -28,6 +32,10 @@ export const GetStarted: FC = () => {
           </button>
           <button
             data-tab="human"
+            id="tab-human"
+            role="tab"
+            aria-selected="false"
+            aria-controls="panel-human"
             class="cn-install-tab"
           >
             <Icon name="terminal" class="size-3.5" />
@@ -36,7 +44,7 @@ export const GetStarted: FC = () => {
         </nav>
 
         {/* Agent panel (visible by default) */}
-        <div data-panel="agent" class="p-4">
+        <div data-panel="agent" id="panel-agent" role="tabpanel" aria-labelledby="tab-agent" class="p-4">
           <div class="flex items-center gap-2">
             <code class="flex-1 bg-muted px-3 py-2 font-mono text-xs">
               {agentCmd}
@@ -52,7 +60,7 @@ export const GetStarted: FC = () => {
         </div>
 
         {/* Human panel (hidden by default) */}
-        <div data-panel="human" class="hidden p-4">
+        <div data-panel="human" id="panel-human" role="tabpanel" aria-labelledby="tab-human" class="hidden p-4">
           {/* OS toggle */}
           <div class="os-toggle mb-3 flex gap-3 text-xs" data-os-container>
             <button

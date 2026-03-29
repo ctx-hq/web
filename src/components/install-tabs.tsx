@@ -38,9 +38,13 @@ export const InstallTabs: FC<{
 
   return (
     <div class="install-tabs cn-card">
-      <nav class="flex gap-4 border-b border-input px-3" aria-label="Installation method">
+      <nav class="flex gap-4 border-b border-input px-3" role="tablist" aria-label="Installation method">
         <button
           data-tab="agent"
+          id="tab-agent"
+          role="tab"
+          aria-selected="true"
+          aria-controls="panel-agent"
           class="cn-install-tab cn-install-tab-active"
         >
           <Icon name="robot" class="size-3.5" />
@@ -48,6 +52,10 @@ export const InstallTabs: FC<{
         </button>
         <button
           data-tab="human"
+          id="tab-human"
+          role="tab"
+          aria-selected="false"
+          aria-controls="panel-human"
           class="cn-install-tab"
         >
           <Icon name="terminal" class="size-3.5" />
@@ -55,7 +63,7 @@ export const InstallTabs: FC<{
         </button>
       </nav>
       {/* Agent panel */}
-      <div data-panel="agent" class="p-3">
+      <div data-panel="agent" id="panel-agent" role="tabpanel" aria-labelledby="tab-agent" class="p-3">
         <div class="flex items-center gap-2">
           <code class="flex-1 bg-muted px-2 py-1 font-mono text-xs">
             {agentCmd}
@@ -70,7 +78,7 @@ export const InstallTabs: FC<{
         </p>
       </div>
       {/* Human panel */}
-      <div data-panel="human" class="hidden p-3">
+      <div data-panel="human" id="panel-human" role="tabpanel" aria-labelledby="tab-human" class="hidden p-3">
         <div class="flex items-center gap-2">
           <code class="flex-1 bg-muted px-2 py-1 font-mono text-xs">
             {installCmd}

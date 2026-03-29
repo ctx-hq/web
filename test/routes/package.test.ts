@@ -157,6 +157,21 @@ describe("package detail routes", () => {
     expect(html).toContain('data-icon="terminal"');
   });
 
+  it("install-tabs has ARIA tablist/tab/tabpanel roles", async () => {
+    mockFetch
+      .mockResolvedValueOnce(apiJson(fakePkg))
+      .mockResolvedValueOnce(apiJson(fakeVersion));
+
+    const res = await req("/@test/existing");
+    const html = await res.text();
+    expect(html).toContain('role="tablist"');
+    expect(html).toContain('role="tab"');
+    expect(html).toContain('role="tabpanel"');
+    expect(html).toContain('aria-selected="true"');
+    expect(html).toContain('aria-controls="panel-agent"');
+    expect(html).toContain('aria-labelledby="tab-agent"');
+  });
+
   it("install-tabs labels are Agent and Human", async () => {
     mockFetch
       .mockResolvedValueOnce(apiJson(fakePkg))
