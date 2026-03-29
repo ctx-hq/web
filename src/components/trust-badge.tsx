@@ -9,7 +9,7 @@ export const TrustBadge: FC<{ tier?: TrustTier | null }> = ({ tier }) => {
 
   return (
     <span
-      class={`inline-flex items-center gap-0.5 text-[10px] font-medium ${config.color}`}
+      class={`inline-flex items-center gap-0.5 text-xs font-medium ${config.color}`}
       aria-label={`Trust: ${config.label}`}
     >
       <span>{config.icon}</span>

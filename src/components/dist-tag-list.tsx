@@ -9,7 +9,7 @@ export const DistTagList: FC<{ tags?: Record<string, string> | null }> = ({ tags
     <div class="flex flex-wrap gap-1.5" aria-label="Distribution tags">
       {entries.map(([tag, version]) => (
         <span
-          class="inline-flex items-center gap-1 rounded border border-border bg-muted/50 px-1.5 py-0.5 text-[10px] font-mono"
+          class="inline-flex items-center gap-1 rounded-none border border-border bg-muted/50 px-1.5 py-0.5 text-xs font-mono"
         >
           <span class="text-muted-foreground">{tag}</span>
           <span class="text-muted-foreground/60">&rarr;</span>

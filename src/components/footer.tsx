@@ -3,14 +3,14 @@ import { SITE_TAGLINE } from "../lib/constants";
 import { Container } from "./ui/container";
 
 export const Footer: FC = () => (
-  <footer class="border-t border-border py-8">
+  <footer class="border-t border-border py-10">
     <Container>
       <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <span class="text-xs font-medium font-heading">getctx.org</span>
-          <p class="mt-1 text-xs text-muted-foreground">{SITE_TAGLINE}</p>
+          <span class="text-sm font-medium font-heading">getctx.org</span>
+          <p class="mt-1 text-sm text-muted-foreground">{SITE_TAGLINE}</p>
         </div>
-        <nav class="flex gap-5 text-xs text-muted-foreground">
+        <nav class="flex gap-5 text-sm text-muted-foreground">
           <a href="/docs" class="transition-colors hover:text-foreground">Docs</a>
           <a href="/docs/api" class="transition-colors hover:text-foreground">API</a>
           <a href="https://github.com/ctx-hq" class="transition-colors hover:text-foreground">GitHub</a>

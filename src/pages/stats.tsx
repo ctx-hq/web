@@ -11,17 +11,17 @@ export const StatsPage: FC<{
   agents: AgentRanking[];
   trending: PackageSummary[];
 }> = ({ overview, agents, trending }) => (
-  <Container class="py-8">
-    <h1 class="mb-8 text-base font-semibold font-heading">Registry Stats</h1>
+  <Container class="py-10">
+    <h1 class="mb-8 text-xl font-semibold font-heading">Registry Stats</h1>
 
     {/* Registry Overview */}
     <section class="mb-8" aria-label="Registry overview">
-      <h2 class="mb-4 text-xs font-semibold font-heading">Registry Overview</h2>
+      <h2 class="mb-4 text-sm font-semibold font-heading">Registry Overview</h2>
       {overview ? (
         <>
-          <dl class="mb-4 grid gap-3 sm:grid-cols-3">
+          <dl class="mb-4 grid gap-4 sm:grid-cols-3">
             <div class="cn-card p-4">
-              <dt class="mb-1 flex items-center gap-1.5 text-[10px] text-muted-foreground">
+              <dt class="mb-1 flex items-center gap-1.5 text-xs text-muted-foreground">
                 <Icon name="package" class="size-3" />
                 Packages
               </dt>
@@ -30,7 +30,7 @@ export const StatsPage: FC<{
               </dd>
             </div>
             <div class="cn-card p-4">
-              <dt class="mb-1 flex items-center gap-1.5 text-[10px] text-muted-foreground">
+              <dt class="mb-1 flex items-center gap-1.5 text-xs text-muted-foreground">
                 <Icon name="download" class="size-3" />
                 Downloads
               </dt>
@@ -39,7 +39,7 @@ export const StatsPage: FC<{
               </dd>
             </div>
             <div class="cn-card p-4">
-              <dt class="mb-1 flex items-center gap-1.5 text-[10px] text-muted-foreground">
+              <dt class="mb-1 flex items-center gap-1.5 text-xs text-muted-foreground">
                 <Icon name="user" class="size-3" />
                 Publishers
               </dt>
@@ -85,7 +85,7 @@ export const StatsPage: FC<{
           )}
         </>
       ) : (
-        <p class="text-xs text-muted-foreground">
+        <p class="text-sm text-muted-foreground">
           Registry overview data is not available at this time.
         </p>
       )}
@@ -93,12 +93,12 @@ export const StatsPage: FC<{
 
     {/* Agent Rankings */}
     <section class="mb-8" aria-label="Agent rankings">
-      <h2 class="mb-4 text-xs font-semibold font-heading">Agent Rankings</h2>
+      <h2 class="mb-4 text-sm font-semibold font-heading">Agent Rankings</h2>
       {agents.length === 0 ? (
-        <p class="text-xs text-muted-foreground">No agent data available.</p>
+        <p class="text-sm text-muted-foreground">No agent data available.</p>
       ) : (
         <div class="cn-card overflow-hidden">
-          <table class="w-full text-xs" aria-label="Agent install rankings">
+          <table class="w-full text-sm" aria-label="Agent install rankings">
             <thead>
               <tr class="border-b border-border bg-muted/50">
                 <th scope="col" class="px-4 py-2 text-left font-medium text-muted-foreground">#</th>
@@ -148,11 +148,11 @@ export const StatsPage: FC<{
 
     {/* Trending Packages */}
     <section aria-label="Trending packages">
-      <h2 class="mb-4 text-xs font-semibold font-heading">Trending Packages</h2>
+      <h2 class="mb-4 text-sm font-semibold font-heading">Trending Packages</h2>
       {trending.length === 0 ? (
-        <p class="text-xs text-muted-foreground">No trending data available.</p>
+        <p class="text-sm text-muted-foreground">No trending data available.</p>
       ) : (
-        <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {trending.map((pkg) => (
             <PackageCard key={pkg.full_name} pkg={pkg} />
           ))}

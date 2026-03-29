@@ -41,9 +41,9 @@ export const Layout: FC<LayoutProps> = ({ meta, currentPath, user, children }) =
         {/* Theme init — must be in <head> to prevent FOUC */}
         <script src="/static/theme-init.js" />
       </head>
-      <body class="bg-background text-foreground font-sans text-xs antialiased">
+      <body class="bg-background text-foreground font-sans text-sm antialiased">
         <Header currentPath={currentPath} user={user} />
-        <main class="min-h-[calc(100vh-3rem)]">{children}</main>
+        <main class="min-h-[calc(100vh-3.5rem)]">{children}</main>
         <Footer />
         <ClientScript />
       </body>

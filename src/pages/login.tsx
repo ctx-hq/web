@@ -7,10 +7,10 @@ export const LoginPage: FC<{ githubClientId?: string; oauthState?: string }> = (
   githubClientId,
   oauthState,
 }) => (
-  <Container size="narrow" class="py-20 text-center">
+  <Container size="narrow" class="py-24 text-center">
     <div class="mx-auto max-w-sm">
-      <h1 class="mb-3 text-lg font-semibold font-heading">Sign in to getctx.org</h1>
-      <p class="mb-8 text-xs text-muted-foreground">
+      <h1 class="mb-3 text-xl font-semibold font-heading">Sign in to getctx.org</h1>
+      <p class="mb-8 text-sm text-muted-foreground">
         Publish and manage your packages.
       </p>
       {githubClientId ? (
@@ -24,8 +24,8 @@ export const LoginPage: FC<{ githubClientId?: string; oauthState?: string }> = (
         </Button>
       ) : (
         <div class="cn-card p-6 text-center">
-          <p class="mb-3 text-xs text-muted-foreground">GitHub OAuth is not configured yet.</p>
-          <p class="text-xs text-muted-foreground">
+          <p class="mb-3 text-sm text-muted-foreground">GitHub OAuth is not configured yet.</p>
+          <p class="text-sm text-muted-foreground">
             For now, use the CLI:&nbsp;
             <code class="bg-muted px-2 py-0.5 font-mono">ctx login</code>
           </p>

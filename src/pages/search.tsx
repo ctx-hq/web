@@ -23,13 +23,13 @@ const SortSelect: FC<{
   <form action="/search" method="get" class="flex items-center gap-1.5">
     {query && <input type="hidden" name="q" value={query} />}
     {type && <input type="hidden" name="type" value={type} />}
-    <label for="sort-select" class="text-xs text-muted-foreground">
+    <label for="sort-select" class="text-sm text-muted-foreground">
       Sort:
     </label>
     <select
       name="sort"
       id="sort-select"
-      class="cn-input cn-input-size-default w-auto cursor-pointer px-2 text-xs"
+      class="cn-input cn-input-size-default w-auto cursor-pointer px-2 text-sm"
       onchange="this.form.submit()"
     >
       {SORT_OPTIONS.map((o) => (
@@ -63,15 +63,15 @@ export const SearchPage: FC<{
   const hasResults = packages.length > 0;
 
   return (
-    <Container class="py-8">
+    <Container class="py-10">
       {/* Search bar — full width */}
       <div class="mb-6">
         <SearchBox value={query} selectedType={type} />
       </div>
 
       {/* Filter bar: type pills left, count + sort right */}
-      <div class="mb-6 flex items-center justify-between">
-        <nav class="flex gap-2" role="navigation" aria-label="Filter by type">
+      <div class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <nav class="flex flex-wrap gap-2" role="navigation" aria-label="Filter by type">
           <Badge
             variant="default"
             active={!type}
@@ -93,7 +93,7 @@ export const SearchPage: FC<{
         </nav>
 
         <div class="flex items-center gap-4">
-          <p class="text-xs text-muted-foreground" aria-live="polite">
+          <p class="text-sm text-muted-foreground" aria-live="polite">
             {countText}
             {hasResults && totalPages > 1
               ? ` \u2014 page ${page} of ${totalPages}`
@@ -107,7 +107,7 @@ export const SearchPage: FC<{
       {/* Results grid or empty state */}
       {hasResults ? (
         <>
-          <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {packages.map((pkg) => (
               <PackageCard key={pkg.full_name} pkg={pkg} />
             ))}
@@ -134,7 +134,7 @@ export const SearchPage: FC<{
                   Prev
                 </Button>
               )}
-              <span class="text-xs text-muted-foreground">
+              <span class="text-sm text-muted-foreground">
                 {page} / {totalPages}
               </span>
               {page < totalPages ? (
@@ -157,17 +157,17 @@ export const SearchPage: FC<{
         </>
       ) : apiError ? (
         <div class="cn-card p-12 text-center">
-          <p class="mb-2 text-sm text-muted-foreground">Service temporarily unavailable</p>
-          <p class="text-xs text-muted-foreground">
+          <p class="mb-2 text-base text-muted-foreground">Service temporarily unavailable</p>
+          <p class="text-sm text-muted-foreground">
             Please try again later.
           </p>
         </div>
       ) : query ? (
         <div class="py-12 text-center">
-          <p class="mb-2 text-sm text-muted-foreground">
+          <p class="mb-2 text-base text-muted-foreground">
             No packages found for &ldquo;{query}&rdquo;
           </p>
-          <p class="text-xs text-muted-foreground">
+          <p class="text-sm text-muted-foreground">
             Try a different search term or{" "}
             <a href="/search" class="underline hover:text-foreground">
               browse all packages
@@ -177,8 +177,8 @@ export const SearchPage: FC<{
         </div>
       ) : (
         <div class="cn-card p-12 text-center">
-          <p class="mb-2 text-sm text-muted-foreground">No packages yet</p>
-          <p class="text-xs text-muted-foreground">
+          <p class="mb-2 text-base text-muted-foreground">No packages yet</p>
+          <p class="text-sm text-muted-foreground">
             Be the first to publish:&nbsp;
             <code class="bg-muted px-2 py-0.5 font-mono text-xs">
               ctx publish

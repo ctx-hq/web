@@ -8,18 +8,18 @@ function avatarUrl(username: string, size: number = 40): string {
 
 export const OrgMembers: FC<{ members: OrgMember[] | null }> = ({ members }) => {
   if (members === null) {
-    return <p class="text-xs text-muted-foreground">Sign in to view members.</p>;
+    return <p class="text-sm text-muted-foreground">Sign in to view members.</p>;
   }
   if (members.length === 0) {
-    return <p class="text-xs text-muted-foreground">No members.</p>;
+    return <p class="text-sm text-muted-foreground">No members.</p>;
   }
 
   return (
     <ul class="space-y-2" aria-label="Organization members">
       {members.map((member) => (
-        <li class="flex items-center gap-3 text-xs">
+        <li class="flex items-center gap-3 text-sm">
           <div class="relative size-6 shrink-0">
-            <div class="absolute inset-0 flex items-center justify-center rounded-full border border-border bg-muted text-[10px] font-medium text-muted-foreground">
+            <div class="absolute inset-0 flex items-center justify-center rounded-full border border-border bg-muted text-xs font-medium text-muted-foreground">
               {member.username[0]?.toUpperCase()}
             </div>
             <img

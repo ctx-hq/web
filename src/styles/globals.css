@@ -105,7 +105,7 @@ html:not(.dark) .light-hidden { display: none; }
 
 /* --- Button --- */
 .cn-button {
-  @apply inline-flex items-center justify-center rounded-none border border-transparent bg-clip-padding text-xs font-medium transition-colors focus-visible:border-ring focus-visible:ring-1 focus-visible:ring-ring/50 focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50 [&_svg:not([class*='size-'])]:size-4;
+  @apply inline-flex items-center justify-center rounded-none border border-transparent bg-clip-padding text-sm font-medium transition-colors focus-visible:border-ring focus-visible:ring-1 focus-visible:ring-ring/50 focus-visible:outline-none disabled:pointer-events-none disabled:opacity-50 [&_svg:not([class*='size-'])]:size-4;
 }
 
 .cn-button-variant-default {
@@ -133,31 +133,31 @@ html:not(.dark) .light-hidden { display: none; }
 }
 
 .cn-button-size-xs {
-  @apply h-6 gap-1 px-2 [&_svg:not([class*='size-'])]:size-3;
+  @apply h-7 gap-1 px-2.5 [&_svg:not([class*='size-'])]:size-3;
 }
 
 .cn-button-size-sm {
-  @apply h-7 gap-1 px-2.5 [&_svg:not([class*='size-'])]:size-3.5;
+  @apply h-8 gap-1.5 px-3 [&_svg:not([class*='size-'])]:size-3.5;
 }
 
 .cn-button-size-default {
-  @apply h-8 gap-1.5 px-2.5;
-}
-
-.cn-button-size-lg {
   @apply h-9 gap-1.5 px-3;
 }
 
+.cn-button-size-lg {
+  @apply h-10 gap-2 px-4;
+}
+
 .cn-button-size-icon-xs {
-  @apply size-6 [&_svg:not([class*='size-'])]:size-3;
+  @apply size-7 [&_svg:not([class*='size-'])]:size-3;
 }
 
 .cn-button-size-icon-sm {
-  @apply size-7;
+  @apply size-8;
 }
 
 .cn-button-size-icon {
-  @apply size-8;
+  @apply size-9;
 }
 
 /* --- Badge --- */
@@ -216,7 +216,7 @@ html:not(.dark) .light-hidden { display: none; }
 }
 
 .cn-card-header {
-  @apply px-4 py-4;
+  @apply px-5 py-4;
 }
 
 .cn-card-title {
@@ -224,28 +224,28 @@ html:not(.dark) .light-hidden { display: none; }
 }
 
 .cn-card-description {
-  @apply text-xs text-muted-foreground;
+  @apply text-sm text-muted-foreground;
 }
 
 .cn-card-content {
-  @apply px-4;
+  @apply px-5;
 }
 
 .cn-card-footer {
-  @apply border-t px-4 py-3;
+  @apply border-t px-5 py-3;
 }
 
 /* --- Input --- */
 .cn-input {
-  @apply w-full rounded-none border border-input bg-background px-2.5 py-2 text-xs text-foreground outline-none transition-shadow placeholder:text-muted-foreground focus:border-ring focus:ring-1 focus:ring-ring/50 dark:bg-input/30 dark:border-input;
+  @apply w-full rounded-none border border-input bg-background px-3 py-2 text-sm text-foreground outline-none transition-shadow placeholder:text-muted-foreground focus:border-ring focus:ring-1 focus:ring-ring/50 dark:bg-input/30 dark:border-input;
 }
 
 .cn-input-size-default {
-  @apply h-8;
+  @apply h-9;
 }
 
 .cn-input-size-lg {
-  @apply h-10 text-sm;
+  @apply h-11 text-sm;
 }
 
 .cn-input-error {
@@ -254,20 +254,20 @@ html:not(.dark) .light-hidden { display: none; }
 
 /* --- Form helpers --- */
 .cn-form-hint {
-  @apply text-[11px] text-muted-foreground;
+  @apply text-xs text-muted-foreground;
 }
 
 .cn-form-error {
-  @apply text-[11px] text-destructive;
+  @apply text-xs text-destructive;
 }
 
 .cn-form-banner-error {
-  @apply flex items-center gap-2 border border-destructive/30 bg-destructive/5 px-3 py-2.5 text-xs text-destructive;
+  @apply flex items-center gap-2 border border-destructive/30 bg-destructive/5 px-3 py-2.5 text-sm text-destructive;
 }
 
 /* --- Install Tabs (underline style, lighter weight than search tabs) --- */
 .cn-install-tab {
-  @apply inline-flex cursor-pointer items-center gap-1.5 pb-2 pt-2.5 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground -mb-px border-b-2 border-transparent;
+  @apply inline-flex cursor-pointer items-center gap-1.5 pb-2 pt-2.5 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground -mb-px border-b-2 border-transparent;
 }
 
 .cn-install-tab-active,
@@ -285,7 +285,7 @@ html:not(.dark) .light-hidden { display: none; }
 }
 
 .cn-tabbed-input-tab {
-  @apply relative inline-block border border-input border-b-0 px-3 py-1.5 text-xs font-medium text-muted-foreground hover:bg-muted hover:text-foreground -mb-px;
+  @apply relative inline-block border border-input border-b-0 px-3 py-1.5 text-sm font-medium text-muted-foreground hover:bg-muted hover:text-foreground -mb-px;
 }
 
 .cn-tabbed-input-tab-active,
@@ -303,11 +303,11 @@ html:not(.dark) .light-hidden { display: none; }
 
 /* --- Prose for README rendering --- */
 .prose {
-  @apply text-xs leading-relaxed text-foreground;
+  @apply text-sm leading-relaxed text-foreground;
 }
-.prose h1 { @apply mb-4 mt-8 text-lg font-semibold font-heading; }
-.prose h2 { @apply mb-3 mt-6 text-base font-semibold font-heading; }
-.prose h3 { @apply mb-2 mt-5 text-sm font-semibold font-heading; }
+.prose h1 { @apply mb-4 mt-8 text-xl font-semibold font-heading; }
+.prose h2 { @apply mb-3 mt-6 text-lg font-semibold font-heading; }
+.prose h3 { @apply mb-2 mt-5 text-base font-semibold font-heading; }
 .prose p { @apply mb-4; }
 .prose a { @apply text-foreground underline underline-offset-2; }
 .prose code { @apply rounded-none bg-muted px-1.5 py-0.5 text-xs font-mono; }
@@ -319,5 +319,5 @@ html:not(.dark) .light-hidden { display: none; }
 .prose blockquote { @apply mb-4 border-l-2 border-border pl-4 text-muted-foreground; }
 .prose img { @apply max-w-full; }
 .prose table { @apply mb-4 w-full border-collapse; }
-.prose th { @apply border border-border bg-muted px-3 py-1.5 text-left text-xs font-medium; }
-.prose td { @apply border border-border px-3 py-1.5 text-xs; }
+.prose th { @apply border border-border bg-muted px-3 py-1.5 text-left text-sm font-medium; }
+.prose td { @apply border border-border px-3 py-1.5 text-sm; }

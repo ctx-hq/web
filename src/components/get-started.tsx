@@ -16,7 +16,7 @@ export const GetStarted: FC = () => {
 
   return (
     <section class="mb-12">
-      <div class="install-tabs cn-card mx-auto max-w-lg">
+      <div class="install-tabs cn-card mx-auto max-w-xl">
         {/* Tab bar — Agent default */}
         <nav class="flex gap-4 border-b border-input px-3" role="tablist" aria-label="Getting started method">
           <button
@@ -54,7 +54,7 @@ export const GetStarted: FC = () => {
               Copy
             </Button>
           </div>
-          <p class="mt-2 text-xs text-muted-foreground">
+          <p class="mt-2 text-sm text-muted-foreground">
             Send this to your Agent to get started with ctx
           </p>
         </div>
@@ -62,7 +62,7 @@ export const GetStarted: FC = () => {
         {/* Human panel (hidden by default) */}
         <div data-panel="human" id="panel-human" role="tabpanel" aria-labelledby="tab-human" class="hidden p-4">
           {/* OS toggle */}
-          <div class="os-toggle mb-3 flex gap-3 text-xs" data-os-container>
+          <div class="os-toggle mb-3 flex gap-3 text-sm" data-os-container>
             <button
               data-os-toggle="unix"
               class="flex items-center gap-1.5 font-medium"
@@ -108,7 +108,7 @@ export const GetStarted: FC = () => {
 
           {/* Usage examples */}
           <div class="mt-4 border-t border-border pt-3">
-            <h3 class="mb-2 text-xs font-semibold font-heading">Then use it</h3>
+            <h3 class="mb-2 text-sm font-semibold font-heading">Then use it</h3>
             <code class="block bg-muted px-3 py-2 font-mono text-xs leading-relaxed">
               {examples.map((ex, i) => (
                 <>

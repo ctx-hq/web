@@ -9,13 +9,13 @@ export const OrgPage: FC<{
   members: OrgMember[] | null;
   packages: PackageSummary[];
 }> = ({ org, members, packages }) => (
-  <Container class="py-8">
+  <Container class="py-10">
     <div class="mb-6">
-      <h1 class="mb-1 text-base font-semibold font-heading">
+      <h1 class="mb-1 text-xl font-semibold font-heading">
         {org.display_name || org.name}
       </h1>
-      <p class="text-xs text-muted-foreground">@{org.name}</p>
-      <div class="mt-2 flex gap-4 text-xs text-muted-foreground">
+      <p class="text-sm text-muted-foreground">@{org.name}</p>
+      <div class="mt-2 flex gap-4 text-sm text-muted-foreground">
         <span>{org.members} {org.members === 1 ? "member" : "members"}</span>
         <span>{org.packages} {org.packages === 1 ? "package" : "packages"}</span>
       </div>
@@ -25,13 +25,13 @@ export const OrgPage: FC<{
       {/* Main content — packages */}
       <div class="min-w-0 flex-1">
         <section aria-label="Organization packages">
-          <h2 class="mb-4 text-xs font-semibold font-heading">Packages</h2>
+          <h2 class="mb-4 text-sm font-semibold font-heading">Packages</h2>
           {packages.length === 0 ? (
             <div class="cn-card p-6 text-center">
-              <p class="text-xs text-muted-foreground">No packages published yet.</p>
+              <p class="text-sm text-muted-foreground">No packages published yet.</p>
             </div>
           ) : (
-            <div class="grid gap-3 sm:grid-cols-2">
+            <div class="grid gap-4 sm:grid-cols-2">
               {packages.map((pkg) => (
                 <PackageCard key={pkg.full_name} pkg={pkg} />
               ))}
@@ -41,9 +41,9 @@ export const OrgPage: FC<{
       </div>
 
       {/* Sidebar — members */}
-      <aside class="mt-8 w-full lg:mt-0 lg:w-72 lg:shrink-0">
-        <div class="cn-card p-4">
-          <h3 class="mb-3 text-xs font-semibold font-heading">Members</h3>
+      <aside class="mt-8 w-full lg:mt-0 lg:w-80 lg:shrink-0">
+        <div class="cn-card p-5">
+          <h3 class="mb-3 text-sm font-semibold font-heading">Members</h3>
           <OrgMembers members={members} />
         </div>
       </aside>

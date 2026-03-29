@@ -73,7 +73,7 @@ export const InstallTabs: FC<{
             Copy
           </Button>
         </div>
-        <p class="mt-2 text-xs text-muted-foreground">
+        <p class="mt-2 text-sm text-muted-foreground">
           Send this to your Agent to use {fullName}
         </p>
       </div>
@@ -88,10 +88,10 @@ export const InstallTabs: FC<{
             Copy
           </Button>
         </div>
-        <p class="mt-1.5 text-xs text-muted-foreground">{humanHint}</p>
+        <p class="mt-1.5 text-sm text-muted-foreground">{humanHint}</p>
         {altInstall && (
           <div class="mt-2 border-t border-border pt-2">
-            <p class="mb-1 text-[10px] text-muted-foreground">Or install directly:</p>
+            <p class="mb-1 text-xs text-muted-foreground">Or install directly:</p>
             <div class="flex items-center gap-2">
               <code class="flex-1 bg-muted px-2 py-1 font-mono text-xs">
                 {altInstall}

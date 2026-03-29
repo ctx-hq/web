@@ -6,7 +6,7 @@ export const PublisherLink: FC<{ slug?: string | null }> = ({ slug }) => {
   return (
     <a
       href={`/publisher/${encodeURIComponent(slug)}`}
-      class="text-[10px] text-muted-foreground hover:text-foreground transition-colors"
+      class="text-xs text-muted-foreground hover:text-foreground transition-colors"
     >
       @{slug}
     </a>

@@ -3,16 +3,16 @@ import { Container } from "../components/ui/container";
 import { SITE_NAME } from "../lib/constants";
 
 export const PrivacyPage: FC = () => (
-  <Container size="narrow" class="py-8">
-    <h1 class="mb-6 text-base font-semibold font-heading">Privacy Policy</h1>
+  <Container size="narrow" class="py-10">
+    <h1 class="mb-6 text-xl font-semibold font-heading">Privacy Policy</h1>
 
-    <div class="prose prose-sm max-w-none space-y-6 text-xs text-muted-foreground">
+    <div class="prose max-w-none space-y-6 text-muted-foreground">
       <p class="text-foreground">
         Last updated: March 2026
       </p>
 
       <section>
-        <h2 class="mb-2 text-sm font-semibold font-heading text-foreground">What we collect</h2>
+        <h2 class="mb-2 text-base font-semibold font-heading text-foreground">What we collect</h2>
         <p>
           When you sign in with GitHub, we receive and store your <strong>GitHub username</strong>,{" "}
           <strong>avatar URL</strong>, and <strong>email address</strong>. This information is used
@@ -21,7 +21,7 @@ export const PrivacyPage: FC = () => (
       </section>
 
       <section>
-        <h2 class="mb-2 text-sm font-semibold font-heading text-foreground">What we do not collect</h2>
+        <h2 class="mb-2 text-base font-semibold font-heading text-foreground">What we do not collect</h2>
         <ul class="list-disc space-y-1 pl-5">
           <li>No analytics or tracking scripts</li>
           <li>No third-party advertising or marketing pixels</li>
@@ -31,7 +31,7 @@ export const PrivacyPage: FC = () => (
       </section>
 
       <section>
-        <h2 class="mb-2 text-sm font-semibold font-heading text-foreground">Cookies</h2>
+        <h2 class="mb-2 text-base font-semibold font-heading text-foreground">Cookies</h2>
         <p>We use three cookies, all strictly necessary for the site to function:</p>
         <ul class="list-disc space-y-1 pl-5">
           <li>
@@ -54,7 +54,7 @@ export const PrivacyPage: FC = () => (
       </section>
 
       <section>
-        <h2 class="mb-2 text-sm font-semibold font-heading text-foreground">Third-party services</h2>
+        <h2 class="mb-2 text-base font-semibold font-heading text-foreground">Third-party services</h2>
         <p>
           We use <strong>GitHub OAuth</strong> for authentication. When you sign in, your browser
           communicates directly with GitHub per their{" "}
@@ -73,7 +73,7 @@ export const PrivacyPage: FC = () => (
       </section>
 
       <section>
-        <h2 class="mb-2 text-sm font-semibold font-heading text-foreground">Data retention &amp; deletion</h2>
+        <h2 class="mb-2 text-base font-semibold font-heading text-foreground">Data retention &amp; deletion</h2>
         <p>
           Your account data is retained as long as your account exists. To request deletion of your
           data, contact us at{" "}
@@ -85,7 +85,7 @@ export const PrivacyPage: FC = () => (
       </section>
 
       <section>
-        <h2 class="mb-2 text-sm font-semibold font-heading text-foreground">Open source</h2>
+        <h2 class="mb-2 text-base font-semibold font-heading text-foreground">Open source</h2>
         <p>
           This website is open source. You can audit exactly what data we collect by reviewing the{" "}
           <a

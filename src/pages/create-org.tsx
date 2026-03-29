@@ -28,8 +28,8 @@ export const CreateOrgPage: FC<{
   const nameError = fieldErrors.name;
 
   return (
-    <Container size="narrow" class="py-8">
-      <h1 class="mb-6 text-base font-semibold font-heading">Create Organization</h1>
+    <Container size="narrow" class="py-10">
+      <h1 class="mb-6 text-xl font-semibold font-heading">Create Organization</h1>
 
       {error && (
         <div class="cn-form-banner-error mb-6" role="alert">
@@ -41,7 +41,7 @@ export const CreateOrgPage: FC<{
       <form method="post" action="/orgs/new" data-create-org-form data-name-pattern={ORG_NAME_REGEX.source} data-name-min={String(ORG_NAME_MIN)} data-name-max={String(ORG_NAME_MAX)}>
         {/* Name field */}
         <div class="mb-5">
-          <label for="org-name" class="mb-1.5 block text-xs font-medium">
+          <label for="org-name" class="mb-1.5 block text-sm font-medium">
             Name <span class="text-destructive" aria-hidden="true">*</span>
           </label>
           <Input
@@ -74,7 +74,7 @@ export const CreateOrgPage: FC<{
 
         {/* Display Name field */}
         <div class="mb-6">
-          <label for="org-display-name" class="mb-1.5 block text-xs font-medium">
+          <label for="org-display-name" class="mb-1.5 block text-sm font-medium">
             Display Name
           </label>
           <Input

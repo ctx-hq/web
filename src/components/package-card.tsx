@@ -12,9 +12,9 @@ export const PackageCard: FC<{ pkg: PackageSummary }> = ({ pkg }) => (
     href={`/${pkg.full_name}`}
     class="cn-card block transition-all hover:ring-foreground/25"
   >
-    <div class="p-4">
+    <div class="p-5">
       <div class="mb-1 flex items-center justify-between gap-1">
-        <span class="min-w-0 truncate text-xs font-medium font-heading">{pkg.full_name}</span>
+        <span class="min-w-0 truncate text-sm font-medium font-heading">{pkg.full_name}</span>
         <div class="flex shrink-0 items-center gap-1">
           <VisibilityBadge visibility={pkg.visibility} />
           <Badge type={pkg.type} />
@@ -24,12 +24,12 @@ export const PackageCard: FC<{ pkg: PackageSummary }> = ({ pkg }) => (
         <div class="mb-1 flex items-center gap-2">
           <TrustBadge tier={pkg.trust_tier} />
           {pkg.publisher_slug && (
-            <span class="text-[10px] text-muted-foreground">@{pkg.publisher_slug}</span>
+            <span class="text-xs text-muted-foreground">@{pkg.publisher_slug}</span>
           )}
         </div>
       )}
-      <p class="mb-2 line-clamp-2 text-xs text-muted-foreground">{pkg.description}</p>
-      <div class="flex items-center gap-3 text-[10px] text-muted-foreground">
+      <p class="mb-2 line-clamp-2 text-sm text-muted-foreground">{pkg.description}</p>
+      <div class="flex items-center gap-3 text-xs text-muted-foreground">
         <span>v{pkg.version}</span>
         <span class="inline-flex items-center gap-0.5">
           <Icon name="download" class="size-3" />

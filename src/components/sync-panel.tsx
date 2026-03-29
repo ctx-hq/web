@@ -6,7 +6,7 @@ export const SyncPanel: FC<{ meta: SyncProfileMeta | null }> = ({ meta }) => {
   if (!meta) {
     return (
       <div class="cn-card p-6 text-center">
-        <p class="text-xs text-muted-foreground">No sync profile found.</p>
+        <p class="text-sm text-muted-foreground">No sync profile found.</p>
         <p class="mt-2">
           <code class="bg-muted px-2 py-1 font-mono text-xs">ctx sync push</code>
         </p>
@@ -16,8 +16,8 @@ export const SyncPanel: FC<{ meta: SyncProfileMeta | null }> = ({ meta }) => {
 
   return (
     <div class="cn-card p-4">
-      <h3 class="mb-3 text-xs font-semibold font-heading">Sync Status</h3>
-      <dl class="space-y-2 text-xs">
+      <h3 class="mb-3 text-sm font-semibold font-heading">Sync Status</h3>
+      <dl class="space-y-2 text-sm">
         <div class="flex items-center justify-between">
           <dt class="text-muted-foreground">Packages</dt>
           <dd class="font-medium">{meta.package_count}</dd>

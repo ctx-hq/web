@@ -4,13 +4,13 @@ import { Button } from "../components/ui/button";
 import { Icon } from "../components/ui/icon";
 
 export const DeviceLoginPage: FC<{ code?: string }> = ({ code }) => (
-  <Container size="narrow" class="py-20 text-center">
+  <Container size="narrow" class="py-24 text-center">
     <div class="mx-auto max-w-xs">
       <div class="mb-5">
         <Icon name="terminal-window" class="mx-auto size-10 text-muted-foreground" />
       </div>
-      <h1 class="mb-2 text-lg font-semibold font-heading">Authorize Device</h1>
-      <p class="mb-6 text-xs text-muted-foreground">
+      <h1 class="mb-2 text-xl font-semibold font-heading">Authorize Device</h1>
+      <p class="mb-6 text-sm text-muted-foreground">
         Enter the code shown in your terminal to grant <code class="bg-muted px-1 py-0.5 font-mono">ctx</code> CLI access to your account.
       </p>
 
@@ -42,7 +42,7 @@ export const DeviceLoginPage: FC<{ code?: string }> = ({ code }) => (
         </Button>
 
         {/* Status messages (managed by client JS) */}
-        <div data-device-status="" class="text-xs" aria-live="polite">
+        <div data-device-status="" class="text-sm" aria-live="polite">
           <p data-device-msg="loading" class="hidden text-muted-foreground">
             Authorizing...
           </p>
@@ -55,7 +55,7 @@ export const DeviceLoginPage: FC<{ code?: string }> = ({ code }) => (
         </div>
       </form>
 
-      <p class="mt-6 text-xs text-muted-foreground">
+      <p class="mt-6 text-sm text-muted-foreground">
         This grants <code class="bg-muted px-1 py-0.5 font-mono">ctx</code> CLI read and write access to your account.
       </p>
     </div>

@@ -6,14 +6,14 @@ export const AgentChart: FC<{
   breakdown: { agent: string; count: number; percentage: number }[];
 }> = ({ breakdown }) => {
   if (!breakdown || breakdown.length === 0) {
-    return <p class="text-xs text-muted-foreground">No agent data available.</p>;
+    return <p class="text-sm text-muted-foreground">No agent data available.</p>;
   }
 
   return (
     <div class="space-y-2" aria-label="Agent breakdown chart">
       {breakdown.map((entry) => (
         <div class="space-y-0.5">
-          <div class="flex items-center justify-between text-xs">
+          <div class="flex items-center justify-between text-sm">
             <span class="font-medium">
               {AGENT_DISPLAY_NAMES[entry.agent] ?? entry.agent}
             </span>

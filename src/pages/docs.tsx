@@ -5,10 +5,10 @@ export const VALID_DOC_SECTIONS = ["getting-started", "spec", "api", "publish"] 
 export type DocSection = (typeof VALID_DOC_SECTIONS)[number];
 
 export const DocsPage: FC<{ section?: string }> = ({ section }) => (
-  <Container size="narrow" class="py-8">
-    <h1 class="mb-6 text-base font-semibold font-heading">Documentation</h1>
+  <Container size="narrow" class="py-10">
+    <h1 class="mb-6 text-xl font-semibold font-heading">Documentation</h1>
 
-    <nav class="mb-8 flex gap-1 border-b border-border">
+    <nav class="mb-8 flex gap-1 overflow-x-auto border-b border-border whitespace-nowrap">
       {([
         { href: "/docs", label: "Getting Started", active: !section },
         { href: "/docs/spec", label: "ctx.yaml Spec", active: section === "spec" },
@@ -17,7 +17,7 @@ export const DocsPage: FC<{ section?: string }> = ({ section }) => (
       ] as const).map((tab) => (
         <a
           href={tab.href}
-          class={`px-3 py-2 text-xs font-medium transition-colors ${
+          class={`px-3 py-2 text-sm font-medium transition-colors ${
             tab.active
               ? "border-b-2 border-foreground text-foreground"
               : "border-b-2 border-transparent text-muted-foreground hover:text-foreground"

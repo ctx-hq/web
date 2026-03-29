@@ -11,17 +11,17 @@ import { GetStarted } from "../components/get-started";
 export const HomePage: FC<{ trending: PackageSummary[]; apiError?: boolean }> = ({ trending, apiError }) => (
   <Container>
     {/* Hero */}
-    <section class="py-20 text-center">
+    <section class="py-24 text-center">
       <div class="mb-5">
         <Icon name="package" class="mx-auto size-16 text-muted-foreground" />
       </div>
-      <h1 class="mb-3 text-2xl font-bold font-heading tracking-tight sm:text-3xl">
+      <h1 class="mb-3 text-3xl font-bold font-heading tracking-tight sm:text-4xl">
         {SITE_TAGLINE}
       </h1>
-      <p class="mx-auto mb-10 max-w-lg text-sm text-muted-foreground">
+      <p class="mx-auto mb-12 max-w-lg text-base text-muted-foreground">
         {SITE_DESCRIPTION}
       </p>
-      <div class="mx-auto max-w-lg">
+      <div class="mx-auto max-w-xl">
         {/* Fused tab-input control */}
         <div class="cn-tabbed-input">
           <nav
@@ -58,25 +58,25 @@ export const HomePage: FC<{ trending: PackageSummary[]; apiError?: boolean }> = 
     <GetStarted />
 
     {/* Trending or empty state */}
-    <section class="mb-16">
-      <h2 class="mb-4 text-xs font-semibold font-heading">Trending</h2>
+    <section class="mb-20">
+      <h2 class="mb-4 text-sm font-semibold font-heading">Trending</h2>
       {trending.length > 0 ? (
-        <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {trending.map((pkg) => (
             <PackageCard key={pkg.full_name} pkg={pkg} />
           ))}
         </div>
       ) : apiError ? (
         <div class="cn-card p-12 text-center">
-          <p class="mb-2 text-sm text-muted-foreground">Service temporarily unavailable</p>
-          <p class="text-xs text-muted-foreground">
+          <p class="mb-2 text-base text-muted-foreground">Service temporarily unavailable</p>
+          <p class="text-sm text-muted-foreground">
             Please try again later.
           </p>
         </div>
       ) : (
         <div class="cn-card p-12 text-center">
-          <p class="mb-2 text-sm text-muted-foreground">No packages yet</p>
-          <p class="text-xs text-muted-foreground">
+          <p class="mb-2 text-base text-muted-foreground">No packages yet</p>
+          <p class="text-sm text-muted-foreground">
             Be the first to publish:&nbsp;
             <code class="bg-muted px-2 py-0.5 font-mono text-xs">ctx publish</code>
           </p>

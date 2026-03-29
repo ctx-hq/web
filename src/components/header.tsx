@@ -18,8 +18,8 @@ export const Header: FC<{ currentPath?: string; user?: SessionUser | null }> = (
   user,
 }) => (
   <header class="border-b border-border">
-    <div class="mx-auto flex h-12 max-w-5xl items-center justify-between px-4 sm:px-6">
-      <a href="/" class="text-sm font-semibold font-heading tracking-tight">
+    <div class="mx-auto flex h-14 max-w-6xl items-center justify-between px-4 sm:px-6 lg:px-8">
+      <a href="/" class="text-base font-semibold font-heading tracking-tight">
         getctx<span class="text-muted-foreground">.org</span>
       </a>
 
@@ -32,7 +32,7 @@ export const Header: FC<{ currentPath?: string; user?: SessionUser | null }> = (
           return (
             <a
               href={link.href}
-              class={`text-xs transition-colors ${
+              class={`text-sm transition-colors ${
                 isActive
                   ? "text-foreground font-medium"
                   : "text-muted-foreground hover:text-foreground"
@@ -60,7 +60,7 @@ export const Header: FC<{ currentPath?: string; user?: SessionUser | null }> = (
           <div class="flex items-center gap-3">
             <a
               href="/dashboard"
-              class={`flex items-center gap-2 text-xs transition-colors ${
+              class={`flex items-center gap-2 text-sm transition-colors ${
                 currentPath === "/dashboard"
                   ? "text-foreground font-medium"
                   : "text-muted-foreground hover:text-foreground"
@@ -77,7 +77,7 @@ export const Header: FC<{ currentPath?: string; user?: SessionUser | null }> = (
             </a>
             <a
               href="/logout"
-              class="text-xs text-muted-foreground hover:text-foreground transition-colors"
+              class="text-sm text-muted-foreground hover:text-foreground transition-colors"
               title="Sign out"
             >
               <Icon name="sign-out" class="size-4" />
@@ -113,7 +113,7 @@ export const Header: FC<{ currentPath?: string; user?: SessionUser | null }> = (
           return (
             <a
               href={link.href}
-              class={`text-xs ${
+              class={`text-sm ${
                 isActive
                   ? "text-foreground font-medium"
                   : "text-muted-foreground hover:text-foreground"
@@ -126,7 +126,7 @@ export const Header: FC<{ currentPath?: string; user?: SessionUser | null }> = (
         })}
         {user ? (
           <>
-            <a href="/dashboard" class="flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground">
+            <a href="/dashboard" class="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
               <img
                 src={user.avatar_url || avatarUrl(user.username, 16)}
                 alt=""
@@ -136,18 +136,18 @@ export const Header: FC<{ currentPath?: string; user?: SessionUser | null }> = (
               />
               {user.username}
             </a>
-            <a href="/logout" class="text-xs text-muted-foreground hover:text-foreground">
+            <a href="/logout" class="text-sm text-muted-foreground hover:text-foreground">
               Sign out
             </a>
           </>
         ) : (
-          <a href="/login" class="text-xs text-muted-foreground hover:text-foreground">
+          <a href="/login" class="text-sm text-muted-foreground hover:text-foreground">
             Sign in
           </a>
         )}
         <button
           id="theme-toggle-mobile"
-          class="flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground"
+          class="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
         >
           <span class="dark-hidden">
             <Icon name="moon" class="size-3.5" />

@@ -2,6 +2,7 @@ import { Hono } from "hono";
 import { getCookie, setCookie, deleteCookie } from "hono/cookie";
 import { Marked } from "marked";
 import { Layout } from "./layout";
+import { Container } from "./components/ui/container";
 import { ApiClient, ApiError } from "./lib/api-client";
 import { defaultMeta, searchMeta, packageMeta, docsMeta, escapeHtml } from "./lib/seo";
 import { SITE_NAME, SITE_URL } from "./lib/constants";
@@ -294,10 +295,10 @@ app.get("/:fullName{@[^/]+/[^/]+}/stats", async (c) => {
     if (err instanceof ApiError && err.status === 404) {
       return c.html(
         <Layout meta={{ ...defaultMeta(), title: `Not Found — ${SITE_NAME}` }} user={c.get("user")}>
-          <div class="mx-auto max-w-5xl px-4 py-16 text-center">
-            <h1 class="mb-2 text-base font-semibold font-heading">Package not found</h1>
-            <p class="text-xs text-muted-foreground">{fullName} does not exist.</p>
-          </div>
+          <Container class="py-16 text-center">
+            <h1 class="mb-2 text-xl font-semibold font-heading">Package not found</h1>
+            <p class="text-sm text-muted-foreground">{fullName} does not exist.</p>
+          </Container>
         </Layout>,
         404
       );
@@ -338,10 +339,10 @@ app.get("/:fullName{@[^/]+/[^/]+}", async (c) => {
     if (err instanceof ApiError && err.status === 404) {
       return c.html(
         <Layout meta={{ ...defaultMeta(), title: `Not Found — ${SITE_NAME}` }} user={c.get("user")}>
-          <div class="mx-auto max-w-5xl px-4 py-16 text-center">
-            <h1 class="mb-2 text-base font-semibold font-heading">Package not found</h1>
-            <p class="text-xs text-muted-foreground">{fullName} does not exist.</p>
-          </div>
+          <Container class="py-16 text-center">
+            <h1 class="mb-2 text-xl font-semibold font-heading">Package not found</h1>
+            <p class="text-sm text-muted-foreground">{fullName} does not exist.</p>
+          </Container>
         </Layout>,
         404
       );
@@ -668,10 +669,10 @@ app.get("/publisher/:slug", async (c) => {
     if (err instanceof ApiError && err.status === 404) {
       return c.html(
         <Layout meta={{ ...defaultMeta(), title: `Not Found — ${SITE_NAME}` }} user={c.get("user")}>
-          <div class="mx-auto max-w-5xl px-4 py-16 text-center">
-            <h1 class="mb-2 text-base font-semibold font-heading">Publisher not found</h1>
-            <p class="text-xs text-muted-foreground">@{slug} does not exist.</p>
-          </div>
+          <Container class="py-16 text-center">
+            <h1 class="mb-2 text-xl font-semibold font-heading">Publisher not found</h1>
+            <p class="text-sm text-muted-foreground">@{slug} does not exist.</p>
+          </Container>
         </Layout>,
         404
       );
@@ -712,10 +713,10 @@ app.get("/org/:name", async (c) => {
     if (err instanceof ApiError && err.status === 404) {
       return c.html(
         <Layout meta={{ ...defaultMeta(), title: `Not Found — ${SITE_NAME}` }} user={c.get("user")}>
-          <div class="mx-auto max-w-5xl px-4 py-16 text-center">
-            <h1 class="mb-2 text-base font-semibold font-heading">Organization not found</h1>
-            <p class="text-xs text-muted-foreground">{name} does not exist.</p>
-          </div>
+          <Container class="py-16 text-center">
+            <h1 class="mb-2 text-xl font-semibold font-heading">Organization not found</h1>
+            <p class="text-sm text-muted-foreground">{name} does not exist.</p>
+          </Container>
         </Layout>,
         404
       );
@@ -884,10 +885,10 @@ app.onError((err, c) => {
   console.error("Unhandled error:", err instanceof Error ? err.message : "unknown");
   return c.html(
     <Layout meta={{ ...defaultMeta(), title: `Error — ${SITE_NAME}` }} user={c.get("user") ?? null}>
-      <div class="mx-auto max-w-5xl px-4 py-16 text-center">
-        <h1 class="mb-2 text-base font-semibold font-heading">Something went wrong</h1>
-        <p class="text-xs text-muted-foreground">Please try again later.</p>
-      </div>
+      <Container class="py-16 text-center">
+        <h1 class="mb-2 text-xl font-semibold font-heading">Something went wrong</h1>
+        <p class="text-sm text-muted-foreground">Please try again later.</p>
+      </Container>
     </Layout>,
     500
   );

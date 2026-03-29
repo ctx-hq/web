@@ -15,8 +15,8 @@ import { TRUST_TIERS } from "../lib/constants";
 
 /** Sidebar card wrapper with title. */
 const SidebarSection: FC<PropsWithChildren<{ title: string }>> = ({ title, children }) => (
-  <div class="cn-card p-4">
-    <h3 class="mb-3 text-xs font-semibold font-heading">{title}</h3>
+  <div class="cn-card p-5">
+    <h3 class="mb-3 text-sm font-semibold font-heading">{title}</h3>
     {children}
   </div>
 );
@@ -42,11 +42,11 @@ export const PackageDetailPage: FC<{
   const sourceRef = manifest?.source?.ref;
 
   return (
-    <Container class="py-8">
+    <Container class="py-10">
       {/* Back navigation */}
       <a
         href="/search"
-        class="mb-4 inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
+        class="mb-4 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
       >
         <Icon name="arrow-right" class="size-3 rotate-180" />
         Back to search
@@ -55,7 +55,7 @@ export const PackageDetailPage: FC<{
       {/* Package header */}
       <div class="mb-6">
         <div class="mb-2 flex flex-wrap items-center gap-2">
-          <h1 class="break-all text-base font-semibold font-heading">
+          <h1 class="break-all text-xl font-semibold font-heading">
             {pkg.full_name}
           </h1>
           <Badge type={pkg.type} />
@@ -71,11 +71,11 @@ export const PackageDetailPage: FC<{
           </div>
         )}
         {pkg.description && (
-          <p class="text-sm text-muted-foreground">{pkg.description}</p>
+          <p class="text-base text-muted-foreground">{pkg.description}</p>
         )}
         {/* Adapter source banner */}
         {isAdapter && sourceGithub && (
-          <div class="mt-2 flex items-center gap-1.5 rounded border border-border bg-muted/50 px-3 py-1.5 text-xs text-muted-foreground">
+          <div class="mt-2 flex items-center gap-1.5 rounded border border-border bg-muted/50 px-3 py-1.5 text-sm text-muted-foreground">
             <Icon name="github-logo" class="size-3.5" />
             <span>
               Adapts{" "}
@@ -87,7 +87,7 @@ export const PackageDetailPage: FC<{
                 {sourceGithub}
               </a>
               {sourceRef && (
-                <span class="ml-1 font-mono text-[10px]">@{sourceRef}</span>
+                <span class="ml-1 font-mono text-xs">@{sourceRef}</span>
               )}
             </span>
           </div>
@@ -95,7 +95,7 @@ export const PackageDetailPage: FC<{
       </div>
 
       {/* Mobile compact metadata — only visible below lg */}
-      <div class="mb-4 flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] text-muted-foreground lg:hidden">
+      <div class="mb-4 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground lg:hidden">
         {pkg.versions.length > 0 && <span>v{pkg.versions[0].version}</span>}
         {pkg.license && <span>{pkg.license}</span>}
         <span class="inline-flex items-center gap-0.5">
@@ -130,16 +130,16 @@ export const PackageDetailPage: FC<{
               dangerouslySetInnerHTML={{ __html: readmeHtml }}
             />
           ) : (
-            <p class="text-xs text-muted-foreground">No README available.</p>
+            <p class="text-sm text-muted-foreground">No README available.</p>
           )}
         </div>
 
         {/* Sidebar — sticky on desktop, stacked on mobile */}
-        <aside class="mt-8 w-full space-y-4 lg:mt-0 lg:w-72 lg:shrink-0 lg:sticky lg:top-6 lg:self-start">
+        <aside class="mt-8 w-full space-y-4 lg:mt-0 lg:w-80 lg:shrink-0 lg:sticky lg:top-6 lg:self-start">
           {/* Metadata card */}
           <div class="hidden lg:block">
             <SidebarSection title="Details">
-              <dl class="space-y-2 text-xs">
+              <dl class="space-y-2 text-sm">
                 {rows.map((row) => (
                   <div class="flex items-center justify-between">
                     <dt class="text-muted-foreground">{row.label}</dt>
@@ -205,7 +205,7 @@ export const PackageDetailPage: FC<{
             manifest.install
           ) && (
             <SidebarSection title="Capabilities">
-              <dl class="space-y-2 text-xs">
+              <dl class="space-y-2 text-sm">
                 {manifest.cli?.binary && (
                   <MetaRow label="Binary" value={manifest.cli.binary} />
                 )}
