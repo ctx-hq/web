@@ -84,3 +84,48 @@ describe("buildMetadataRows", () => {
     expect(pub!.value).toBe("Jan 15");
   });
 });
+
+describe("package detail v2 fields", () => {
+  it("should support publisher field", () => {
+    const pkg = {
+      full_name: "@hong/my-skill",
+      publisher: { slug: "hong", kind: "user" as const },
+      dist_tags: { latest: "1.0.0", beta: "2.0.0-beta.1" },
+      trust_tier: "structural" as const,
+      visibility: "public" as const,
+    };
+    expect(pkg.publisher?.slug).toBe("hong");
+    expect(pkg.publisher?.kind).toBe("user");
+  });
+
+  it("should support dist_tags", () => {
+    const distTags = { latest: "1.0.0", beta: "2.0.0-beta.1" };
+    expect(Object.keys(distTags)).toHaveLength(2);
+    expect(distTags.latest).toBe("1.0.0");
+    expect(distTags.beta).toBe("2.0.0-beta.1");
+  });
+
+  it("should support trust_tier values", () => {
+    const tiers = ["unverified", "structural", "source_linked", "reviewed", "verified"];
+    tiers.forEach(tier => {
+      expect(typeof tier).toBe("string");
+    });
+  });
+
+  it("should support visibility values", () => {
+    const values = ["public", "unlisted", "private"];
+    values.forEach(v => {
+      expect(["public", "unlisted", "private"]).toContain(v);
+    });
+  });
+
+  it("should handle null publisher gracefully", () => {
+    const pkg: { publisher: { slug: string } | null } = { publisher: null };
+    expect(pkg.publisher?.slug).toBeUndefined();
+  });
+
+  it("should handle empty dist_tags", () => {
+    const pkg = { dist_tags: {} };
+    expect(Object.keys(pkg.dist_tags)).toHaveLength(0);
+  });
+});

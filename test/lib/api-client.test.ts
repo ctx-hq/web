@@ -97,4 +97,169 @@ describe("ApiClient", () => {
       expect(url).toContain("limit=12");
     });
   });
+
+  describe("getPackageStats", () => {
+    it("constructs correct URL", async () => {
+      mockFetch.mockResolvedValue(jsonResponse({
+        downloads: { total: 100, weekly: 20, daily: [] },
+        agents: { total_installs: 50, breakdown: [] },
+      }));
+      await client.getPackageStats("scope/name");
+
+      const url = mockFetch.mock.calls[0][0] as string;
+      expect(url).toContain("/v1/packages/scope%2Fname/stats");
+    });
+
+    it("returns parsed stats", async () => {
+      const statsData = {
+        downloads: { total: 500, weekly: 80, daily: [{ date: "2025-03-20", count: 12 }] },
+        agents: { total_installs: 200, breakdown: [{ agent: "claude", count: 100, percentage: 50 }] },
+      };
+      mockFetch.mockResolvedValue(jsonResponse(statsData));
+      const result = await client.getPackageStats("test/pkg");
+      expect(result.downloads.total).toBe(500);
+      expect(result.agents.breakdown[0].agent).toBe("claude");
+    });
+  });
+
+  describe("getPublisher", () => {
+    it("constructs correct URL", async () => {
+      mockFetch.mockResolvedValue(jsonResponse({ slug: "hong", kind: "user", packages: 5, created_at: "2025-01-01T00:00:00Z" }));
+      await client.getPublisher("hong");
+
+      const url = mockFetch.mock.calls[0][0] as string;
+      expect(url).toContain("/v1/publishers/hong");
+    });
+
+    it("encodes special characters in slug", async () => {
+      mockFetch.mockResolvedValue(jsonResponse({ slug: "my org", kind: "org", packages: 0, created_at: "" }));
+      await client.getPublisher("my org");
+
+      const url = mockFetch.mock.calls[0][0] as string;
+      expect(url).toContain("/v1/publishers/my%20org");
+    });
+  });
+
+  describe("getTrending", () => {
+    it("uses default limit", async () => {
+      mockFetch.mockResolvedValue(jsonResponse({ packages: [], period: "7d" }));
+      await client.getTrending();
+
+      const url = mockFetch.mock.calls[0][0] as string;
+      expect(url).toContain("/v1/stats/trending?limit=20");
+    });
+
+    it("accepts custom limit", async () => {
+      mockFetch.mockResolvedValue(jsonResponse({ packages: [], period: "7d" }));
+      await client.getTrending(10);
+
+      const url = mockFetch.mock.calls[0][0] as string;
+      expect(url).toContain("limit=10");
+    });
+  });
+
+  describe("getAgentRankings", () => {
+    it("constructs correct URL", async () => {
+      mockFetch.mockResolvedValue(jsonResponse({ agents: [] }));
+      await client.getAgentRankings();
+
+      const url = mockFetch.mock.calls[0][0] as string;
+      expect(url).toContain("/v1/stats/agents");
+    });
+
+    it("returns parsed rankings", async () => {
+      mockFetch.mockResolvedValue(jsonResponse({
+        agents: [{ name: "claude", total_installs: 5000, packages: 120 }],
+      }));
+      const result = await client.getAgentRankings();
+      expect(result.agents).toHaveLength(1);
+      expect(result.agents[0].name).toBe("claude");
+    });
+  });
+
+  describe("getAgentDetail", () => {
+    it("encodes agent name in URL", async () => {
+      mockFetch.mockResolvedValue(jsonResponse({ agent: "claude", total_installs: 100, top_packages: [] }));
+      await client.getAgentDetail("claude");
+
+      const url = mockFetch.mock.calls[0][0] as string;
+      expect(url).toContain("/v1/stats/agents/claude");
+    });
+  });
+
+  describe("getOrg", () => {
+    it("constructs correct URL", async () => {
+      mockFetch.mockResolvedValue(jsonResponse({ id: "1", name: "acme", members: 5, packages: 10 }));
+      await client.getOrg("acme");
+
+      const url = mockFetch.mock.calls[0][0] as string;
+      expect(url).toContain("/v1/orgs/acme");
+    });
+  });
+
+  describe("getOrgPackages", () => {
+    it("constructs correct URL", async () => {
+      mockFetch.mockResolvedValue(jsonResponse({ packages: [] }));
+      await client.getOrgPackages("acme");
+
+      const url = mockFetch.mock.calls[0][0] as string;
+      expect(url).toContain("/v1/orgs/acme/packages");
+    });
+  });
+
+  describe("getSyncProfile", () => {
+    it("sends Authorization header", async () => {
+      mockFetch.mockResolvedValue(jsonResponse({
+        profile: { packages: [] },
+        meta: { package_count: 0, syncable_count: 0, unsyncable_count: 0, last_push_at: null, last_pull_at: null, last_push_device: "", last_pull_device: "" },
+      }));
+      await client.getSyncProfile("test-token");
+
+      const opts = mockFetch.mock.calls[0][1] as RequestInit;
+      expect((opts.headers as Record<string, string>).Authorization).toBe("Bearer test-token");
+    });
+
+    it("constructs correct URL", async () => {
+      mockFetch.mockResolvedValue(jsonResponse({
+        profile: { packages: [] },
+        meta: { package_count: 0, syncable_count: 0, unsyncable_count: 0, last_push_at: null, last_pull_at: null, last_push_device: "", last_pull_device: "" },
+      }));
+      await client.getSyncProfile("token");
+
+      const url = mockFetch.mock.calls[0][0] as string;
+      expect(url).toContain("/v1/me/sync-profile");
+    });
+  });
+
+  describe("getPublisherPackages", () => {
+    it("constructs correct URL with params", async () => {
+      mockFetch.mockResolvedValue(jsonResponse({ publisher: { slug: "hong", kind: "user" }, packages: [] }));
+      await client.getPublisherPackages("hong", { type: "skill", limit: 5 });
+
+      const url = mockFetch.mock.calls[0][0] as string;
+      expect(url).toContain("/v1/publishers/hong/packages");
+      expect(url).toContain("type=skill");
+      expect(url).toContain("limit=5");
+    });
+  });
+
+  describe("getPackageTags", () => {
+    it("constructs correct URL", async () => {
+      mockFetch.mockResolvedValue(jsonResponse({ tags: { latest: "1.0.0" } }));
+      await client.getPackageTags("scope/name");
+
+      const url = mockFetch.mock.calls[0][0] as string;
+      expect(url).toContain("/v1/packages/scope%2Fname/tags");
+    });
+  });
+
+  describe("getMyOrgs", () => {
+    it("sends Authorization header", async () => {
+      mockFetch.mockResolvedValue(jsonResponse({ orgs: [] }));
+      await client.getMyOrgs("my-token");
+
+      const opts = mockFetch.mock.calls[0][1] as RequestInit;
+      expect((opts.headers as Record<string, string>).Authorization).toBe("Bearer my-token");
+    });
+  });
 });

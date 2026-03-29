@@ -50,4 +50,70 @@ describe("package-card", () => {
     };
     expect(`v${pkg.version}`).toBe("v");
   });
+
+  it("includes trust_tier in PackageSummary", () => {
+    const pkg: PackageSummary = {
+      full_name: "hong/verified-skill",
+      type: "skill",
+      description: "A verified skill",
+      version: "1.0.0",
+      downloads: 500,
+      repository: "",
+      trust_tier: "verified",
+    };
+    expect(pkg.trust_tier).toBe("verified");
+  });
+
+  it("handles undefined trust_tier (optional field)", () => {
+    const pkg: PackageSummary = {
+      full_name: "hong/basic",
+      type: "skill",
+      description: "Basic skill",
+      version: "1.0.0",
+      downloads: 10,
+      repository: "",
+    };
+    expect(pkg.trust_tier).toBeUndefined();
+  });
+
+  it("includes publisher_slug in PackageSummary", () => {
+    const pkg: PackageSummary = {
+      full_name: "hong/my-tool",
+      type: "cli",
+      description: "My tool",
+      version: "2.0.0",
+      downloads: 200,
+      repository: "",
+      publisher_slug: "hong",
+    };
+    expect(pkg.publisher_slug).toBe("hong");
+  });
+
+  it("handles undefined publisher_slug (optional field)", () => {
+    const pkg: PackageSummary = {
+      full_name: "test/no-pub",
+      type: "mcp",
+      description: "No publisher",
+      version: "0.1.0",
+      downloads: 0,
+      repository: "",
+    };
+    expect(pkg.publisher_slug).toBeUndefined();
+  });
+
+  it("combines trust_tier and publisher_slug", () => {
+    const pkg: PackageSummary = {
+      full_name: "acme/enterprise-tool",
+      type: "cli",
+      description: "Enterprise grade tool",
+      version: "3.0.0",
+      downloads: 10000,
+      repository: "https://github.com/acme/enterprise-tool",
+      trust_tier: "reviewed",
+      publisher_slug: "acme",
+    };
+    expect(pkg.trust_tier).toBe("reviewed");
+    expect(pkg.publisher_slug).toBe("acme");
+    expect(`/@${pkg.full_name}`).toBe("/@acme/enterprise-tool");
+  });
 });

@@ -5,7 +5,7 @@ import { Layout } from "./layout";
 import { ApiClient, ApiError } from "./lib/api-client";
 import { defaultMeta, searchMeta, packageMeta, docsMeta, escapeHtml } from "./lib/seo";
 import { SITE_NAME, SITE_URL } from "./lib/constants";
-import type { SessionUser, PackageSummary, PackageType, SortOption, SearchResult, ManifestInfo } from "./lib/types";
+import type { SessionUser, PackageSummary, PackageType, SortOption, SearchResult, ManifestInfo, OrgInfo, OrgMember, SyncProfileMeta, AgentRanking } from "./lib/types";
 import { parseManifest } from "./lib/types";
 import { validateSort } from "./lib/search-url";
 import { HomePage } from "./pages/home";
@@ -15,6 +15,10 @@ import { DocsPage, VALID_DOC_SECTIONS } from "./pages/docs";
 import { LoginPage } from "./pages/login";
 import { DashboardPage } from "./pages/dashboard";
 import { PrivacyPage } from "./pages/privacy";
+import { PublisherPage } from "./pages/publisher";
+import { OrgPage } from "./pages/org";
+import { StatsPage } from "./pages/stats";
+import { PackageStatsPage } from "./pages/package-stats";
 
 type Env = {
   Bindings: {
@@ -209,6 +213,34 @@ app.get("/:fullName{@[^/]+/[^/]+\\.ctx}", async (c) => {
     return c.text(await res.text());
   } catch {
     return c.text("Service temporarily unavailable", 502);
+  }
+});
+
+// Package stats: /@scope/name/stats
+app.get("/:fullName{@[^/]+/[^/]+}/stats", async (c) => {
+  const fullName = c.req.param("fullName");
+  try {
+    const stats = await api(c).getPackageStats(fullName);
+    const meta = { ...defaultMeta(), title: `${fullName} Stats — ${SITE_NAME}` };
+    c.header("Cache-Control", "public, s-maxage=60, stale-while-revalidate=120");
+    return c.html(
+      <Layout meta={meta} currentPath={`/${fullName}/stats`}>
+        <PackageStatsPage fullName={fullName} stats={stats} />
+      </Layout>
+    );
+  } catch (err) {
+    if (err instanceof ApiError && err.status === 404) {
+      return c.html(
+        <Layout meta={{ ...defaultMeta(), title: `Not Found — ${SITE_NAME}` }}>
+          <div class="mx-auto max-w-5xl px-4 py-16 text-center">
+            <h1 class="mb-2 text-base font-semibold font-heading">Package not found</h1>
+            <p class="text-xs text-muted-foreground">{fullName} does not exist.</p>
+          </div>
+        </Layout>,
+        404
+      );
+    }
+    throw err;
   }
 });
 
@@ -437,6 +469,8 @@ app.get("/dashboard", async (c) => {
 
   const { user, token: sessionToken } = session;
   const apiBase = c.env.API_BASE_URL;
+  const rawTab = c.req.query("tab");
+  const activeTab = rawTab && ["packages", "orgs", "sync"].includes(rawTab) ? rawTab : "packages";
 
   // Fetch the user's published packages
   let packages: PackageSummary[] = [];
@@ -453,10 +487,140 @@ app.get("/dashboard", async (c) => {
     // Non-critical — show dashboard with empty list
   }
 
+  // Fetch orgs if on orgs tab
+  let orgs: OrgInfo[] = [];
+  if (activeTab === "orgs") {
+    try {
+      const result = await api(c).getMyOrgs(sessionToken);
+      orgs = result.orgs;
+    } catch {
+      // Non-critical
+    }
+  }
+
+  // Fetch sync profile if on sync tab
+  let syncMeta: SyncProfileMeta | null = null;
+  if (activeTab === "sync") {
+    try {
+      const result = await api(c).getSyncProfile(sessionToken);
+      syncMeta = result.meta;
+    } catch {
+      // Non-critical
+    }
+  }
+
   const meta = { ...defaultMeta(), title: `Dashboard — ${SITE_NAME}` };
   return c.html(
     <Layout meta={meta} currentPath="/dashboard" user={user}>
-      <DashboardPage username={user.username} packages={packages} />
+      <DashboardPage
+        username={user.username}
+        packages={packages}
+        orgs={orgs}
+        syncMeta={syncMeta}
+        activeTab={activeTab}
+      />
+    </Layout>
+  );
+});
+
+// Publisher profile
+app.get("/publisher/:slug", async (c) => {
+  const slug = c.req.param("slug");
+  try {
+    const [publisher, pkgResult] = await Promise.all([
+      api(c).getPublisher(slug),
+      api(c).getPublisherPackages(slug, { limit: 50 }),
+    ]);
+    const meta = { ...defaultMeta(), title: `@${slug} — ${SITE_NAME}` };
+    c.header("Cache-Control", "public, s-maxage=60, stale-while-revalidate=120");
+    return c.html(
+      <Layout meta={meta} currentPath={`/publisher/${slug}`}>
+        <PublisherPage publisher={publisher} packages={pkgResult.packages} />
+      </Layout>
+    );
+  } catch (err) {
+    if (err instanceof ApiError && err.status === 404) {
+      return c.html(
+        <Layout meta={{ ...defaultMeta(), title: `Not Found — ${SITE_NAME}` }}>
+          <div class="mx-auto max-w-5xl px-4 py-16 text-center">
+            <h1 class="mb-2 text-base font-semibold font-heading">Publisher not found</h1>
+            <p class="text-xs text-muted-foreground">@{slug} does not exist.</p>
+          </div>
+        </Layout>,
+        404
+      );
+    }
+    throw err;
+  }
+});
+
+// Organization page
+app.get("/org/:name", async (c) => {
+  const name = c.req.param("name");
+  try {
+    const [org, pkgResult] = await Promise.all([
+      api(c).getOrg(name),
+      api(c).getOrgPackages(name),
+    ]);
+
+    // Members require auth — best-effort
+    let members: OrgMember[] | null = null;
+    const session = await resolveUser(c);
+    if (session) {
+      try {
+        const result = await api(c).getOrgMembers(name, session.token);
+        members = result.members;
+      } catch {
+        // Not a member or API error — leave as null to show appropriate message
+      }
+    }
+
+    const meta = { ...defaultMeta(), title: `${org.display_name || org.name} — ${SITE_NAME}` };
+    c.header("Cache-Control", "public, s-maxage=60, stale-while-revalidate=120");
+    return c.html(
+      <Layout meta={meta} currentPath={`/org/${name}`}>
+        <OrgPage org={org} members={members} packages={pkgResult.packages} />
+      </Layout>
+    );
+  } catch (err) {
+    if (err instanceof ApiError && err.status === 404) {
+      return c.html(
+        <Layout meta={{ ...defaultMeta(), title: `Not Found — ${SITE_NAME}` }}>
+          <div class="mx-auto max-w-5xl px-4 py-16 text-center">
+            <h1 class="mb-2 text-base font-semibold font-heading">Organization not found</h1>
+            <p class="text-xs text-muted-foreground">{name} does not exist.</p>
+          </div>
+        </Layout>,
+        404
+      );
+    }
+    throw err;
+  }
+});
+
+// Stats page
+app.get("/stats", async (c) => {
+  let agents: AgentRanking[] = [];
+  let trending: PackageSummary[] = [];
+  try {
+    const [agentResult, trendingResult] = await Promise.all([
+      api(c).getAgentRankings(),
+      api(c).getTrending(12),
+    ]);
+    agents = agentResult.agents;
+    trending = trendingResult.packages;
+  } catch (err) {
+    if (err instanceof ApiError && err.status >= 500) {
+      console.error("Stats: upstream error", err.status);
+    }
+    // Non-critical — render with empty data
+  }
+
+  const meta = { ...defaultMeta(), title: `Stats — ${SITE_NAME}` };
+  c.header("Cache-Control", "public, s-maxage=60, stale-while-revalidate=120");
+  return c.html(
+    <Layout meta={meta} currentPath="/stats">
+      <StatsPage agents={agents} trending={trending} />
     </Layout>
   );
 });

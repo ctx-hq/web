@@ -1,7 +1,13 @@
-import type { PackageSummary, PackageDetail, SearchResult, VersionDetail } from "./types";
+import type {
+  PackageSummary, PackageDetail, SearchResult, VersionDetail,
+  PackageStats, PublisherProfile, OrgDetail, OrgMember, OrgInfo,
+  AgentRanking, SyncProfileMeta, SyncPackageEntry,
+} from "./types";
 
 export class ApiClient {
   constructor(private baseUrl: string) {}
+
+  // --- Package APIs ---
 
   async search(query: string, opts?: { type?: string; platform?: string; limit?: number; offset?: number }): Promise<SearchResult> {
     const params = new URLSearchParams({ q: query });
@@ -29,10 +35,74 @@ export class ApiClient {
     return this.get(`/v1/packages/${encodeURIComponent(fullName)}/versions/${encodeURIComponent(version)}`);
   }
 
-  private async get<T>(path: string): Promise<T> {
+  // --- Stats APIs ---
+
+  async getPackageStats(fullName: string): Promise<PackageStats> {
+    return this.get(`/v1/packages/${encodeURIComponent(fullName)}/stats`);
+  }
+
+  async getPackageTags(fullName: string): Promise<{ tags: Record<string, string> }> {
+    return this.get(`/v1/packages/${encodeURIComponent(fullName)}/tags`);
+  }
+
+  async getTrending(limit = 20): Promise<{ packages: PackageSummary[]; period: string }> {
+    return this.get(`/v1/stats/trending?limit=${limit}`);
+  }
+
+  async getAgentRankings(): Promise<{ agents: AgentRanking[] }> {
+    return this.get("/v1/stats/agents");
+  }
+
+  async getAgentDetail(agent: string): Promise<{ agent: string; total_installs: number; top_packages: PackageSummary[] }> {
+    return this.get(`/v1/stats/agents/${encodeURIComponent(agent)}`);
+  }
+
+  // --- Publisher APIs ---
+
+  async getPublisher(slug: string): Promise<PublisherProfile> {
+    return this.get(`/v1/publishers/${encodeURIComponent(slug)}`);
+  }
+
+  async getPublisherPackages(slug: string, opts?: { type?: string; limit?: number; offset?: number }): Promise<{ publisher: { slug: string; kind: string }; packages: PackageSummary[] }> {
+    const params = new URLSearchParams();
+    if (opts?.type) params.set("type", opts.type);
+    if (opts?.limit) params.set("limit", String(opts.limit));
+    if (opts?.offset) params.set("offset", String(opts.offset));
+    return this.get(`/v1/publishers/${encodeURIComponent(slug)}/packages?${params}`);
+  }
+
+  // --- Org APIs ---
+
+  async getOrg(name: string): Promise<OrgDetail> {
+    return this.get(`/v1/orgs/${encodeURIComponent(name)}`);
+  }
+
+  async getOrgMembers(name: string, token: string): Promise<{ members: OrgMember[] }> {
+    return this.get(`/v1/orgs/${encodeURIComponent(name)}/members`, token);
+  }
+
+  async getOrgPackages(name: string): Promise<{ packages: PackageSummary[] }> {
+    return this.get(`/v1/orgs/${encodeURIComponent(name)}/packages`);
+  }
+
+  async getMyOrgs(token: string): Promise<{ orgs: OrgInfo[] }> {
+    return this.get("/v1/orgs", token);
+  }
+
+  // --- Sync APIs ---
+
+  async getSyncProfile(token: string): Promise<{ profile: { packages: SyncPackageEntry[] }; meta: SyncProfileMeta }> {
+    return this.get("/v1/me/sync-profile", token);
+  }
+
+  // --- HTTP helpers ---
+
+  private async get<T>(path: string, token?: string): Promise<T> {
     const url = `${this.baseUrl}${path}`;
+    const headers: Record<string, string> = { Accept: "application/json" };
+    if (token) headers.Authorization = `Bearer ${token}`;
     const resp = await fetch(url, {
-      headers: { Accept: "application/json" },
+      headers,
       signal: AbortSignal.timeout(10_000),
     });
     if (!resp.ok) {

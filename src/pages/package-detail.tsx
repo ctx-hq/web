@@ -5,8 +5,12 @@ import { Icon } from "../components/ui/icon";
 import { Badge } from "../components/badge";
 import { InstallTabs } from "../components/install-tabs";
 import { VersionList } from "../components/version-list";
+import { TrustBadge } from "../components/trust-badge";
+import { PublisherLink } from "../components/publisher-link";
+import { DistTagList } from "../components/dist-tag-list";
 import { formatNumber, formatDate } from "../lib/format";
 import { safeRepoUrl, buildMetadataRows } from "../lib/package-helpers";
+import { TRUST_TIERS } from "../lib/constants";
 
 /** Sidebar card wrapper with title. */
 const SidebarSection: FC<PropsWithChildren<{ title: string }>> = ({ title, children }) => (
@@ -57,7 +61,13 @@ export const PackageDetailPage: FC<{
           {isAdapter && (
             <Badge variant="outline">adapter</Badge>
           )}
+          <TrustBadge tier={pkg.trust_tier} />
         </div>
+        {pkg.publisher && (
+          <div class="mb-1">
+            <PublisherLink slug={pkg.publisher.slug} />
+          </div>
+        )}
         {pkg.description && (
           <p class="text-sm text-muted-foreground">{pkg.description}</p>
         )}
@@ -149,6 +159,36 @@ export const PackageDetailPage: FC<{
                     </dd>
                   </div>
                 )}
+                {pkg.publisher && (
+                  <div class="flex items-center justify-between">
+                    <dt class="text-muted-foreground">Publisher</dt>
+                    <dd>
+                      <a
+                        href={`/publisher/${encodeURIComponent(pkg.publisher.slug)}`}
+                        class="text-xs font-medium hover:text-foreground"
+                      >
+                        @{pkg.publisher.slug}
+                      </a>
+                    </dd>
+                  </div>
+                )}
+                {pkg.trust_tier && pkg.trust_tier !== "unverified" && TRUST_TIERS[pkg.trust_tier] && (
+                  <div class="flex items-center justify-between">
+                    <dt class="text-muted-foreground">Trust</dt>
+                    <dd><TrustBadge tier={pkg.trust_tier} /></dd>
+                  </div>
+                )}
+                <div class="flex items-center justify-between">
+                  <dt class="text-muted-foreground">Stats</dt>
+                  <dd>
+                    <a
+                      href={`/${pkg.full_name}/stats`}
+                      class="text-xs font-medium hover:text-foreground"
+                    >
+                      View stats
+                    </a>
+                  </dd>
+                </div>
               </dl>
             </SidebarSection>
           </div>
@@ -215,6 +255,13 @@ export const PackageDetailPage: FC<{
                   <Badge variant="outline">{p}</Badge>
                 ))}
               </div>
+            </SidebarSection>
+          )}
+
+          {/* Dist Tags */}
+          {pkg.dist_tags && Object.keys(pkg.dist_tags).length > 0 && (
+            <SidebarSection title="Dist Tags">
+              <DistTagList tags={pkg.dist_tags} />
             </SidebarSection>
           )}
 

@@ -4,6 +4,7 @@ import { formatDownloads } from "../lib/format";
 import { Badge } from "./badge";
 import { Card } from "./ui/card";
 import { Icon } from "./ui/icon";
+import { TrustBadge } from "./trust-badge";
 
 export const PackageCard: FC<{ pkg: PackageSummary }> = ({ pkg }) => (
   <a
@@ -15,6 +16,14 @@ export const PackageCard: FC<{ pkg: PackageSummary }> = ({ pkg }) => (
         <span class="text-xs font-medium font-heading">{pkg.full_name}</span>
         <Badge type={pkg.type} />
       </div>
+      {(pkg.trust_tier || pkg.publisher_slug) && (
+        <div class="mb-1 flex items-center gap-2">
+          <TrustBadge tier={pkg.trust_tier} />
+          {pkg.publisher_slug && (
+            <span class="text-[10px] text-muted-foreground">@{pkg.publisher_slug}</span>
+          )}
+        </div>
+      )}
       <p class="mb-2 line-clamp-2 text-xs text-muted-foreground">{pkg.description}</p>
       <div class="flex items-center gap-3 text-[10px] text-muted-foreground">
         <span>v{pkg.version}</span>
