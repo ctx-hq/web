@@ -9,44 +9,44 @@ export class ApiClient {
 
   // --- Package APIs ---
 
-  async search(query: string, opts?: { type?: string; platform?: string; limit?: number; offset?: number }): Promise<SearchResult> {
+  async search(query: string, opts?: { type?: string; platform?: string; limit?: number; offset?: number }, token?: string | null): Promise<SearchResult> {
     const params = new URLSearchParams({ q: query });
     if (opts?.type) params.set("type", opts.type);
     if (opts?.platform) params.set("platform", opts.platform);
     if (opts?.limit) params.set("limit", String(opts.limit));
     if (opts?.offset) params.set("offset", String(opts.offset));
-    return this.get(`/v1/search?${params}`);
+    return this.get(`/v1/search?${params}`, token);
   }
 
-  async listPackages(opts?: { type?: string; sort?: string; limit?: number; offset?: number }): Promise<{ packages: PackageSummary[]; total: number }> {
+  async listPackages(opts?: { type?: string; sort?: string; limit?: number; offset?: number }, token?: string | null): Promise<{ packages: PackageSummary[]; total: number }> {
     const params = new URLSearchParams();
     if (opts?.type) params.set("type", opts.type);
     if (opts?.sort) params.set("sort", opts.sort);
     if (opts?.limit) params.set("limit", String(opts.limit));
     if (opts?.offset) params.set("offset", String(opts.offset));
-    return this.get(`/v1/packages?${params}`);
+    return this.get(`/v1/packages?${params}`, token);
   }
 
-  async getPackage(fullName: string): Promise<PackageDetail> {
-    return this.get(`/v1/packages/${encodeURIComponent(fullName)}`);
+  async getPackage(fullName: string, token?: string | null): Promise<PackageDetail> {
+    return this.get(`/v1/packages/${encodeURIComponent(fullName)}`, token);
   }
 
-  async getVersion(fullName: string, version: string): Promise<VersionDetail> {
-    return this.get(`/v1/packages/${encodeURIComponent(fullName)}/versions/${encodeURIComponent(version)}`);
+  async getVersion(fullName: string, version: string, token?: string | null): Promise<VersionDetail> {
+    return this.get(`/v1/packages/${encodeURIComponent(fullName)}/versions/${encodeURIComponent(version)}`, token);
   }
 
   // --- Stats APIs ---
 
-  async getPackageStats(fullName: string): Promise<PackageStats> {
-    return this.get(`/v1/packages/${encodeURIComponent(fullName)}/stats`);
+  async getPackageStats(fullName: string, token?: string | null): Promise<PackageStats> {
+    return this.get(`/v1/packages/${encodeURIComponent(fullName)}/stats`, token);
   }
 
   async getPackageTags(fullName: string): Promise<{ tags: Record<string, string> }> {
     return this.get(`/v1/packages/${encodeURIComponent(fullName)}/tags`);
   }
 
-  async getTrending(limit = 20): Promise<{ packages: PackageSummary[]; period: string }> {
-    return this.get(`/v1/stats/trending?limit=${limit}`);
+  async getTrending(limit = 20, token?: string | null): Promise<{ packages: PackageSummary[]; period: string }> {
+    return this.get(`/v1/stats/trending?limit=${limit}`, token);
   }
 
   async getAgentRankings(): Promise<{ agents: AgentRanking[] }> {
@@ -63,12 +63,12 @@ export class ApiClient {
     return this.get(`/v1/publishers/${encodeURIComponent(slug)}`);
   }
 
-  async getPublisherPackages(slug: string, opts?: { type?: string; limit?: number; offset?: number }): Promise<{ publisher: { slug: string; kind: string }; packages: PackageSummary[] }> {
+  async getPublisherPackages(slug: string, opts?: { type?: string; limit?: number; offset?: number }, token?: string | null): Promise<{ publisher: { slug: string; kind: string }; packages: PackageSummary[] }> {
     const params = new URLSearchParams();
     if (opts?.type) params.set("type", opts.type);
     if (opts?.limit) params.set("limit", String(opts.limit));
     if (opts?.offset) params.set("offset", String(opts.offset));
-    return this.get(`/v1/publishers/${encodeURIComponent(slug)}/packages?${params}`);
+    return this.get(`/v1/publishers/${encodeURIComponent(slug)}/packages?${params}`, token);
   }
 
   // --- Org APIs ---
@@ -81,8 +81,8 @@ export class ApiClient {
     return this.get(`/v1/orgs/${encodeURIComponent(name)}/members`, token);
   }
 
-  async getOrgPackages(name: string): Promise<{ packages: PackageSummary[] }> {
-    return this.get(`/v1/orgs/${encodeURIComponent(name)}/packages`);
+  async getOrgPackages(name: string, token?: string | null): Promise<{ packages: PackageSummary[] }> {
+    return this.get(`/v1/orgs/${encodeURIComponent(name)}/packages`, token);
   }
 
   async getMyOrgs(token: string): Promise<{ orgs: OrgInfo[] }> {
@@ -97,7 +97,7 @@ export class ApiClient {
 
   // --- HTTP helpers ---
 
-  private async get<T>(path: string, token?: string): Promise<T> {
+  private async get<T>(path: string, token?: string | null): Promise<T> {
     const url = `${this.baseUrl}${path}`;
     const headers: Record<string, string> = { Accept: "application/json" };
     if (token) headers.Authorization = `Bearer ${token}`;

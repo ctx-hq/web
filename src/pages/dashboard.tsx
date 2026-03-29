@@ -4,7 +4,6 @@ import { Container } from "../components/ui/container";
 import { Button } from "../components/ui/button";
 import { Icon } from "../components/ui/icon";
 import { PackageCard } from "../components/package-card";
-import { VisibilityBadge } from "../components/visibility-badge";
 import { SyncPanel } from "../components/sync-panel";
 import { Badge } from "../components/badge";
 

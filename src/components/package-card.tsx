@@ -5,6 +5,7 @@ import { Badge } from "./badge";
 import { Card } from "./ui/card";
 import { Icon } from "./ui/icon";
 import { TrustBadge } from "./trust-badge";
+import { VisibilityBadge } from "./visibility-badge";
 
 export const PackageCard: FC<{ pkg: PackageSummary }> = ({ pkg }) => (
   <a
@@ -12,9 +13,12 @@ export const PackageCard: FC<{ pkg: PackageSummary }> = ({ pkg }) => (
     class="cn-card block transition-all hover:ring-foreground/25"
   >
     <div class="p-4">
-      <div class="mb-1 flex items-center justify-between">
-        <span class="text-xs font-medium font-heading">{pkg.full_name}</span>
-        <Badge type={pkg.type} />
+      <div class="mb-1 flex items-center justify-between gap-1">
+        <span class="min-w-0 truncate text-xs font-medium font-heading">{pkg.full_name}</span>
+        <div class="flex shrink-0 items-center gap-1">
+          <VisibilityBadge visibility={pkg.visibility} />
+          <Badge type={pkg.type} />
+        </div>
       </div>
       {(pkg.trust_tier || pkg.publisher_slug) && (
         <div class="mb-1 flex items-center gap-2">

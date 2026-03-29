@@ -33,6 +33,106 @@ function req(path: string) {
   return app.request(path, {}, ENV);
 }
 
+describe("auth middleware SSOT", () => {
+  it("anonymous user sees Sign in button on home page", async () => {
+    const res = await req("/");
+    expect(res.status).toBe(200);
+    const html = await res.text();
+    expect(html).toContain("Sign in");
+  });
+
+  it("logged-in user sees username in header on home page", async () => {
+    mockFetch.mockImplementation((url: string) => {
+      if (typeof url === "string" && url.includes("/v1/me")) {
+        return Promise.resolve(apiJson({ username: "hong", avatar_url: "https://example.com/avatar.png" }));
+      }
+      return Promise.resolve(apiJson({ packages: [], total: 0 }));
+    });
+
+    const res = await app.request("/", {
+      headers: { Cookie: "__Host-ctx_session=valid-token" },
+    }, ENV);
+    expect(res.status).toBe(200);
+    const html = await res.text();
+    expect(html).toContain("hong");
+    expect(html).not.toContain(">Sign in<");
+  });
+
+  it("logged-in user sees Vary: Cookie header", async () => {
+    mockFetch.mockImplementation((url: string) => {
+      if (typeof url === "string" && url.includes("/v1/me")) {
+        return Promise.resolve(apiJson({ username: "hong" }));
+      }
+      return Promise.resolve(apiJson({ packages: [], total: 0 }));
+    });
+
+    const res = await app.request("/", {
+      headers: { Cookie: "__Host-ctx_session=valid-token" },
+    }, ENV);
+    expect(res.headers.get("Vary")).toContain("Cookie");
+  });
+
+  it("logged-in user gets private cache headers instead of public", async () => {
+    mockFetch.mockImplementation((url: string) => {
+      if (typeof url === "string" && url.includes("/v1/me")) {
+        return Promise.resolve(apiJson({ username: "hong" }));
+      }
+      return Promise.resolve(apiJson({ packages: [], total: 0 }));
+    });
+
+    const res = await app.request("/", {
+      headers: { Cookie: "__Host-ctx_session=valid-token" },
+    }, ENV);
+    const cc = res.headers.get("Cache-Control");
+    expect(cc).toContain("private");
+    expect(cc).toContain("no-store");
+    expect(cc).not.toContain("s-maxage");
+  });
+
+  it("sets Vary: Cookie when cookie exists but /v1/me fails", async () => {
+    mockFetch.mockImplementation((url: string) => {
+      if (typeof url === "string" && url.includes("/v1/me")) {
+        return Promise.resolve(new Response("Service Unavailable", { status: 503 }));
+      }
+      return Promise.resolve(apiJson({ packages: [], total: 0 }));
+    });
+
+    const res = await app.request("/", {
+      headers: { Cookie: "__Host-ctx_session=valid-token" },
+    }, ENV);
+    expect(res.headers.get("Vary")).toContain("Cookie");
+    // Should fall back to public cache since user resolved as anonymous
+    expect(res.headers.get("Cache-Control")).toContain("s-maxage");
+  });
+
+  it("clears stale session cookie on 401 from /v1/me", async () => {
+    mockFetch.mockImplementation((url: string) => {
+      if (typeof url === "string" && url.includes("/v1/me")) {
+        return Promise.resolve(new Response("Unauthorized", { status: 401 }));
+      }
+      return Promise.resolve(apiJson({ packages: [], total: 0 }));
+    });
+
+    const res = await app.request("/", {
+      headers: { Cookie: "__Host-ctx_session=expired-token" },
+    }, ENV);
+    const setCookieHeader = res.headers.get("Set-Cookie") ?? "";
+    expect(setCookieHeader).toContain("__Host-ctx_session");
+    // Cookie deletion sets Max-Age=0
+    expect(setCookieHeader).toMatch(/Max-Age=0/i);
+  });
+
+  it("auth middleware skips non-HTML routes", async () => {
+    const res = await req("/api/search-suggest?q=ab");
+    expect(res.status).toBe(200);
+    // /v1/me should NOT be called for API proxy routes
+    const meCall = mockFetch.mock.calls.find(
+      (call) => typeof call[0] === "string" && call[0].includes("/v1/me")
+    );
+    expect(meCall).toBeUndefined();
+  });
+});
+
 describe("real app routes", () => {
   it("home route responds with 200", async () => {
     const res = await req("/");
@@ -233,9 +333,12 @@ describe("real app routes", () => {
   });
 
   it("dashboard with fake session redirects to login (API rejects)", async () => {
-    mockFetch.mockResolvedValueOnce(
-      new Response("Unauthorized", { status: 401 })
-    );
+    mockFetch.mockImplementation((url: string) => {
+      if (typeof url === "string" && url.includes("/v1/me")) {
+        return Promise.resolve(new Response("Unauthorized", { status: 401 }));
+      }
+      return Promise.resolve(apiJson({ packages: [], total: 0 }));
+    });
 
     const res = await app.request("/dashboard", {
       headers: { Cookie: "__Host-ctx_session=fake-token" },
@@ -245,9 +348,15 @@ describe("real app routes", () => {
   });
 
   it("dashboard with valid session renders page", async () => {
-    mockFetch.mockResolvedValueOnce(
-      apiJson({ username: "hong" })
-    );
+    mockFetch.mockImplementation((url: string) => {
+      if (typeof url === "string" && url.includes("/v1/me")) {
+        return Promise.resolve(apiJson({ username: "hong" }));
+      }
+      if (typeof url === "string" && url.includes("/v1/publishers/")) {
+        return Promise.resolve(apiJson({ publisher: { slug: "hong", kind: "user" }, packages: [], total: 0 }));
+      }
+      return Promise.resolve(apiJson({ packages: [], total: 0 }));
+    });
 
     const res = await app.request("/dashboard", {
       headers: { Cookie: "__Host-ctx_session=valid-token" },

@@ -6,6 +6,7 @@ import { Badge } from "../components/badge";
 import { InstallTabs } from "../components/install-tabs";
 import { VersionList } from "../components/version-list";
 import { TrustBadge } from "../components/trust-badge";
+import { VisibilityBadge } from "../components/visibility-badge";
 import { PublisherLink } from "../components/publisher-link";
 import { DistTagList } from "../components/dist-tag-list";
 import { formatNumber, formatDate } from "../lib/format";
@@ -61,6 +62,7 @@ export const PackageDetailPage: FC<{
           {isAdapter && (
             <Badge variant="outline">adapter</Badge>
           )}
+          <VisibilityBadge visibility={pkg.visibility} />
           <TrustBadge tier={pkg.trust_tier} />
         </div>
         {pkg.publisher && (

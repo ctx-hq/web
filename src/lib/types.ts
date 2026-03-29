@@ -17,6 +17,7 @@ export interface PackageSummary {
   repository: string;
   trust_tier?: TrustTier;
   publisher_slug?: string;
+  visibility?: Visibility;
 }
 
 export interface PackageDetail {

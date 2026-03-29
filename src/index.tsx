@@ -26,6 +26,10 @@ type Env = {
     API_BASE_URL: string;
     GITHUB_CLIENT_ID?: string;
   };
+  Variables: {
+    user: SessionUser | null;
+    token: string | null;
+  };
 };
 
 const app = new Hono<Env>();
@@ -51,6 +55,48 @@ app.use("*", async (c, next) => {
   );
 });
 
+// ── Auth middleware — resolve session once for all HTML routes (SSOT) ────────
+app.use("*", async (c, next) => {
+  const path = c.req.path;
+  // Skip non-HTML routes that don't render Layout
+  if (
+    path.startsWith("/api/") ||
+    path === "/sitemap.xml" ||
+    path === "/robots.txt" ||
+    path === "/skill.md" ||
+    path.startsWith("/install.") ||
+    path.endsWith(".ctx")
+  ) {
+    c.set("user", null);
+    c.set("token", null);
+    return next();
+  }
+
+  // No session cookie → skip the API call entirely
+  const cookie = getCookie(c, "__Host-ctx_session");
+  if (!cookie) {
+    c.set("user", null);
+    c.set("token", null);
+    return next();
+  }
+
+  // Cookie exists — always set Vary so CDN never conflates anon/auth variants,
+  // even if resolveUser fails (timeout, 5xx).
+  c.header("Vary", "Cookie");
+
+  const session = await resolveUser(c);
+  c.set("user", session?.user ?? null);
+  c.set("token", session?.token ?? null);
+
+  await next();
+
+  // Authenticated response: override any route-level public cache header
+  // to prevent CDN from serving personalized content to other users.
+  if (session) {
+    c.header("Cache-Control", "private, no-store");
+  }
+});
+
 function api(c: { env: Env["Bindings"] }) {
   const base = c.env.API_BASE_URL;
   if (!base) throw new Error("API_BASE_URL environment variable is required");
@@ -63,7 +109,7 @@ function isSafeRedirect(path: string | undefined): path is string {
   return path.startsWith("/") && !path.startsWith("//") && !/^\/[\\]/.test(path) && !path.includes(":");
 }
 
-/** Resolve session user from cookie. Only call in auth-required routes. */
+/** Resolve session user from cookie. Returns null on invalid/expired session. */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function resolveUser(c: any): Promise<{ user: SessionUser; token: string } | null> {
   const token = getCookie(c, "__Host-ctx_session") as string | undefined;
@@ -78,8 +124,12 @@ async function resolveUser(c: any): Promise<{ user: SessionUser; token: string }
       const data = (await resp.json()) as SessionUser;
       return { user: data, token };
     }
+    // Expired/revoked session — clear stale cookie to avoid repeated /v1/me calls
+    if (resp.status === 401 || resp.status === 403) {
+      deleteCookie(c, "__Host-ctx_session", { path: "/", secure: true });
+    }
   } catch {
-    // Session invalid or API down — treat as logged out
+    // Network error or timeout — treat as logged out but keep cookie for retry
   }
   return null;
 }
@@ -125,7 +175,7 @@ app.get("/", async (c) => {
   let trending: { packages: PackageSummary[]; total: number } = { packages: [], total: 0 };
   let apiError = false;
   try {
-    trending = await api(c).listPackages({ sort: "downloads", limit: 12 });
+    trending = await api(c).listPackages({ sort: "downloads", limit: 12 }, c.get("token"));
   } catch (e) {
     apiError = true;
     console.error("Home: failed to fetch trending packages", e);
@@ -133,7 +183,7 @@ app.get("/", async (c) => {
   const meta = defaultMeta();
   c.header("Cache-Control", "public, s-maxage=60, stale-while-revalidate=120");
   return c.html(
-    <Layout meta={meta} currentPath="/">
+    <Layout meta={meta} currentPath="/" user={c.get("user")}>
       <HomePage trending={trending.packages} apiError={apiError} />
     </Layout>
   );
@@ -158,7 +208,7 @@ app.get("/search", async (c) => {
   let apiError = false;
   if (query) {
     try {
-      result = await api(c).search(query, { type, limit: PAGE_SIZE, offset });
+      result = await api(c).search(query, { type, limit: PAGE_SIZE, offset }, c.get("token"));
     } catch (e) {
       apiError = true;
       console.error("Search: failed to fetch results", e);
@@ -166,7 +216,7 @@ app.get("/search", async (c) => {
   } else {
     try {
       const sortParam = sort === "newest" ? "created_at" : undefined;
-      const listed = await api(c).listPackages({ type, sort: sortParam, limit: PAGE_SIZE, offset });
+      const listed = await api(c).listPackages({ type, sort: sortParam, limit: PAGE_SIZE, offset }, c.get("token"));
       result = { packages: listed.packages, total: listed.total };
     } catch (e) {
       apiError = true;
@@ -189,7 +239,7 @@ app.get("/search", async (c) => {
   const meta = searchMeta(query, { type });
   c.header("Cache-Control", "public, s-maxage=30, stale-while-revalidate=60");
   return c.html(
-    <Layout meta={meta} currentPath="/search">
+    <Layout meta={meta} currentPath="/search" user={c.get("user")}>
       <SearchPage
         query={query}
         type={type}
@@ -225,18 +275,18 @@ app.get("/:fullName{@[^/]+/[^/]+\\.ctx}", async (c) => {
 app.get("/:fullName{@[^/]+/[^/]+}/stats", async (c) => {
   const fullName = c.req.param("fullName");
   try {
-    const stats = await api(c).getPackageStats(fullName);
+    const stats = await api(c).getPackageStats(fullName, c.get("token"));
     const meta = { ...defaultMeta(), title: `${fullName} Stats — ${SITE_NAME}` };
     c.header("Cache-Control", "public, s-maxage=60, stale-while-revalidate=120");
     return c.html(
-      <Layout meta={meta} currentPath={`/${fullName}/stats`}>
+      <Layout meta={meta} currentPath={`/${fullName}/stats`} user={c.get("user")}>
         <PackageStatsPage fullName={fullName} stats={stats} />
       </Layout>
     );
   } catch (err) {
     if (err instanceof ApiError && err.status === 404) {
       return c.html(
-        <Layout meta={{ ...defaultMeta(), title: `Not Found — ${SITE_NAME}` }}>
+        <Layout meta={{ ...defaultMeta(), title: `Not Found — ${SITE_NAME}` }} user={c.get("user")}>
           <div class="mx-auto max-w-5xl px-4 py-16 text-center">
             <h1 class="mb-2 text-base font-semibold font-heading">Package not found</h1>
             <p class="text-xs text-muted-foreground">{fullName} does not exist.</p>
@@ -254,13 +304,13 @@ app.get("/:fullName{@[^/]+/[^/]+}", async (c) => {
   const fullName = c.req.param("fullName");
 
   try {
-    const pkg = await api(c).getPackage(fullName);
+    const pkg = await api(c).getPackage(fullName, c.get("token"));
 
     let readmeHtml = "";
     let manifestInfo: ManifestInfo | null = null;
     if (pkg.versions.length > 0) {
       try {
-        const ver = await api(c).getVersion(fullName, pkg.versions[0].version);
+        const ver = await api(c).getVersion(fullName, pkg.versions[0].version, c.get("token"));
         if (ver.readme) {
           readmeHtml = await safeMarked.parse(ver.readme);
         }
@@ -273,14 +323,14 @@ app.get("/:fullName{@[^/]+/[^/]+}", async (c) => {
     const meta = packageMeta(pkg);
     c.header("Cache-Control", "public, s-maxage=300, stale-while-revalidate=600");
     return c.html(
-      <Layout meta={meta} currentPath={`/${fullName}`}>
+      <Layout meta={meta} currentPath={`/${fullName}`} user={c.get("user")}>
         <PackageDetailPage pkg={pkg} readmeHtml={readmeHtml} manifest={manifestInfo} />
       </Layout>
     );
   } catch (err) {
     if (err instanceof ApiError && err.status === 404) {
       return c.html(
-        <Layout meta={{ ...defaultMeta(), title: `Not Found — ${SITE_NAME}` }}>
+        <Layout meta={{ ...defaultMeta(), title: `Not Found — ${SITE_NAME}` }} user={c.get("user")}>
           <div class="mx-auto max-w-5xl px-4 py-16 text-center">
             <h1 class="mb-2 text-base font-semibold font-heading">Package not found</h1>
             <p class="text-xs text-muted-foreground">{fullName} does not exist.</p>
@@ -298,7 +348,7 @@ app.get("/docs", (c) => {
   const meta = docsMeta();
   c.header("Cache-Control", "public, s-maxage=3600, stale-while-revalidate=7200");
   return c.html(
-    <Layout meta={meta} currentPath="/docs">
+    <Layout meta={meta} currentPath="/docs" user={c.get("user")}>
       <DocsPage />
     </Layout>
   );
@@ -312,7 +362,7 @@ app.get("/docs/:section", (c) => {
   const meta = docsMeta(section);
   c.header("Cache-Control", "public, s-maxage=3600, stale-while-revalidate=7200");
   return c.html(
-    <Layout meta={meta} currentPath={`/docs/${section}`}>
+    <Layout meta={meta} currentPath={`/docs/${section}`} user={c.get("user")}>
       <DocsPage section={section} />
     </Layout>
   );
@@ -320,9 +370,8 @@ app.get("/docs/:section", (c) => {
 
 // Login — redirect to dashboard if already signed in
 app.get("/login", async (c) => {
-  const session = await resolveUser(c);
   const redirect = c.req.query("redirect");
-  if (session) {
+  if (c.get("user")) {
     return c.redirect(isSafeRedirect(redirect) ? redirect! : "/dashboard");
   }
   const state = crypto.randomUUID();
@@ -345,7 +394,7 @@ app.get("/login", async (c) => {
   }
   const meta = { ...defaultMeta(), title: `Sign in — ${SITE_NAME}` };
   return c.html(
-    <Layout meta={meta} currentPath="/login">
+    <Layout meta={meta} currentPath="/login" user={c.get("user")}>
       <LoginPage githubClientId={c.env.GITHUB_CLIENT_ID} oauthState={state} />
     </Layout>
   );
@@ -417,10 +466,9 @@ app.get("/logout", (c) => {
 
 // Device login — authorize a CLI device code
 app.get("/login/device", async (c) => {
-  const session = await resolveUser(c);
   const code = c.req.query("code") ?? "";
 
-  if (!session) {
+  if (!c.get("user")) {
     const redirectPath = code
       ? `/login/device?code=${encodeURIComponent(code)}`
       : "/login/device";
@@ -429,7 +477,7 @@ app.get("/login/device", async (c) => {
 
   const meta = { ...defaultMeta(), title: `Authorize Device — ${SITE_NAME}` };
   return c.html(
-    <Layout meta={meta} currentPath="/login/device" user={session.user}>
+    <Layout meta={meta} currentPath="/login/device" user={c.get("user")}>
       <DeviceLoginPage code={code} />
     </Layout>
   );
@@ -469,27 +517,20 @@ app.post("/api/device/authorize", async (c) => {
 
 // Dashboard (auth required)
 app.get("/dashboard", async (c) => {
-  const session = await resolveUser(c);
-  if (!session) {
+  const user = c.get("user");
+  const token = c.get("token");
+  if (!user || !token) {
     return c.redirect("/login");
   }
 
-  const { user, token: sessionToken } = session;
-  const apiBase = c.env.API_BASE_URL;
   const rawTab = c.req.query("tab");
   const activeTab = rawTab && ["packages", "orgs", "sync"].includes(rawTab) ? rawTab : "packages";
 
-  // Fetch the user's published packages
+  // Fetch the user's published packages via publisher API
   let packages: PackageSummary[] = [];
   try {
-    const pkgResp = await fetch(`${apiBase}/v1/users/${encodeURIComponent(user.username)}/packages?limit=50`, {
-      headers: { Accept: "application/json", Authorization: `Bearer ${sessionToken}` },
-      signal: AbortSignal.timeout(5_000),
-    });
-    if (pkgResp.ok) {
-      const data = (await pkgResp.json()) as { packages: PackageSummary[] };
-      packages = data.packages;
-    }
+    const pkgResult = await api(c).getPublisherPackages(user.username, { limit: 50 }, token);
+    packages = pkgResult.packages;
   } catch {
     // Non-critical — show dashboard with empty list
   }
@@ -498,7 +539,7 @@ app.get("/dashboard", async (c) => {
   let orgs: OrgInfo[] = [];
   if (activeTab === "orgs") {
     try {
-      const result = await api(c).getMyOrgs(sessionToken);
+      const result = await api(c).getMyOrgs(token);
       orgs = result.orgs;
     } catch {
       // Non-critical
@@ -509,7 +550,7 @@ app.get("/dashboard", async (c) => {
   let syncMeta: SyncProfileMeta | null = null;
   if (activeTab === "sync") {
     try {
-      const result = await api(c).getSyncProfile(sessionToken);
+      const result = await api(c).getSyncProfile(token);
       syncMeta = result.meta;
     } catch {
       // Non-critical
@@ -536,19 +577,19 @@ app.get("/publisher/:slug", async (c) => {
   try {
     const [publisher, pkgResult] = await Promise.all([
       api(c).getPublisher(slug),
-      api(c).getPublisherPackages(slug, { limit: 50 }),
+      api(c).getPublisherPackages(slug, { limit: 50 }, c.get("token")),
     ]);
     const meta = { ...defaultMeta(), title: `@${slug} — ${SITE_NAME}` };
     c.header("Cache-Control", "public, s-maxage=60, stale-while-revalidate=120");
     return c.html(
-      <Layout meta={meta} currentPath={`/publisher/${slug}`}>
+      <Layout meta={meta} currentPath={`/publisher/${slug}`} user={c.get("user")}>
         <PublisherPage publisher={publisher} packages={pkgResult.packages} />
       </Layout>
     );
   } catch (err) {
     if (err instanceof ApiError && err.status === 404) {
       return c.html(
-        <Layout meta={{ ...defaultMeta(), title: `Not Found — ${SITE_NAME}` }}>
+        <Layout meta={{ ...defaultMeta(), title: `Not Found — ${SITE_NAME}` }} user={c.get("user")}>
           <div class="mx-auto max-w-5xl px-4 py-16 text-center">
             <h1 class="mb-2 text-base font-semibold font-heading">Publisher not found</h1>
             <p class="text-xs text-muted-foreground">@{slug} does not exist.</p>
@@ -567,15 +608,15 @@ app.get("/org/:name", async (c) => {
   try {
     const [org, pkgResult] = await Promise.all([
       api(c).getOrg(name),
-      api(c).getOrgPackages(name),
+      api(c).getOrgPackages(name, c.get("token")),
     ]);
 
     // Members require auth — best-effort
     let members: OrgMember[] | null = null;
-    const session = await resolveUser(c);
-    if (session) {
+    const token = c.get("token");
+    if (token) {
       try {
-        const result = await api(c).getOrgMembers(name, session.token);
+        const result = await api(c).getOrgMembers(name, token);
         members = result.members;
       } catch {
         // Not a member or API error — leave as null to show appropriate message
@@ -585,14 +626,14 @@ app.get("/org/:name", async (c) => {
     const meta = { ...defaultMeta(), title: `${org.display_name || org.name} — ${SITE_NAME}` };
     c.header("Cache-Control", "public, s-maxage=60, stale-while-revalidate=120");
     return c.html(
-      <Layout meta={meta} currentPath={`/org/${name}`}>
+      <Layout meta={meta} currentPath={`/org/${name}`} user={c.get("user")}>
         <OrgPage org={org} members={members} packages={pkgResult.packages} />
       </Layout>
     );
   } catch (err) {
     if (err instanceof ApiError && err.status === 404) {
       return c.html(
-        <Layout meta={{ ...defaultMeta(), title: `Not Found — ${SITE_NAME}` }}>
+        <Layout meta={{ ...defaultMeta(), title: `Not Found — ${SITE_NAME}` }} user={c.get("user")}>
           <div class="mx-auto max-w-5xl px-4 py-16 text-center">
             <h1 class="mb-2 text-base font-semibold font-heading">Organization not found</h1>
             <p class="text-xs text-muted-foreground">{name} does not exist.</p>
@@ -612,7 +653,7 @@ app.get("/stats", async (c) => {
   try {
     const [agentResult, trendingResult] = await Promise.all([
       api(c).getAgentRankings(),
-      api(c).getTrending(12),
+      api(c).getTrending(12, c.get("token")),
     ]);
     agents = agentResult.agents;
     trending = trendingResult.packages;
@@ -626,7 +667,7 @@ app.get("/stats", async (c) => {
   const meta = { ...defaultMeta(), title: `Stats — ${SITE_NAME}` };
   c.header("Cache-Control", "public, s-maxage=60, stale-while-revalidate=120");
   return c.html(
-    <Layout meta={meta} currentPath="/stats">
+    <Layout meta={meta} currentPath="/stats" user={c.get("user")}>
       <StatsPage agents={agents} trending={trending} />
     </Layout>
   );
@@ -637,7 +678,7 @@ app.get("/privacy", (c) => {
   const meta = { ...defaultMeta(), title: `Privacy Policy — ${SITE_NAME}` };
   c.header("Cache-Control", "public, s-maxage=86400, stale-while-revalidate=86400");
   return c.html(
-    <Layout meta={meta} currentPath="/privacy">
+    <Layout meta={meta} currentPath="/privacy" user={c.get("user")}>
       <PrivacyPage />
     </Layout>
   );
@@ -763,7 +804,7 @@ app.get("/robots.txt", (c) => {
 app.onError((err, c) => {
   console.error("Unhandled error:", err instanceof Error ? err.message : "unknown");
   return c.html(
-    <Layout meta={{ ...defaultMeta(), title: `Error — ${SITE_NAME}` }}>
+    <Layout meta={{ ...defaultMeta(), title: `Error — ${SITE_NAME}` }} user={c.get("user") ?? null}>
       <div class="mx-auto max-w-5xl px-4 py-16 text-center">
         <h1 class="mb-2 text-base font-semibold font-heading">Something went wrong</h1>
         <p class="text-xs text-muted-foreground">Please try again later.</p>

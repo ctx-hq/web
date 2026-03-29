@@ -262,4 +262,78 @@ describe("ApiClient", () => {
       expect((opts.headers as Record<string, string>).Authorization).toBe("Bearer my-token");
     });
   });
+
+  describe("token passthrough", () => {
+    it("search passes Authorization header when token provided", async () => {
+      mockFetch.mockResolvedValue(jsonResponse({ packages: [], total: 0 }));
+      await client.search("test", {}, "my-token");
+
+      const opts = mockFetch.mock.calls[0][1] as RequestInit;
+      expect((opts.headers as Record<string, string>).Authorization).toBe("Bearer my-token");
+    });
+
+    it("search omits Authorization header when no token", async () => {
+      mockFetch.mockResolvedValue(jsonResponse({ packages: [], total: 0 }));
+      await client.search("test");
+
+      const opts = mockFetch.mock.calls[0][1] as RequestInit;
+      expect((opts.headers as Record<string, string>).Authorization).toBeUndefined();
+    });
+
+    it("listPackages passes Authorization header when token provided", async () => {
+      mockFetch.mockResolvedValue(jsonResponse({ packages: [], total: 0 }));
+      await client.listPackages({}, "my-token");
+
+      const opts = mockFetch.mock.calls[0][1] as RequestInit;
+      expect((opts.headers as Record<string, string>).Authorization).toBe("Bearer my-token");
+    });
+
+    it("getPackage passes Authorization header when token provided", async () => {
+      mockFetch.mockResolvedValue(jsonResponse({ full_name: "scope/name" }));
+      await client.getPackage("scope/name", "my-token");
+
+      const opts = mockFetch.mock.calls[0][1] as RequestInit;
+      expect((opts.headers as Record<string, string>).Authorization).toBe("Bearer my-token");
+    });
+
+    it("getPackageStats passes Authorization header when token provided", async () => {
+      mockFetch.mockResolvedValue(jsonResponse({ downloads: {}, agents: {} }));
+      await client.getPackageStats("scope/name", "my-token");
+
+      const opts = mockFetch.mock.calls[0][1] as RequestInit;
+      expect((opts.headers as Record<string, string>).Authorization).toBe("Bearer my-token");
+    });
+
+    it("getPublisherPackages passes Authorization header when token provided", async () => {
+      mockFetch.mockResolvedValue(jsonResponse({ publisher: {}, packages: [] }));
+      await client.getPublisherPackages("hong", {}, "my-token");
+
+      const opts = mockFetch.mock.calls[0][1] as RequestInit;
+      expect((opts.headers as Record<string, string>).Authorization).toBe("Bearer my-token");
+    });
+
+    it("getOrgPackages passes Authorization header when token provided", async () => {
+      mockFetch.mockResolvedValue(jsonResponse({ packages: [] }));
+      await client.getOrgPackages("acme", "my-token");
+
+      const opts = mockFetch.mock.calls[0][1] as RequestInit;
+      expect((opts.headers as Record<string, string>).Authorization).toBe("Bearer my-token");
+    });
+
+    it("getTrending passes Authorization header when token provided", async () => {
+      mockFetch.mockResolvedValue(jsonResponse({ packages: [], period: "7d" }));
+      await client.getTrending(20, "my-token");
+
+      const opts = mockFetch.mock.calls[0][1] as RequestInit;
+      expect((opts.headers as Record<string, string>).Authorization).toBe("Bearer my-token");
+    });
+
+    it("null token is treated as no token", async () => {
+      mockFetch.mockResolvedValue(jsonResponse({ packages: [], total: 0 }));
+      await client.listPackages({}, null);
+
+      const opts = mockFetch.mock.calls[0][1] as RequestInit;
+      expect((opts.headers as Record<string, string>).Authorization).toBeUndefined();
+    });
+  });
 });
