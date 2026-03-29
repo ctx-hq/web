@@ -9,7 +9,7 @@ export const VisibilityBadge: FC<{ visibility?: Visibility | null }> = ({ visibi
 
   return (
     <span
-      class="inline-flex items-center gap-0.5 rounded border border-border bg-muted/50 px-1.5 py-0.5 text-[10px] text-muted-foreground"
+      class="inline-flex items-center gap-0.5 border border-border bg-muted/50 px-1.5 py-0.5 text-[10px] text-muted-foreground"
       aria-label={`Visibility: ${config.label}`}
     >
       <span aria-hidden="true">{config.icon}</span>

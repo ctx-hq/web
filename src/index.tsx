@@ -84,7 +84,7 @@ app.use("*", async (c, next) => {
   // even if resolveUser fails (timeout, 5xx).
   c.header("Vary", "Cookie");
 
-  const session = await resolveUser(c);
+  const session = await resolveUser(c, cookie);
   c.set("user", session?.user ?? null);
   c.set("token", session?.token ?? null);
 
@@ -109,11 +109,9 @@ function isSafeRedirect(path: string | undefined): path is string {
   return path.startsWith("/") && !path.startsWith("//") && !/^\/[\\]/.test(path) && !path.includes(":");
 }
 
-/** Resolve session user from cookie. Returns null on invalid/expired session. */
+/** Resolve session user from token. Returns null on invalid/expired session. */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function resolveUser(c: any): Promise<{ user: SessionUser; token: string } | null> {
-  const token = getCookie(c, "__Host-ctx_session") as string | undefined;
-  if (!token) return null;
+async function resolveUser(c: any, token: string): Promise<{ user: SessionUser; token: string } | null> {
   try {
     const apiBase: string = c.env.API_BASE_URL;
     const resp = await fetch(`${apiBase}/v1/me`, {
@@ -483,7 +481,8 @@ app.get("/login/device", async (c) => {
   );
 });
 
-// Device authorize proxy — forwards to API (avoids CORS / exposing API_BASE_URL)
+// Device authorize proxy — forwards to API (avoids CORS / exposing API_BASE_URL).
+// Starts with /api/ so auth middleware skips it; reads cookie directly.
 app.post("/api/device/authorize", async (c) => {
   const token = getCookie(c, "__Host-ctx_session") as string | undefined;
   if (!token) {
