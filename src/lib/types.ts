@@ -121,6 +121,13 @@ export interface AgentRanking {
   packages: number;
 }
 
+export interface RegistryOverview {
+  total_packages: number;
+  total_downloads: number;
+  total_publishers: number;
+  breakdown: { type: string; count: number; percentage: number }[];
+}
+
 // --- Sync types ---
 
 export interface SyncProfileMeta {

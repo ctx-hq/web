@@ -52,7 +52,7 @@ export const PackageStatsPage: FC<{
                   const heightPct = (day.count / maxCount) * 100;
                   return (
                     <div
-                      class="flex-1 bg-foreground/70 rounded-t-sm transition-all hover:bg-foreground"
+                      class="flex-1 bg-foreground/70 transition-all hover:bg-foreground"
                       style={`height: ${Math.max(heightPct, 2)}%`}
                       title={`${day.date}: ${formatNumber(day.count)}`}
                     />

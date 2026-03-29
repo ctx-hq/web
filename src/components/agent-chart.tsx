@@ -21,10 +21,15 @@ export const AgentChart: FC<{
               {formatNumber(entry.count)} ({entry.percentage.toFixed(1)}%)
             </span>
           </div>
-          <div class="h-2 w-full rounded-full bg-muted">
+          <div class="h-2 w-full bg-muted">
             <div
-              class="h-2 rounded-full bg-foreground/70"
+              class="h-2 bg-foreground/70"
               style={`width: ${Math.min(entry.percentage, 100)}%`}
+              role="meter"
+              aria-valuenow={entry.percentage}
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-label={`${AGENT_DISPLAY_NAMES[entry.agent] ?? entry.agent}: ${entry.percentage.toFixed(1)} percent`}
             />
           </div>
         </div>

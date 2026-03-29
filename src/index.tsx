@@ -5,7 +5,7 @@ import { Layout } from "./layout";
 import { ApiClient, ApiError } from "./lib/api-client";
 import { defaultMeta, searchMeta, packageMeta, docsMeta, escapeHtml } from "./lib/seo";
 import { SITE_NAME, SITE_URL } from "./lib/constants";
-import type { SessionUser, PackageSummary, PackageType, SortOption, SearchResult, ManifestInfo, OrgInfo, OrgMember, SyncProfileMeta, AgentRanking } from "./lib/types";
+import type { SessionUser, PackageSummary, PackageType, SortOption, SearchResult, ManifestInfo, OrgInfo, OrgMember, SyncProfileMeta, AgentRanking, RegistryOverview } from "./lib/types";
 import { parseManifest } from "./lib/types";
 import { validateSort } from "./lib/search-url";
 import { HomePage } from "./pages/home";
@@ -657,25 +657,26 @@ app.get("/org/:name", async (c) => {
 app.get("/stats", async (c) => {
   let agents: AgentRanking[] = [];
   let trending: PackageSummary[] = [];
-  try {
-    const [agentResult, trendingResult] = await Promise.all([
-      api(c).getAgentRankings(),
-      api(c).getTrending(12, c.get("token")),
-    ]);
-    agents = agentResult.agents;
-    trending = trendingResult.packages;
-  } catch (err) {
-    if (err instanceof ApiError && err.status >= 500) {
-      console.error("Stats: upstream error", err.status);
+  let overview: RegistryOverview | null = null;
+  const results = await Promise.allSettled([
+    api(c).getAgentRankings(),
+    api(c).getTrending(12, c.get("token")),
+    api(c).getRegistryOverview(),
+  ]);
+  if (results[0].status === "fulfilled") agents = results[0].value.agents;
+  if (results[1].status === "fulfilled") trending = results[1].value.packages;
+  if (results[2].status === "fulfilled") overview = results[2].value;
+  for (const r of results) {
+    if (r.status === "rejected" && r.reason instanceof ApiError && r.reason.status >= 500) {
+      console.error("Stats: upstream error", r.reason.status);
     }
-    // Non-critical — render with empty data
   }
 
   const meta = { ...defaultMeta(), title: `Stats — ${SITE_NAME}` };
   c.header("Cache-Control", "public, s-maxage=60, stale-while-revalidate=120");
   return c.html(
     <Layout meta={meta} currentPath="/stats" user={c.get("user")}>
-      <StatsPage agents={agents} trending={trending} />
+      <StatsPage overview={overview} agents={agents} trending={trending} />
     </Layout>
   );
 });

@@ -1,7 +1,7 @@
 import type {
   PackageSummary, PackageDetail, SearchResult, VersionDetail,
   PackageStats, PublisherProfile, OrgDetail, OrgMember, OrgInfo,
-  AgentRanking, SyncProfileMeta, SyncPackageEntry,
+  AgentRanking, RegistryOverview, SyncProfileMeta, SyncPackageEntry,
 } from "./types";
 
 export class ApiClient {
@@ -47,6 +47,10 @@ export class ApiClient {
 
   async getTrending(limit = 20, token?: string | null): Promise<{ packages: PackageSummary[]; period: string }> {
     return this.get(`/v1/stats/trending?limit=${limit}`, token);
+  }
+
+  async getRegistryOverview(): Promise<RegistryOverview> {
+    return this.get("/v1/stats/overview");
   }
 
   async getAgentRankings(): Promise<{ agents: AgentRanking[] }> {
