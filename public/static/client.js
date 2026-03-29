@@ -191,19 +191,44 @@ document.addEventListener('click',function(e){
       // Remove error state on edit
       nameInput.classList.remove('cn-input-error');
       nameInput.removeAttribute('aria-invalid');
+      nameInput.setAttribute('aria-describedby','org-name-hint');
       var errEl=document.getElementById('org-name-error');
       if(errEl)errEl.remove();
     });
   }
 
+  function getNameError(v){
+    if(!v)return 'Organization name is required.';
+    if(v.length<nameMin||v.length>nameMax)return 'Name must be between '+nameMin+' and '+nameMax+' characters.';
+    if(!nameRe.test(v))return 'Name can only contain lowercase letters, numbers, and hyphens, and must start and end with a letter or number.';
+    return null;
+  }
+
+  function showNameError(msg){
+    var existing=document.getElementById('org-name-error');
+    if(existing)existing.remove();
+    if(!msg||!nameInput)return;
+    var el=document.createElement('p');
+    el.id='org-name-error';
+    el.className='cn-form-error mt-1.5';
+    el.setAttribute('role','alert');
+    el.textContent=msg;
+    var hint=document.getElementById('org-name-hint');
+    if(hint&&hint.parentNode)hint.parentNode.insertBefore(el,hint.nextSibling);
+    else nameInput.parentNode.appendChild(el);
+    nameInput.setAttribute('aria-describedby','org-name-hint org-name-error');
+  }
+
   form.addEventListener('submit',function(e){
     var v=nameInput?nameInput.value.trim():'';
-    if(!v||v.length<nameMin||v.length>nameMax||!nameRe.test(v)){
+    var err=getNameError(v);
+    if(err){
       e.preventDefault();
       if(nameInput){
         nameInput.classList.add('cn-input-error');
         nameInput.setAttribute('aria-invalid','true');
         nameInput.focus();
+        showNameError(err);
       }
       return;
     }

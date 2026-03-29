@@ -567,10 +567,17 @@ app.post("/orgs/new", async (c) => {
     await api(c).createOrg(name, displayName, token);
     return c.redirect(`/org/${encodeURIComponent(name)}`);
   } catch (err) {
+    if (err instanceof ApiError && (err.status === 401 || err.status === 403)) {
+      return c.redirect("/login");
+    }
+
     let errorMsg = "Failed to create organization. Please try again.";
+    let statusCode: 409 | 422 | 500 = 422;
     if (err instanceof ApiError) {
       const apiMsg = err.body?.message;
       errorMsg = (typeof apiMsg === "string" && apiMsg) || err.message || errorMsg;
+      if (err.status === 409) statusCode = 409;
+      else if (err.status >= 500) statusCode = 500;
     }
 
     const meta = { ...defaultMeta(), title: `Create Organization — ${SITE_NAME}` };
@@ -581,7 +588,7 @@ app.post("/orgs/new", async (c) => {
           values={{ name, display_name: displayName }}
         />
       </Layout>,
-      422,
+      statusCode,
     );
   }
 });
