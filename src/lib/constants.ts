@@ -28,10 +28,10 @@ export const TRUST_TIERS: Record<string, { label: string; color: string; icon: s
 };
 
 /** Visibility display configuration. */
-export const VISIBILITY_CONFIG: Record<string, { label: string; icon: string }> = {
-  public: { label: "Public", icon: "\u{1F310}" },
-  unlisted: { label: "Unlisted", icon: "\u{1F517}" },
-  private: { label: "Private", icon: "\u{1F512}" },
+export const VISIBILITY_CONFIG: Record<string, { label: string }> = {
+  public: { label: "Public" },
+  unlisted: { label: "Unlisted" },
+  private: { label: "Private" },
 };
 
 /** Agent display names for readable output. */
