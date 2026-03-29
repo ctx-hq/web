@@ -4,7 +4,7 @@ export const SITE_DESCRIPTION =
   "Discover, install, and manage skills, MCP servers, and CLI tools for AI agents.";
 export const SITE_URL = "https://getctx.org";
 export const DEFAULT_OG_IMAGE = "https://getctx.org/og-default.png";
-export const PACKAGE_TYPES = ["skill", "mcp", "cli"] as const;
+export const PACKAGE_TYPES = ["skill", "cli", "mcp"] as const;
 
 export const SORT_OPTIONS = [
   { value: "downloads", label: "Downloads" },

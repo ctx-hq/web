@@ -149,6 +149,44 @@ describe("real app routes", () => {
     expect(html).toContain('aria-label="Package type filter"');
   });
 
+  it("home page tab order is All, skill, cli, mcp", async () => {
+    const res = await req("/");
+    const html = await res.text();
+    // All tabs should appear in order: All → skill → cli → mcp
+    const allIdx = html.indexOf(">All<");
+    const skillIdx = html.indexOf('data-home-tab="skill"');
+    const cliIdx = html.indexOf('data-home-tab="cli"');
+    const mcpIdx = html.indexOf('data-home-tab="mcp"');
+    expect(allIdx).toBeGreaterThan(-1);
+    expect(skillIdx).toBeGreaterThan(allIdx);
+    expect(cliIdx).toBeGreaterThan(skillIdx);
+    expect(mcpIdx).toBeGreaterThan(cliIdx);
+  });
+
+  it("home page get-started uses cn-tabbed-input-tab style (not underline)", async () => {
+    const res = await req("/");
+    const html = await res.text();
+    // Get-started tabs should use the unified tab style
+    expect(html).toContain("cn-tabbed-input-tab");
+    expect(html).toContain("cn-tabbed-input-tab-active");
+    // Should NOT contain old underline-style classes on tab buttons
+    expect(html).not.toMatch(/data-tab="agent"[^>]*border-b-foreground/);
+    expect(html).not.toMatch(/data-tab="human"[^>]*border-b-transparent/);
+  });
+
+  it("get-started tab labels are Agent and CLI (not Human)", async () => {
+    const res = await req("/");
+    const html = await res.text();
+    // The install-tabs area should have Agent and CLI labels
+    const installTabsSection = html.slice(
+      html.indexOf('class="install-tabs'),
+      html.indexOf('data-panel="agent"'),
+    );
+    expect(installTabsSection).toContain(">Agent<");
+    expect(installTabsSection).toContain(">CLI<");
+    expect(installTabsSection).not.toContain(">Human<");
+  });
+
   it("search with q param calls API search", async () => {
     mockFetch.mockResolvedValueOnce(
       apiJson({ packages: [makePkg()], total: 1 })

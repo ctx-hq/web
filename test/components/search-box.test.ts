@@ -30,3 +30,13 @@ describe("search-box", () => {
     expect(new Set(values).size).toBe(values.length);
   });
 });
+
+describe("PACKAGE_TYPES order", () => {
+  it("has exactly 3 types", () => {
+    expect(PACKAGE_TYPES).toHaveLength(3);
+  });
+
+  it("order is skill, cli, mcp", () => {
+    expect(PACKAGE_TYPES).toEqual(["skill", "cli", "mcp"]);
+  });
+});

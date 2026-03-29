@@ -38,20 +38,20 @@ export const InstallTabs: FC<{
 
   return (
     <div class="install-tabs cn-card">
-      <div class="flex border-b border-border">
+      <nav class="flex border-b border-input">
         <button
           data-tab="agent"
-          class="border-b-2 border-b-foreground px-3 py-1.5 text-xs font-medium"
+          class="cn-tabbed-input-tab cn-tabbed-input-tab-active"
         >
           Agent
         </button>
         <button
           data-tab="human"
-          class="border-b-2 border-b-transparent px-3 py-1.5 text-xs font-medium text-muted-foreground"
+          class="cn-tabbed-input-tab"
         >
           CLI
         </button>
-      </div>
+      </nav>
       {/* Agent panel */}
       <div data-panel="agent" class="p-3">
         <div class="flex items-center gap-2">

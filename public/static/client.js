@@ -37,9 +37,7 @@ document.addEventListener('click',function(e){
   if(!btn||!btn.closest('.install-tabs'))return;
   var tab=btn.dataset.tab,container=btn.closest('.install-tabs');
   container.querySelectorAll('[data-tab]').forEach(function(b){
-    b.classList.toggle('border-b-foreground',b.dataset.tab===tab);
-    b.classList.toggle('border-b-transparent',b.dataset.tab!==tab);
-    b.classList.toggle('text-muted-foreground',b.dataset.tab!==tab);
+    b.classList.toggle('cn-tabbed-input-tab-active',b.dataset.tab===tab);
   });
   container.querySelectorAll('[data-panel]').forEach(function(p){
     p.classList.toggle('hidden',p.dataset.panel!==tab);

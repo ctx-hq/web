@@ -144,6 +144,36 @@ describe("package detail routes", () => {
     expect(html).toContain("ctx install @test/existing");
   });
 
+  it("install-tabs uses cn-tabbed-input-tab style (not underline)", async () => {
+    mockFetch
+      .mockResolvedValueOnce(apiJson(fakePkg))
+      .mockResolvedValueOnce(apiJson(fakeVersion));
+
+    const res = await req("/@test/existing");
+    const html = await res.text();
+    expect(html).toContain("cn-tabbed-input-tab");
+    expect(html).toContain("cn-tabbed-input-tab-active");
+    // Should NOT contain old underline-style classes on tab buttons
+    expect(html).not.toMatch(/data-tab="agent"[^>]*border-b-foreground/);
+    expect(html).not.toMatch(/data-tab="human"[^>]*border-b-transparent/);
+  });
+
+  it("install-tabs labels are Agent and CLI (not Human)", async () => {
+    mockFetch
+      .mockResolvedValueOnce(apiJson(fakePkg))
+      .mockResolvedValueOnce(apiJson(fakeVersion));
+
+    const res = await req("/@test/existing");
+    const html = await res.text();
+    const installTabsSection = html.slice(
+      html.indexOf('class="install-tabs'),
+      html.indexOf('data-panel="agent"'),
+    );
+    expect(installTabsSection).toContain(">Agent<");
+    expect(installTabsSection).toContain(">CLI<");
+    expect(installTabsSection).not.toContain(">Human<");
+  });
+
   // === README ===
 
   it("renders README HTML in prose container", async () => {

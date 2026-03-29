@@ -18,22 +18,20 @@ export const GetStarted: FC = () => {
     <section class="mb-12">
       <div class="install-tabs cn-card mx-auto max-w-lg">
         {/* Tab bar — Agent default */}
-        <div class="flex border-b border-border">
+        <nav class="flex border-b border-input">
           <button
             data-tab="agent"
-            class="flex items-center gap-1.5 border-b-2 border-b-foreground px-3 py-1.5 text-xs font-medium"
+            class="cn-tabbed-input-tab cn-tabbed-input-tab-active flex items-center gap-1.5"
           >
-            <Icon name="robot" class="size-3" />
             Agent
           </button>
           <button
             data-tab="human"
-            class="flex items-center gap-1.5 border-b-2 border-b-transparent px-3 py-1.5 text-xs font-medium text-muted-foreground"
+            class="cn-tabbed-input-tab flex items-center gap-1.5"
           >
-            <Icon name="user" class="size-3" />
-            Human
+            CLI
           </button>
-        </div>
+        </nav>
 
         {/* Agent panel (visible by default) */}
         <div data-panel="agent" class="p-4">
