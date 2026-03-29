@@ -445,6 +445,8 @@ describe("privacy page", () => {
     const html = await res.text();
     expect(html).toContain("__Host-ctx_session");
     expect(html).toContain("__Host-oauth_state");
+    expect(html).toContain("__Host-oauth_redirect");
+    expect(html).toContain("three cookies");
   });
 
   it("privacy page mentions no analytics", async () => {

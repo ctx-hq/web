@@ -19,13 +19,12 @@ import { PublisherPage } from "./pages/publisher";
 import { OrgPage } from "./pages/org";
 import { StatsPage } from "./pages/stats";
 import { PackageStatsPage } from "./pages/package-stats";
+import { DeviceLoginPage } from "./pages/device-login";
 
 type Env = {
   Bindings: {
     API_BASE_URL: string;
     GITHUB_CLIENT_ID?: string;
-    GITHUB_CLIENT_SECRET?: string;
-
   };
 };
 
@@ -56,6 +55,12 @@ function api(c: { env: Env["Bindings"] }) {
   const base = c.env.API_BASE_URL;
   if (!base) throw new Error("API_BASE_URL environment variable is required");
   return new ApiClient(base);
+}
+
+/** Validate redirect path: must be relative, no protocol, no double-slash (open redirect prevention). */
+function isSafeRedirect(path: string | undefined): path is string {
+  if (!path) return false;
+  return path.startsWith("/") && !path.startsWith("//") && !/^\/[\\]/.test(path) && !path.includes(":");
 }
 
 /** Resolve session user from cookie. Only call in auth-required routes. */
@@ -316,8 +321,9 @@ app.get("/docs/:section", (c) => {
 // Login — redirect to dashboard if already signed in
 app.get("/login", async (c) => {
   const session = await resolveUser(c);
+  const redirect = c.req.query("redirect");
   if (session) {
-    return c.redirect("/dashboard");
+    return c.redirect(isSafeRedirect(redirect) ? redirect! : "/dashboard");
   }
   const state = crypto.randomUUID();
   setCookie(c, "__Host-oauth_state", state, {
@@ -327,6 +333,16 @@ app.get("/login", async (c) => {
     path: "/",
     maxAge: 600,
   });
+  // Store redirect destination for post-login
+  if (isSafeRedirect(redirect)) {
+    setCookie(c, "__Host-oauth_redirect", redirect!, {
+      httpOnly: true,
+      secure: true,
+      sameSite: "Lax",
+      path: "/",
+      maxAge: 600,
+    });
+  }
   const meta = { ...defaultMeta(), title: `Sign in — ${SITE_NAME}` };
   return c.html(
     <Layout meta={meta} currentPath="/login">
@@ -335,110 +351,45 @@ app.get("/login", async (c) => {
   );
 });
 
-// OAuth callback — exchange GitHub code for user session
+// OAuth callback — forward code to API (SSOT: API owns GitHub exchange)
 app.get("/login/callback", async (c) => {
   const code = c.req.query("code");
   const state = c.req.query("state");
 
+  /** Clean up transient OAuth cookies on every exit path. */
+  const clearOAuthCookies = () => {
+    deleteCookie(c, "__Host-oauth_state", { path: "/", secure: true });
+    deleteCookie(c, "__Host-oauth_redirect", { path: "/", secure: true });
+  };
+
   if (!code || !state) {
+    clearOAuthCookies();
     return c.redirect("/login");
   }
 
   // Verify state matches cookie
   const savedState = getCookie(c, "__Host-oauth_state");
   if (!savedState || savedState !== state) {
-    return c.redirect("/login");
-  }
-
-  const clientId = c.env.GITHUB_CLIENT_ID;
-  const clientSecret = c.env.GITHUB_CLIENT_SECRET;
-  if (!clientId || !clientSecret) {
+    clearOAuthCookies();
     return c.redirect("/login");
   }
 
   try {
-    // Exchange code for GitHub access token
-    const tokenResp = await fetch("https://github.com/login/oauth/access_token", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-      },
-      body: JSON.stringify({
-        client_id: clientId,
-        client_secret: clientSecret,
-        code,
-      }),
-    });
-
-    const tokenData = await tokenResp.json() as { access_token?: string; error?: string };
-    if (!tokenData.access_token) {
-      return c.redirect("/login");
-    }
-
-    // Get user profile from GitHub (including email)
-    const userResp = await fetch("https://api.github.com/user", {
-      headers: {
-        Authorization: `Bearer ${tokenData.access_token}`,
-        Accept: "application/json",
-        "User-Agent": "getctx.org",
-      },
-    });
-    const ghUser = await userResp.json() as {
-      id: number;
-      login: string;
-      email: string | null;
-      avatar_url: string;
-    };
-
-    // If email not public, fetch from /user/emails
-    let email = ghUser.email ?? "";
-    if (!email) {
-      const emailsResp = await fetch("https://api.github.com/user/emails", {
-        headers: {
-          Authorization: `Bearer ${tokenData.access_token}`,
-          Accept: "application/json",
-          "User-Agent": "getctx.org",
-        },
-      });
-      const emails = await emailsResp.json() as Array<{ email: string; primary: boolean; verified: boolean }>;
-      const primary = emails.find((e) => e.primary && e.verified);
-      email = primary?.email ?? emails[0]?.email ?? "";
-    }
-
-    // Revoke GitHub access token — best-effort, fire-and-forget
-    try {
-      await fetch(`https://api.github.com/applications/${clientId}/token`, {
-        method: "DELETE",
-        headers: {
-          Authorization: `Basic ${btoa(`${clientId}:${clientSecret}`)}`,
-          Accept: "application/vnd.github+json",
-          "User-Agent": "getctx.org",
-        },
-        body: JSON.stringify({ access_token: tokenData.access_token }),
-        signal: AbortSignal.timeout(5_000),
-      });
-    } catch { /* best-effort — token may already be single-use */ }
-
-    // Register/login user via our API
+    // Forward code to API — API handles GitHub token exchange, user upsert, session creation
     const apiBase = c.env.API_BASE_URL;
     const registerResp = await fetch(`${apiBase}/v1/auth/github`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        github_id: String(ghUser.id),
-        username: ghUser.login,
-        email,
-        avatar_url: ghUser.avatar_url,
-      }),
+      body: JSON.stringify({ code }),
     });
 
     const session = await registerResp.json() as { token?: string; error?: string };
     if (!session.token) {
+      clearOAuthCookies();
       return c.redirect("/login");
     }
 
-    // Set session cookie and clear oauth_state
+    // Set session cookie
     setCookie(c, "__Host-ctx_session", session.token, {
       httpOnly: true,
       secure: true,
@@ -446,10 +397,14 @@ app.get("/login/callback", async (c) => {
       path: "/",
       maxAge: 2592000,
     });
-    deleteCookie(c, "__Host-oauth_state", { path: "/", secure: true });
 
-    return c.redirect("/dashboard");
+    // Honor redirect destination from login flow, then clean up
+    const redirect = getCookie(c, "__Host-oauth_redirect") as string | undefined;
+    clearOAuthCookies();
+
+    return c.redirect(isSafeRedirect(redirect) ? redirect : "/dashboard");
   } catch {
+    clearOAuthCookies();
     return c.redirect("/login");
   }
 });
@@ -458,6 +413,58 @@ app.get("/login/callback", async (c) => {
 app.get("/logout", (c) => {
   deleteCookie(c, "__Host-ctx_session", { path: "/", secure: true });
   return c.redirect("/");
+});
+
+// Device login — authorize a CLI device code
+app.get("/login/device", async (c) => {
+  const session = await resolveUser(c);
+  const code = c.req.query("code") ?? "";
+
+  if (!session) {
+    const redirectPath = code
+      ? `/login/device?code=${encodeURIComponent(code)}`
+      : "/login/device";
+    return c.redirect(`/login?redirect=${encodeURIComponent(redirectPath)}`);
+  }
+
+  const meta = { ...defaultMeta(), title: `Authorize Device — ${SITE_NAME}` };
+  return c.html(
+    <Layout meta={meta} currentPath="/login/device" user={session.user}>
+      <DeviceLoginPage code={code} />
+    </Layout>
+  );
+});
+
+// Device authorize proxy — forwards to API (avoids CORS / exposing API_BASE_URL)
+app.post("/api/device/authorize", async (c) => {
+  const token = getCookie(c, "__Host-ctx_session") as string | undefined;
+  if (!token) {
+    return c.json({ error: "unauthorized", message: "Not signed in" }, 401);
+  }
+
+  let body: { user_code?: string };
+  try {
+    body = await c.req.json<{ user_code?: string }>();
+  } catch {
+    return c.json({ error: "bad_request", message: "Invalid request body" }, 400);
+  }
+
+  try {
+    const apiBase = c.env.API_BASE_URL;
+    const resp = await fetch(`${apiBase}/v1/auth/device/authorize`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ user_code: body.user_code }),
+    });
+
+    const data = await resp.json();
+    return c.json(data, resp.status as any);
+  } catch {
+    return c.json({ error: "server_error", message: "Unable to reach authorization service" }, 502);
+  }
 });
 
 // Dashboard (auth required)

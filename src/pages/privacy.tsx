@@ -32,7 +32,7 @@ export const PrivacyPage: FC = () => (
 
       <section>
         <h2 class="mb-2 text-sm font-semibold font-heading text-foreground">Cookies</h2>
-        <p>We use two cookies, both strictly necessary for the site to function:</p>
+        <p>We use three cookies, all strictly necessary for the site to function:</p>
         <ul class="list-disc space-y-1 pl-5">
           <li>
             <strong>__Host-ctx_session</strong> — your authentication session token (HTTP-only, secure,
@@ -41,6 +41,10 @@ export const PrivacyPage: FC = () => (
           <li>
             <strong>__Host-oauth_state</strong> — CSRF protection during GitHub sign-in (HTTP-only,
             secure, 10-minute expiry)
+          </li>
+          <li>
+            <strong>__Host-oauth_redirect</strong> — preserves your destination page during sign-in
+            (HTTP-only, secure, 10-minute expiry, cleared after use)
           </li>
         </ul>
         <p>

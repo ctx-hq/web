@@ -103,6 +103,65 @@ document.addEventListener('click',function(e){
   });
 })();
 
+/* --- Device login form --- */
+(function(){
+  var form=document.querySelector('[data-device-form]');
+  if(!form)return;
+  var input=form.querySelector('input[name="user_code"]');
+  var btn=form.querySelector('button[type="submit"]');
+  var msgLoading=form.querySelector('[data-device-msg="loading"]');
+  var msgSuccess=form.querySelector('[data-device-msg="success"]');
+  var msgError=form.querySelector('[data-device-msg="error"]');
+
+  // Auto-uppercase as user types
+  if(input){
+    input.addEventListener('input',function(){
+      var pos=input.selectionStart;
+      input.value=input.value.toUpperCase().replace(/[^A-Z0-9]/g,'');
+      input.setSelectionRange(pos,pos);
+    });
+  }
+
+  function showMsg(type,text){
+    [msgLoading,msgSuccess,msgError].forEach(function(el){if(el)el.classList.add('hidden')});
+    var target=type==='loading'?msgLoading:type==='success'?msgSuccess:msgError;
+    if(target){
+      if(text)target.textContent=text;
+      target.classList.remove('hidden');
+    }
+  }
+
+  form.addEventListener('submit',function(e){
+    e.preventDefault();
+    var code=input?input.value.trim():'';
+    if(!code||code.length<6)return;
+
+    showMsg('loading');
+    if(btn)btn.disabled=true;
+    if(input)input.readOnly=true;
+
+    fetch('/api/device/authorize',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({user_code:code})
+    }).then(function(res){
+      return res.json().then(function(data){return{ok:res.ok,data:data}});
+    }).then(function(result){
+      if(result.ok){
+        showMsg('success');
+      }else{
+        showMsg('error',result.data.message||'Authorization failed. Please try again.');
+        if(btn)btn.disabled=false;
+        if(input)input.readOnly=false;
+      }
+    }).catch(function(){
+      showMsg('error','Network error. Please check your connection and try again.');
+      if(btn)btn.disabled=false;
+      if(input)input.readOnly=false;
+    });
+  });
+})();
+
 /* --- Copy code blocks in prose (read from <code>, not <pre>) --- */
 document.querySelectorAll('.prose pre').forEach(function(pre){
   var code=pre.querySelector('code');
