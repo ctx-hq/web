@@ -64,8 +64,7 @@ app.use("*", async (c, next) => {
     path === "/sitemap.xml" ||
     path === "/robots.txt" ||
     path === "/skill.md" ||
-    path.startsWith("/install.") ||
-    path.endsWith(".ctx")
+    path.startsWith("/install.")
   ) {
     c.set("user", null);
     c.set("token", null);
@@ -252,17 +251,26 @@ app.get("/search", async (c) => {
   );
 });
 
-// Agent-readable .ctx endpoint: proxy to API
+// Agent-readable .ctx endpoint: proxy to API (respects package visibility)
 app.get("/:fullName{@[^/]+/[^/]+\\.ctx}", async (c) => {
   const fullName = c.req.param("fullName").replace(/\.ctx$/, "");
   const apiBase = c.env.API_BASE_URL;
+  const token = c.get("token");
+  const headers: Record<string, string> = {};
+  if (token) headers.Authorization = `Bearer ${token}`;
   try {
     const res = await fetch(`${apiBase}/${fullName}.ctx`, {
+      headers,
       signal: AbortSignal.timeout(5_000),
     });
     if (!res.ok) return c.text(`Package ${fullName} not found`, 404);
     c.header("Content-Type", "text/plain; charset=utf-8");
-    c.header("Cache-Control", "public, s-maxage=300, stale-while-revalidate=600");
+    // Private packages: no public caching
+    if (token) {
+      c.header("Cache-Control", "private, no-store");
+    } else {
+      c.header("Cache-Control", "public, s-maxage=300, stale-while-revalidate=600");
+    }
     return c.text(await res.text());
   } catch {
     return c.text("Service temporarily unavailable", 502);
