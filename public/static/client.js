@@ -160,6 +160,61 @@ document.addEventListener('click',function(e){
   });
 })();
 
+/* --- Create org form --- */
+(function(){
+  var form=document.querySelector('[data-create-org-form]');
+  if(!form)return;
+  var nameInput=document.getElementById('org-name');
+  var preview=document.getElementById('org-name-preview');
+  var submitBtn=form.querySelector('button[type="submit"]');
+  var nameRe=new RegExp('^'+form.dataset.namePattern+'$');
+  var nameMin=parseInt(form.dataset.nameMin,10)||2;
+  var nameMax=parseInt(form.dataset.nameMax,10)||39;
+
+  function updatePreview(){
+    var v=nameInput.value;
+    if(v&&preview){
+      preview.classList.remove('hidden');
+      var strong=preview.querySelector('strong');
+      if(strong)strong.textContent='@'+v;
+    }else if(preview){
+      preview.classList.add('hidden');
+    }
+  }
+
+  if(nameInput){
+    nameInput.addEventListener('input',function(){
+      var pos=nameInput.selectionStart;
+      nameInput.value=nameInput.value.toLowerCase().replace(/[^a-z0-9-]/g,'');
+      nameInput.setSelectionRange(pos,pos);
+      updatePreview();
+      // Remove error state on edit
+      nameInput.classList.remove('cn-input-error');
+      nameInput.removeAttribute('aria-invalid');
+      var errEl=document.getElementById('org-name-error');
+      if(errEl)errEl.remove();
+    });
+  }
+
+  form.addEventListener('submit',function(e){
+    var v=nameInput?nameInput.value.trim():'';
+    if(!v||v.length<nameMin||v.length>nameMax||!nameRe.test(v)){
+      e.preventDefault();
+      if(nameInput){
+        nameInput.classList.add('cn-input-error');
+        nameInput.setAttribute('aria-invalid','true');
+        nameInput.focus();
+      }
+      return;
+    }
+    // Prevent double submit
+    if(submitBtn){
+      submitBtn.disabled=true;
+      submitBtn.setAttribute('aria-disabled','true');
+    }
+  });
+})();
+
 /* --- Copy code blocks in prose (read from <code>, not <pre>) --- */
 document.querySelectorAll('.prose pre').forEach(function(pre){
   var code=pre.querySelector('code');

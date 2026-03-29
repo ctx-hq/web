@@ -71,10 +71,26 @@ export const DashboardPage: FC<{
     {/* My Orgs tab */}
     {activeTab === "orgs" && (
       <section>
-        <h2 class="mb-4 text-xs font-semibold font-heading">My organizations</h2>
+        <div class="mb-4 flex items-center justify-between">
+          <h2 class="text-xs font-semibold font-heading">My organizations</h2>
+          <Button variant="outline" size="xs" href="/orgs/new">
+            <Icon name="plus" class="size-3" />
+            Create Organization
+          </Button>
+        </div>
         {orgs.length === 0 ? (
-          <div class="cn-card p-6 text-center">
-            <p class="text-xs text-muted-foreground">You are not a member of any organizations.</p>
+          <div class="cn-card p-8 text-center">
+            <Icon name="users-three" class="mx-auto mb-3 size-8 text-muted-foreground/50" />
+            <p class="text-xs font-medium font-heading">No organizations yet</p>
+            <p class="mx-auto mt-1.5 max-w-xs text-[11px] text-muted-foreground">
+              Create an org to publish packages under a shared namespace and collaborate with your team.
+            </p>
+            <div class="mt-4">
+              <Button variant="default" size="xs" href="/orgs/new">
+                <Icon name="plus" class="size-3" />
+                Create Organization
+              </Button>
+            </div>
           </div>
         ) : (
           <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">

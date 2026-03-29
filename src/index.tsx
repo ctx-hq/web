@@ -20,6 +20,7 @@ import { OrgPage } from "./pages/org";
 import { StatsPage } from "./pages/stats";
 import { PackageStatsPage } from "./pages/package-stats";
 import { DeviceLoginPage } from "./pages/device-login";
+import { CreateOrgPage, validateOrgName } from "./pages/create-org";
 
 type Env = {
   Bindings: {
@@ -519,6 +520,69 @@ app.post("/api/device/authorize", async (c) => {
     return c.json(data, resp.status as any);
   } catch {
     return c.json({ error: "server_error", message: "Unable to reach authorization service" }, 502);
+  }
+});
+
+// Create Organization (auth required)
+app.get("/orgs/new", async (c) => {
+  const user = c.get("user");
+  if (!user) {
+    return c.redirect("/login?redirect=/orgs/new");
+  }
+  const meta = { ...defaultMeta(), title: `Create Organization — ${SITE_NAME}` };
+  return c.html(
+    <Layout meta={meta} currentPath="/orgs/new" user={user}>
+      <CreateOrgPage />
+    </Layout>
+  );
+});
+
+app.post("/orgs/new", async (c) => {
+  const user = c.get("user");
+  const token = c.get("token");
+  if (!user || !token) {
+    return c.redirect("/login?redirect=/orgs/new");
+  }
+
+  const body = await c.req.parseBody();
+  const name = String(body.name ?? "").trim();
+  const displayName = String(body.display_name ?? "").trim() || undefined;
+
+  // Server-side validation
+  const nameError = validateOrgName(name);
+  if (nameError) {
+    const meta = { ...defaultMeta(), title: `Create Organization — ${SITE_NAME}` };
+    return c.html(
+      <Layout meta={meta} currentPath="/orgs/new" user={user}>
+        <CreateOrgPage
+          fieldErrors={{ name: nameError }}
+          values={{ name, display_name: displayName }}
+        />
+      </Layout>,
+      422,
+    );
+  }
+
+  try {
+    await api(c).createOrg(name, displayName, token);
+    return c.redirect(`/org/${encodeURIComponent(name)}`);
+  } catch (err) {
+    let errorMsg = "Failed to create organization. Please try again.";
+    if (err instanceof ApiError) {
+      const apiMsg = err.body?.message;
+      errorMsg = (typeof apiMsg === "string" && apiMsg) || err.message || errorMsg;
+    }
+
+    const meta = { ...defaultMeta(), title: `Create Organization — ${SITE_NAME}` };
+    return c.html(
+      <Layout meta={meta} currentPath="/orgs/new" user={user}>
+        <CreateOrgPage
+          error={errorMsg}
+          values={{ name, display_name: displayName }}
+        />
+      </Layout>,
+      422,
+    );
   }
 });
 

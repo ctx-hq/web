@@ -85,6 +85,7 @@ describe("dashboard page", () => {
       const emptyOrgs: OrgInfo[] = [];
       expect(emptyOrgs.length).toBe(0);
     });
+
   });
 
   // --- Sync tab ---

@@ -99,6 +99,14 @@ export class ApiClient {
     return this.get("/v1/me/sync-profile", token);
   }
 
+  // --- Org mutation APIs ---
+
+  async createOrg(name: string, displayName: string | undefined, token: string): Promise<{ id: string; name: string }> {
+    const body: Record<string, string> = { name };
+    if (displayName) body.display_name = displayName;
+    return this.post("/v1/orgs", body, token);
+  }
+
   // --- HTTP helpers ---
 
   private async get<T>(path: string, token?: string | null): Promise<T> {
@@ -115,14 +123,39 @@ export class ApiClient {
     }
     return resp.json() as Promise<T>;
   }
+
+  private async post<T>(path: string, body: Record<string, unknown>, token: string): Promise<T> {
+    const url = `${this.baseUrl}${path}`;
+    const resp = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(body),
+      signal: AbortSignal.timeout(10_000),
+    });
+    if (!resp.ok) {
+      const text = await resp.text().catch(() => "");
+      throw new ApiError(resp.status, text || `API error: ${resp.status}`);
+    }
+    return resp.json() as Promise<T>;
+  }
 }
 
 export class ApiError extends Error {
+  public body: Record<string, unknown> | null;
   constructor(
     public status: number,
     message: string,
   ) {
     super(message);
     this.name = "ApiError";
+    try {
+      this.body = JSON.parse(message);
+    } catch {
+      this.body = null;
+    }
   }
 }
