@@ -3,6 +3,7 @@ import type {
   PackageStats, PublisherProfile, OrgDetail, OrgMember, OrgInfo,
   OrgInvitation, PackageAccessEntry,
   AgentRanking, RegistryOverview, SyncProfileMeta, SyncPackageEntry,
+  TransferRequest, AppNotification, RenameResult,
 } from "./types";
 
 export class ApiClient {
@@ -156,6 +157,87 @@ export class ApiClient {
 
   async updatePackageAccess(fullName: string, add: string[], remove: string[], token: string): Promise<void> {
     return this.patch(`/v1/packages/${encodeURIComponent(fullName)}/access`, { add, remove }, token);
+  }
+
+  // --- Transfer APIs ---
+
+  async initiateTransfer(fullName: string, to: string, message: string, token: string): Promise<TransferRequest> {
+    return this.post(`/v1/packages/${encodeURIComponent(fullName)}/transfer`, { to, message }, token);
+  }
+
+  async cancelTransfer(fullName: string, token: string): Promise<void> {
+    return this.doDelete(`/v1/packages/${encodeURIComponent(fullName)}/transfer`, token);
+  }
+
+  async listMyTransfers(token: string): Promise<{ transfers: TransferRequest[] }> {
+    return this.get("/v1/me/transfers", token);
+  }
+
+  async acceptTransfer(id: string, token: string): Promise<void> {
+    return this.post(`/v1/me/transfers/${encodeURIComponent(id)}/accept`, {}, token);
+  }
+
+  async declineTransfer(id: string, token: string): Promise<void> {
+    return this.post(`/v1/me/transfers/${encodeURIComponent(id)}/decline`, {}, token);
+  }
+
+  // --- Package Settings APIs ---
+
+  async setVisibility(fullName: string, visibility: string, token: string): Promise<void> {
+    return this.patch(`/v1/packages/${encodeURIComponent(fullName)}/visibility`, { visibility }, token);
+  }
+
+  // --- Rename APIs ---
+
+  async renamePackage(fullName: string, newName: string, confirm: string, token: string): Promise<RenameResult> {
+    return this.patch(`/v1/packages/${encodeURIComponent(fullName)}/rename`, { new_name: newName, confirm }, token);
+  }
+
+  async renameOrg(orgName: string, newName: string, confirm: string, token: string): Promise<RenameResult> {
+    return this.patch(`/v1/orgs/${encodeURIComponent(orgName)}/rename`, { new_name: newName, confirm }, token);
+  }
+
+  async renameUser(newUsername: string, confirm: string, token: string): Promise<RenameResult> {
+    return this.patch("/v1/me/rename", { new_username: newUsername, confirm }, token);
+  }
+
+  // --- Notification APIs ---
+
+  async listNotifications(token: string, unreadOnly = false): Promise<{ notifications: AppNotification[] }> {
+    const qs = unreadOnly ? "?unread_only=true" : "";
+    return this.get(`/v1/me/notifications${qs}`, token);
+  }
+
+  async getNotificationCount(token: string): Promise<{ unread: number }> {
+    return this.get("/v1/me/notifications/count", token);
+  }
+
+  async markNotificationRead(id: string, token: string): Promise<void> {
+    return this.patch(`/v1/me/notifications/${encodeURIComponent(id)}`, { read: true }, token);
+  }
+
+  async dismissNotification(id: string, token: string): Promise<void> {
+    return this.doDelete(`/v1/me/notifications/${encodeURIComponent(id)}`, token);
+  }
+
+  // --- Org Lifecycle APIs ---
+
+  async archiveOrg(orgName: string, token: string): Promise<void> {
+    return this.post(`/v1/orgs/${encodeURIComponent(orgName)}/archive`, {}, token);
+  }
+
+  async unarchiveOrg(orgName: string, token: string): Promise<void> {
+    return this.post(`/v1/orgs/${encodeURIComponent(orgName)}/unarchive`, {}, token);
+  }
+
+  async leaveOrg(orgName: string, token: string): Promise<void> {
+    return this.post(`/v1/orgs/${encodeURIComponent(orgName)}/leave`, {}, token);
+  }
+
+  async dissolveOrg(orgName: string, action: string, confirm: string, transferTo: string, token: string): Promise<void> {
+    const body: Record<string, string> = { action, confirm };
+    if (transferTo) body.transfer_to = transferTo;
+    return this.post(`/v1/orgs/${encodeURIComponent(orgName)}/dissolve`, body, token);
   }
 
   // --- HTTP helpers ---

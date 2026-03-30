@@ -6,9 +6,9 @@ import { Header } from "./components/header";
 import { Footer } from "./components/footer";
 // CSS is built separately via `vite build --mode client` → /static/client.css
 
-type LayoutProps = PropsWithChildren<{ meta: SeoMeta; currentPath?: string; user?: SessionUser | null }>;
+type LayoutProps = PropsWithChildren<{ meta: SeoMeta; currentPath?: string; user?: SessionUser | null; notificationCount?: number }>;
 
-export const Layout: FC<LayoutProps> = ({ meta, currentPath, user, children }) => {
+export const Layout: FC<LayoutProps> = ({ meta, currentPath, user, notificationCount, children }) => {
   return (
     <html lang="en">
       <head>
@@ -42,7 +42,7 @@ export const Layout: FC<LayoutProps> = ({ meta, currentPath, user, children }) =
         <script src="/static/theme-init.js" />
       </head>
       <body class="bg-background text-foreground font-sans text-sm antialiased">
-        <Header currentPath={currentPath} user={user} />
+        <Header currentPath={currentPath} user={user} notificationCount={notificationCount} />
         <main class="min-h-[calc(100vh-3.5rem)]">{children}</main>
         <Footer />
         <ClientScript />

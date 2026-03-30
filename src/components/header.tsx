@@ -13,9 +13,10 @@ function avatarUrl(username: string, size: number = 40): string {
   return `https://source.boringavatars.com/beam/${size}/${encodeURIComponent(username)}?colors=264653,2a9d8f,e9c46a,f4a261,e76f51`;
 }
 
-export const Header: FC<{ currentPath?: string; user?: SessionUser | null }> = ({
+export const Header: FC<{ currentPath?: string; user?: SessionUser | null; notificationCount?: number }> = ({
   currentPath = "",
   user,
+  notificationCount = 0,
 }) => (
   <header class="border-b border-border">
     <div class="mx-auto flex h-14 max-w-6xl items-center justify-between px-4 sm:px-6 lg:px-8">
@@ -58,6 +59,18 @@ export const Header: FC<{ currentPath?: string; user?: SessionUser | null }> = (
         </Button>
         {user ? (
           <div class="flex items-center gap-3">
+            <a
+              href="/dashboard?tab=notifications"
+              class="relative text-muted-foreground hover:text-foreground transition-colors"
+              title="Notifications"
+            >
+              <Icon name="bell" class="size-4" />
+              {notificationCount > 0 && (
+                <span class="absolute -right-1.5 -top-1.5 flex size-4 items-center justify-center rounded-full bg-primary text-[9px] font-bold text-primary-foreground">
+                  {notificationCount > 9 ? "9+" : notificationCount}
+                </span>
+              )}
+            </a>
             <a
               href="/dashboard"
               class={`flex items-center gap-2 text-sm transition-colors ${

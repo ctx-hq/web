@@ -92,6 +92,7 @@ export interface OrgInfo {
 export interface OrgDetail extends OrgInfo {
   members: number;
   packages: number;
+  archived?: boolean;
 }
 
 export interface OrgMember {
@@ -175,4 +176,39 @@ export interface PublisherProfile {
   kind: "user" | "org";
   packages: number;
   created_at: string;
+}
+
+// --- Transfer types ---
+
+export interface TransferRequest {
+  id: string;
+  package: string;
+  from: string;
+  to: string;
+  status: string;
+  message?: string;
+  expires_at: string;
+  created_at: string;
+}
+
+// --- Notification types ---
+
+export interface AppNotification {
+  id: string;
+  type: string;
+  title: string;
+  body: string;
+  read: boolean;
+  data?: string;
+  created_at: string;
+}
+
+// --- Rename types ---
+
+export interface RenameResult {
+  old_name?: string;
+  new_name?: string;
+  old_username?: string;
+  new_username?: string;
+  packages_updated?: number;
 }

@@ -1,5 +1,5 @@
 import type { FC } from "hono/jsx";
-import type { PackageSummary, OrgInfo, OrgInvitation, SyncProfileMeta } from "../lib/types";
+import type { PackageSummary, OrgInfo, OrgInvitation, SyncProfileMeta, TransferRequest, AppNotification } from "../lib/types";
 import { Container } from "../components/ui/container";
 import { Button } from "../components/ui/button";
 import { Icon } from "../components/ui/icon";
@@ -10,6 +10,7 @@ import { Badge } from "../components/badge";
 const TABS = [
   { key: "packages", label: "My Packages", href: "/dashboard" },
   { key: "orgs", label: "My Orgs", href: "/dashboard?tab=orgs" },
+  { key: "notifications", label: "Notifications", href: "/dashboard?tab=notifications" },
   { key: "sync", label: "Sync", href: "/dashboard?tab=sync" },
 ] as const;
 
@@ -18,9 +19,12 @@ export const DashboardPage: FC<{
   packages: PackageSummary[];
   orgs?: OrgInfo[];
   invitations?: OrgInvitation[];
+  transfers?: TransferRequest[];
+  notifications?: AppNotification[];
+  notificationCount?: number;
   syncMeta?: SyncProfileMeta | null;
   activeTab?: string;
-}> = ({ username, packages, orgs = [], invitations = [], syncMeta = null, activeTab = "packages" }) => (
+}> = ({ username, packages, orgs = [], invitations = [], transfers = [], notifications = [], notificationCount = 0, syncMeta = null, activeTab = "packages" }) => (
   <Container class="py-10">
     <h1 class="mb-6 text-xl font-semibold font-heading">Dashboard</h1>
     <p class="mb-4 text-sm text-muted-foreground">Signed in as @{username}</p>
@@ -38,6 +42,11 @@ export const DashboardPage: FC<{
           {...(activeTab === tab.key ? { "aria-current": "page" } : {})}
         >
           {tab.label}
+          {tab.key === "notifications" && notificationCount > 0 && (
+            <span class="ml-1.5 inline-flex size-5 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">
+              {notificationCount > 99 ? "99+" : notificationCount}
+            </span>
+          )}
         </a>
       ))}
     </nav>
@@ -153,6 +162,86 @@ export const DashboardPage: FC<{
                 </div>
                 <p class="text-xs text-muted-foreground">@{org.name}</p>
               </a>
+            ))}
+          </div>
+        )}
+      </section>
+    )}
+
+    {/* Notifications tab */}
+    {activeTab === "notifications" && (
+      <section>
+        {/* Pending transfers */}
+        {transfers.length > 0 && (
+          <div class="mb-6">
+            <h2 class="mb-3 text-sm font-semibold font-heading">
+              Pending Transfers ({transfers.length})
+            </h2>
+            <div class="space-y-2">
+              {transfers.map((t) => (
+                <div class="cn-card flex items-center justify-between p-4">
+                  <div class="flex items-center gap-3">
+                    <span class="text-sm font-medium">{t.package}</span>
+                    <span class="text-xs text-muted-foreground">
+                      {t.from} &rarr; {t.to}
+                    </span>
+                  </div>
+                  <div class="flex gap-2">
+                    <form method="post" action={`/transfers/${t.id}/accept`}>
+                      <button
+                        type="submit"
+                        class="cn-button-size-xs bg-primary px-3 text-xs font-medium text-primary-foreground hover:bg-primary/90"
+                      >
+                        Accept
+                      </button>
+                    </form>
+                    <form method="post" action={`/transfers/${t.id}/decline`}>
+                      <button
+                        type="submit"
+                        class="cn-button-size-xs border border-border bg-background px-3 text-xs text-muted-foreground hover:bg-muted"
+                      >
+                        Decline
+                      </button>
+                    </form>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Notifications list */}
+        <h2 class="mb-3 text-sm font-semibold font-heading">Notifications</h2>
+        {notifications.length === 0 ? (
+          <div class="cn-card p-8 text-center">
+            <Icon name="bell" class="mx-auto mb-4 size-12 text-muted-foreground" />
+            <p class="text-sm font-medium font-heading">All caught up</p>
+            <p class="mt-1.5 text-xs text-muted-foreground">No notifications to show.</p>
+          </div>
+        ) : (
+          <div class="space-y-2">
+            {notifications.map((n) => (
+              <div class={`cn-card flex items-center justify-between p-4 ${!n.read ? "border-l-2 border-l-primary" : ""}`}>
+                <div>
+                  <p class={`text-sm ${!n.read ? "font-medium" : "text-muted-foreground"}`}>
+                    {n.title}
+                  </p>
+                  {n.body && (
+                    <p class="mt-0.5 text-xs text-muted-foreground">{n.body}</p>
+                  )}
+                  <p class="mt-1 text-[10px] text-muted-foreground">{n.created_at}</p>
+                </div>
+                {!n.read && (
+                  <form method="post" action={`/notifications/${n.id}/read`}>
+                    <button
+                      type="submit"
+                      class="cn-button-size-xs border border-border bg-background px-3 text-xs text-muted-foreground hover:bg-muted"
+                    >
+                      Mark read
+                    </button>
+                  </form>
+                )}
+              </div>
             ))}
           </div>
         )}

@@ -12,6 +12,7 @@ import { validateSort } from "./lib/search-url";
 import { HomePage } from "./pages/home";
 import { SearchPage } from "./pages/search";
 import { PackageDetailPage } from "./pages/package-detail";
+import { PackageSettingsPage } from "./pages/package-settings";
 import { DocsPage, VALID_DOC_SECTIONS } from "./pages/docs";
 import { LoginPage } from "./pages/login";
 import { DashboardPage } from "./pages/dashboard";
@@ -277,6 +278,84 @@ app.get("/:fullName{@[^/]+/[^/]+\\.ctx}", async (c) => {
     return c.text(await res.text());
   } catch {
     return c.text("Service temporarily unavailable", 502);
+  }
+});
+
+// Package settings: /@scope/name/settings
+app.get("/:fullName{@[^/]+/[^/]+}/settings", async (c) => {
+  const user = c.get("user");
+  const token = c.get("token");
+  if (!user || !token) return c.redirect("/login");
+
+  const fullName = c.req.param("fullName");
+  const parts = fullName.replace(/^@/, "").split("/");
+  const scope = parts[0];
+  const name = parts[1];
+  const error = c.req.query("error") ?? undefined;
+
+  let visibility = "public";
+  let canManage = false;
+  try {
+    const pkg = await api(c).getPackage(fullName, token);
+    visibility = pkg.visibility ?? "public";
+    canManage = true;
+  } catch {
+    // Package not found or no access
+  }
+
+  const meta = { ...defaultMeta(), title: `${fullName} Settings — ${SITE_NAME}` };
+  return c.html(
+    <Layout meta={meta} currentPath={`/${fullName}/settings`} user={user}>
+      <PackageSettingsPage
+        fullName={fullName}
+        scope={scope}
+        name={name}
+        visibility={visibility}
+        canManage={canManage}
+        error={error}
+      />
+    </Layout>
+  );
+});
+
+// Package settings POST actions
+app.post("/:fullName{@[^/]+/[^/]+}/settings/visibility", async (c) => {
+  const token = c.get("token");
+  if (!token) return c.redirect("/login");
+  const fullName = c.req.param("fullName");
+  const body = await c.req.parseBody();
+  try {
+    await api(c).setVisibility(fullName, body.visibility as string, token);
+  } catch {
+    return c.redirect(`/${fullName}/settings?error=Failed+to+update+visibility`);
+  }
+  return c.redirect(`/${fullName}/settings`);
+});
+
+app.post("/:fullName{@[^/]+/[^/]+}/settings/rename", async (c) => {
+  const token = c.get("token");
+  if (!token) return c.redirect("/login");
+  const fullName = c.req.param("fullName");
+  const body = await c.req.parseBody();
+  try {
+    const result = await api(c).renamePackage(fullName, body.new_name as string, fullName, token);
+    const newName = result.new_name ?? fullName;
+    return c.redirect(`/${newName}/settings`);
+  } catch {
+    return c.redirect(`/${fullName}/settings?error=Failed+to+rename+package`);
+  }
+});
+
+app.post("/:fullName{@[^/]+/[^/]+}/settings/transfer", async (c) => {
+  const token = c.get("token");
+  if (!token) return c.redirect("/login");
+  const fullName = c.req.param("fullName");
+  const body = await c.req.parseBody();
+  try {
+    await api(c).initiateTransfer(fullName, body.to as string, "", token);
+    return c.redirect(`/${fullName}/settings?error=Transfer+request+sent`);
+  } catch {
+    return c.redirect(`/${fullName}/settings?error=Failed+to+initiate+transfer`);
   }
 });
 
@@ -604,7 +683,7 @@ app.get("/dashboard", async (c) => {
   }
 
   const rawTab = c.req.query("tab");
-  const activeTab = rawTab && ["packages", "orgs", "sync"].includes(rawTab) ? rawTab : "packages";
+  const activeTab = rawTab && ["packages", "orgs", "notifications", "sync"].includes(rawTab) ? rawTab : "packages";
 
   // Fetch the user's published packages via publisher API
   let packages: PackageSummary[] = [];
@@ -631,6 +710,30 @@ app.get("/dashboard", async (c) => {
     }
   }
 
+  // Fetch notifications and transfers
+  let notifications: any[] = [];
+  let transfers: any[] = [];
+  let notificationCount = 0;
+  if (activeTab === "notifications") {
+    try {
+      const [notifResult, xferResult] = await Promise.all([
+        api(c).listNotifications(token),
+        api(c).listMyTransfers(token),
+      ]);
+      notifications = notifResult.notifications ?? notifResult;
+      transfers = xferResult.transfers ?? xferResult;
+    } catch {
+      // Non-critical
+    }
+  }
+  // Always fetch count for badge
+  try {
+    const countResult = await api(c).getNotificationCount(token);
+    notificationCount = countResult.unread ?? countResult ?? 0;
+  } catch {
+    // Non-critical
+  }
+
   // Fetch sync profile if on sync tab
   let syncMeta: SyncProfileMeta | null = null;
   if (activeTab === "sync") {
@@ -644,12 +747,15 @@ app.get("/dashboard", async (c) => {
 
   const meta = { ...defaultMeta(), title: `Dashboard — ${SITE_NAME}` };
   return c.html(
-    <Layout meta={meta} currentPath="/dashboard" user={user}>
+    <Layout meta={meta} currentPath="/dashboard" user={user} notificationCount={notificationCount}>
       <DashboardPage
         username={user.username}
         packages={packages}
         orgs={orgs}
         invitations={invitations}
+        transfers={transfers}
+        notifications={notifications}
+        notificationCount={notificationCount}
         syncMeta={syncMeta}
         activeTab={activeTab}
       />
@@ -726,6 +832,7 @@ app.get("/org/:name/settings", async (c) => {
           currentUser={user.username}
           userRole={currentMember.role}
           success={c.req.query("success") || undefined}
+          error={c.req.query("error") || undefined}
         />
       </Layout>
     );
@@ -842,6 +949,73 @@ app.post("/org/:name/members/:username/remove", async (c) => {
   }
 });
 
+// Archive org form action
+app.post("/org/:name/settings/archive", async (c) => {
+  const token = c.get("token");
+  if (!token) return c.redirect("/login");
+
+  const name = c.req.param("name");
+  try {
+    await api(c).archiveOrg(name, token);
+    return c.redirect(`/org/${name}/settings?success=${encodeURIComponent("Organization archived")}`);
+  } catch (err) {
+    const msg = err instanceof ApiError ? ((err.body?.message as string) || err.message) : "Failed to archive organization";
+    return c.redirect(`/org/${name}/settings?error=${encodeURIComponent(msg)}`);
+  }
+});
+
+// Unarchive org form action
+app.post("/org/:name/settings/unarchive", async (c) => {
+  const token = c.get("token");
+  if (!token) return c.redirect("/login");
+
+  const name = c.req.param("name");
+  try {
+    await api(c).unarchiveOrg(name, token);
+    return c.redirect(`/org/${name}/settings?success=${encodeURIComponent("Organization unarchived")}`);
+  } catch (err) {
+    const msg = err instanceof ApiError ? ((err.body?.message as string) || err.message) : "Failed to unarchive organization";
+    return c.redirect(`/org/${name}/settings?error=${encodeURIComponent(msg)}`);
+  }
+});
+
+// Leave org form action
+app.post("/org/:name/settings/leave", async (c) => {
+  const token = c.get("token");
+  if (!token) return c.redirect("/login");
+
+  const name = c.req.param("name");
+  try {
+    await api(c).leaveOrg(name, token);
+    return c.redirect("/dashboard?tab=orgs");
+  } catch (err) {
+    const msg = err instanceof ApiError ? ((err.body?.message as string) || err.message) : "Failed to leave organization";
+    return c.redirect(`/org/${name}/settings?error=${encodeURIComponent(msg)}`);
+  }
+});
+
+// Delete org form action
+app.post("/org/:name/settings/delete", async (c) => {
+  const token = c.get("token");
+  if (!token) return c.redirect("/login");
+
+  const name = c.req.param("name");
+  const body = await c.req.parseBody();
+  const confirm = String(body.confirm ?? "").trim();
+
+  if (confirm !== name) {
+    return c.redirect(`/org/${name}/settings?error=${encodeURIComponent("Confirmation does not match organization name")}`);
+  }
+
+  try {
+    await api(c).dissolveOrg(name, "delete", confirm, "", token);
+    return c.redirect("/dashboard?tab=orgs");
+  } catch (err) {
+    const msg = err instanceof ApiError ? ((err.body?.message as string) || err.message) : "Failed to delete organization";
+    return c.redirect(`/org/${name}/settings?error=${encodeURIComponent(msg)}`);
+  }
+});
+
 // Accept/decline invitation form actions (from dashboard)
 app.post("/invitations/:id/accept", async (c) => {
   const token = c.get("token");
@@ -865,6 +1039,44 @@ app.post("/invitations/:id/decline", async (c) => {
     // Best-effort
   }
   return c.redirect("/dashboard?tab=orgs");
+});
+
+// Transfer accept/decline form actions (from dashboard notifications tab)
+app.post("/transfers/:id/accept", async (c) => {
+  const token = c.get("token");
+  if (!token) return c.redirect("/login");
+  const id = c.req.param("id");
+  try {
+    await api(c).acceptTransfer(id, token);
+  } catch {
+    // Best-effort
+  }
+  return c.redirect("/dashboard?tab=notifications");
+});
+
+app.post("/transfers/:id/decline", async (c) => {
+  const token = c.get("token");
+  if (!token) return c.redirect("/login");
+  const id = c.req.param("id");
+  try {
+    await api(c).declineTransfer(id, token);
+  } catch {
+    // Best-effort
+  }
+  return c.redirect("/dashboard?tab=notifications");
+});
+
+// Mark notification as read (from dashboard)
+app.post("/notifications/:id/read", async (c) => {
+  const token = c.get("token");
+  if (!token) return c.redirect("/login");
+  const id = c.req.param("id");
+  try {
+    await api(c).markNotificationRead(id, token);
+  } catch {
+    // Best-effort
+  }
+  return c.redirect("/dashboard?tab=notifications");
 });
 
 // Organization page

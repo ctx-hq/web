@@ -155,6 +155,81 @@ export const OrgSettingsPage: FC<{
           ))}
         </div>
       </section>
+
+      {/* Danger Zone */}
+      <section class="mt-12 border-t border-destructive/30 pt-8">
+        <h2 class="mb-4 text-lg font-semibold font-heading text-destructive">Danger Zone</h2>
+        <div class="space-y-4">
+          {/* Archive/Unarchive — owner only */}
+          {userRole === "owner" && (
+            <div class="cn-card flex items-center justify-between border-destructive/30 p-4">
+              <div>
+                <p class="text-sm font-medium">
+                  {org.archived ? "Unarchive this organization" : "Archive this organization"}
+                </p>
+                <p class="text-xs text-muted-foreground">
+                  {org.archived
+                    ? "Restore the ability to publish new packages."
+                    : "Prevent new packages from being published. Existing packages remain downloadable."}
+                </p>
+              </div>
+              <form method="post" action={`/org/${org.name}/settings/${org.archived ? "unarchive" : "archive"}`}>
+                <button
+                  type="submit"
+                  class="cn-button-size-xs border border-destructive/50 bg-background px-3 text-xs text-destructive hover:bg-destructive/10"
+                >
+                  {org.archived ? "Unarchive" : "Archive"}
+                </button>
+              </form>
+            </div>
+          )}
+
+          {/* Leave — non-owners, or owners when other owners exist */}
+          {(userRole !== "owner" || members.filter((m) => m.role === "owner").length > 1) && (
+            <div class="cn-card flex items-center justify-between border-destructive/30 p-4">
+              <div>
+                <p class="text-sm font-medium">Leave this organization</p>
+                <p class="text-xs text-muted-foreground">Remove yourself from this organization.</p>
+              </div>
+              <form method="post" action={`/org/${org.name}/settings/leave`}>
+                <button
+                  type="submit"
+                  class="cn-button-size-xs border border-destructive/50 bg-background px-3 text-xs text-destructive hover:bg-destructive/10"
+                >
+                  Leave
+                </button>
+              </form>
+            </div>
+          )}
+
+          {/* Delete — owner only */}
+          {userRole === "owner" && (
+            <div class="cn-card border-destructive/30 p-4">
+              <div class="flex items-center justify-between">
+                <div>
+                  <p class="text-sm font-medium">Delete this organization</p>
+                  <p class="text-xs text-muted-foreground">Permanently delete this organization. This cannot be undone.</p>
+                </div>
+              </div>
+              <form method="post" action={`/org/${org.name}/settings/delete`} class="mt-3 flex items-center gap-3">
+                <input
+                  name="confirm"
+                  type="text"
+                  required
+                  placeholder={`Type "${org.name}" to confirm`}
+                  class="cn-input-size-default flex-1 border border-destructive/50 bg-background px-3 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-destructive/50"
+                />
+                <button
+                  type="submit"
+                  class="cn-button-size-xs border border-destructive/50 bg-background px-3 text-xs text-destructive hover:bg-destructive/10"
+                >
+                  Delete
+                </button>
+              </form>
+            </div>
+          )}
+        </div>
+      </section>
     </div>
   </Container>
 );
