@@ -33,6 +33,9 @@ export const OrgMembers: FC<{ members: OrgMember[] | null }> = ({ members }) => 
           <Badge variant={member.role === "owner" ? "default" : "secondary"}>
             {member.role}
           </Badge>
+          {member.visibility === "private" && (
+            <span class="text-xs text-muted-foreground" title="Private membership">(private)</span>
+          )}
         </li>
       ))}
     </ul>

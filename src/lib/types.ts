@@ -98,6 +98,26 @@ export interface OrgMember {
   username: string;
   avatar_url: string;
   role: string;
+  visibility: "public" | "private";
+  created_at: string;
+}
+
+export interface OrgInvitation {
+  id: string;
+  org_name: string;
+  org_display_name?: string;
+  inviter: string;
+  invitee: string;
+  role: string;
+  status: "pending" | "accepted" | "declined" | "expired" | "cancelled";
+  expires_at: string;
+  created_at: string;
+  resolved_at?: string;
+}
+
+export interface PackageAccessEntry {
+  username: string;
+  granted_by: string;
   created_at: string;
 }
 

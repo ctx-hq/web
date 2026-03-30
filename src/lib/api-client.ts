@@ -1,6 +1,7 @@
 import type {
   PackageSummary, PackageDetail, SearchResult, VersionDetail,
   PackageStats, PublisherProfile, OrgDetail, OrgMember, OrgInfo,
+  OrgInvitation, PackageAccessEntry,
   AgentRanking, RegistryOverview, SyncProfileMeta, SyncPackageEntry,
 } from "./types";
 
@@ -107,6 +108,56 @@ export class ApiClient {
     return this.post("/v1/orgs", body, token);
   }
 
+  // --- Invitation APIs ---
+
+  async inviteOrgMember(orgName: string, username: string, role: string, token: string): Promise<OrgInvitation> {
+    return this.post(`/v1/orgs/${encodeURIComponent(orgName)}/invitations`, { username, role }, token);
+  }
+
+  async listOrgInvitations(orgName: string, token: string): Promise<{ invitations: OrgInvitation[] }> {
+    return this.get(`/v1/orgs/${encodeURIComponent(orgName)}/invitations`, token);
+  }
+
+  async cancelOrgInvitation(orgName: string, invitationId: string, token: string): Promise<void> {
+    return this.doDelete(`/v1/orgs/${encodeURIComponent(orgName)}/invitations/${encodeURIComponent(invitationId)}`, token);
+  }
+
+  async listMyInvitations(token: string): Promise<{ invitations: OrgInvitation[] }> {
+    return this.get("/v1/me/invitations", token);
+  }
+
+  async acceptInvitation(id: string, token: string): Promise<void> {
+    return this.post(`/v1/me/invitations/${encodeURIComponent(id)}/accept`, {}, token);
+  }
+
+  async declineInvitation(id: string, token: string): Promise<void> {
+    return this.post(`/v1/me/invitations/${encodeURIComponent(id)}/decline`, {}, token);
+  }
+
+  // --- Member Visibility APIs ---
+
+  async updateMemberVisibility(orgName: string, username: string, visibility: string, token: string): Promise<void> {
+    return this.patch(`/v1/orgs/${encodeURIComponent(orgName)}/members/${encodeURIComponent(username)}/visibility`, { visibility }, token);
+  }
+
+  async getPublicMembers(orgName: string): Promise<{ members: OrgMember[] }> {
+    return this.get(`/v1/orgs/${encodeURIComponent(orgName)}/public-members`);
+  }
+
+  async removeMember(orgName: string, username: string, token: string): Promise<void> {
+    return this.doDelete(`/v1/orgs/${encodeURIComponent(orgName)}/members/${encodeURIComponent(username)}`, token);
+  }
+
+  // --- Package Access APIs ---
+
+  async getPackageAccess(fullName: string, token: string): Promise<{ access: PackageAccessEntry[] }> {
+    return this.get(`/v1/packages/${encodeURIComponent(fullName)}/access`, token);
+  }
+
+  async updatePackageAccess(fullName: string, add: string[], remove: string[], token: string): Promise<void> {
+    return this.patch(`/v1/packages/${encodeURIComponent(fullName)}/access`, { add, remove }, token);
+  }
+
   // --- HTTP helpers ---
 
   private async get<T>(path: string, token?: string | null): Promise<T> {
@@ -140,6 +191,47 @@ export class ApiClient {
       const text = await resp.text().catch(() => "");
       throw new ApiError(resp.status, text || `API error: ${resp.status}`);
     }
+    if (resp.status === 204) return undefined as T;
+    const text = await resp.text();
+    if (!text) return undefined as T;
+    return JSON.parse(text) as T;
+  }
+
+  private async patch<T>(path: string, body: Record<string, unknown>, token: string): Promise<T> {
+    const url = `${this.baseUrl}${path}`;
+    const resp = await fetch(url, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(body),
+      signal: AbortSignal.timeout(10_000),
+    });
+    if (!resp.ok) {
+      const text = await resp.text().catch(() => "");
+      throw new ApiError(resp.status, text || `API error: ${resp.status}`);
+    }
+    if (resp.status === 204) return undefined as T;
+    return resp.json() as Promise<T>;
+  }
+
+  private async doDelete<T>(path: string, token: string): Promise<T> {
+    const url = `${this.baseUrl}${path}`;
+    const resp = await fetch(url, {
+      method: "DELETE",
+      headers: {
+        Accept: "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      signal: AbortSignal.timeout(10_000),
+    });
+    if (!resp.ok) {
+      const text = await resp.text().catch(() => "");
+      throw new ApiError(resp.status, text || `API error: ${resp.status}`);
+    }
+    if (resp.status === 204) return undefined as T;
     return resp.json() as Promise<T>;
   }
 }

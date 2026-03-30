@@ -1,5 +1,5 @@
 import type { FC } from "hono/jsx";
-import type { PackageSummary, OrgInfo, SyncProfileMeta } from "../lib/types";
+import type { PackageSummary, OrgInfo, OrgInvitation, SyncProfileMeta } from "../lib/types";
 import { Container } from "../components/ui/container";
 import { Button } from "../components/ui/button";
 import { Icon } from "../components/ui/icon";
@@ -17,9 +17,10 @@ export const DashboardPage: FC<{
   username: string;
   packages: PackageSummary[];
   orgs?: OrgInfo[];
+  invitations?: OrgInvitation[];
   syncMeta?: SyncProfileMeta | null;
   activeTab?: string;
-}> = ({ username, packages, orgs = [], syncMeta = null, activeTab = "packages" }) => (
+}> = ({ username, packages, orgs = [], invitations = [], syncMeta = null, activeTab = "packages" }) => (
   <Container class="py-10">
     <h1 class="mb-6 text-xl font-semibold font-heading">Dashboard</h1>
     <p class="mb-4 text-sm text-muted-foreground">Signed in as @{username}</p>
@@ -71,6 +72,53 @@ export const DashboardPage: FC<{
     {/* My Orgs tab */}
     {activeTab === "orgs" && (
       <section>
+        {/* Pending invitations */}
+        {invitations.filter((i) => i.status === "pending").length > 0 && (
+          <div class="mb-6">
+            <h2 class="mb-3 text-sm font-semibold font-heading">
+              Pending Invitations ({invitations.filter((i) => i.status === "pending").length})
+            </h2>
+            <div class="space-y-2">
+              {invitations.filter((i) => i.status === "pending").map((inv) => (
+                <div class="cn-card flex items-center justify-between p-4">
+                  <div class="flex items-center gap-3">
+                    <span class="text-sm font-medium">
+                      @{inv.org_name}
+                    </span>
+                    {inv.org_display_name && (
+                      <span class="text-xs text-muted-foreground">
+                        {inv.org_display_name}
+                      </span>
+                    )}
+                    <Badge variant="secondary">{inv.role}</Badge>
+                    <span class="text-xs text-muted-foreground">
+                      from {inv.inviter}
+                    </span>
+                  </div>
+                  <div class="flex gap-2">
+                    <form method="post" action={`/invitations/${inv.id}/accept`}>
+                      <button
+                        type="submit"
+                        class="cn-button-size-xs bg-primary px-3 text-xs font-medium text-primary-foreground hover:bg-primary/90"
+                      >
+                        Accept
+                      </button>
+                    </form>
+                    <form method="post" action={`/invitations/${inv.id}/decline`}>
+                      <button
+                        type="submit"
+                        class="cn-button-size-xs border border-border bg-background px-3 text-xs text-muted-foreground hover:bg-muted"
+                      >
+                        Decline
+                      </button>
+                    </form>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         <div class="mb-4 flex items-center justify-between">
           <h2 class="text-sm font-semibold font-heading">My organizations</h2>
           <Button variant="outline" size="xs" href="/orgs/new">

@@ -11,9 +11,9 @@ describe("org page", () => {
   };
 
   const members: OrgMember[] = [
-    { username: "alice", avatar_url: "https://example.com/alice.png", role: "owner", created_at: "2025-01-01T00:00:00Z" },
-    { username: "bob", avatar_url: "https://example.com/bob.png", role: "member", created_at: "2025-02-01T00:00:00Z" },
-    { username: "carol", avatar_url: "https://example.com/carol.png", role: "member", created_at: "2025-03-01T00:00:00Z" },
+    { username: "alice", avatar_url: "https://example.com/alice.png", role: "owner", visibility: "public", created_at: "2025-01-01T00:00:00Z" },
+    { username: "bob", avatar_url: "https://example.com/bob.png", role: "member", visibility: "private", created_at: "2025-02-01T00:00:00Z" },
+    { username: "carol", avatar_url: "https://example.com/carol.png", role: "member", visibility: "public", created_at: "2025-03-01T00:00:00Z" },
   ];
 
   const packages: PackageSummary[] = [

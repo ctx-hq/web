@@ -6,7 +6,7 @@ import { Container } from "./components/ui/container";
 import { ApiClient, ApiError } from "./lib/api-client";
 import { defaultMeta, searchMeta, packageMeta, docsMeta, escapeHtml } from "./lib/seo";
 import { SITE_NAME, SITE_URL } from "./lib/constants";
-import type { SessionUser, PackageSummary, PackageType, SortOption, SearchResult, ManifestInfo, OrgInfo, OrgMember, SyncProfileMeta, AgentRanking, RegistryOverview } from "./lib/types";
+import type { SessionUser, PackageSummary, PackageType, SortOption, SearchResult, ManifestInfo, OrgInfo, OrgMember, OrgInvitation, SyncProfileMeta, AgentRanking, RegistryOverview } from "./lib/types";
 import { parseManifest } from "./lib/types";
 import { validateSort } from "./lib/search-url";
 import { HomePage } from "./pages/home";
@@ -22,6 +22,7 @@ import { StatsPage } from "./pages/stats";
 import { PackageStatsPage } from "./pages/package-stats";
 import { DeviceLoginPage } from "./pages/device-login";
 import { CreateOrgPage, validateOrgName } from "./pages/create-org";
+import { OrgSettingsPage } from "./pages/org-settings";
 
 type Env = {
   Bindings: {
@@ -614,12 +615,17 @@ app.get("/dashboard", async (c) => {
     // Non-critical — show dashboard with empty list
   }
 
-  // Fetch orgs if on orgs tab
+  // Fetch orgs and invitations if on orgs tab
   let orgs: OrgInfo[] = [];
+  let invitations: OrgInvitation[] = [];
   if (activeTab === "orgs") {
     try {
-      const result = await api(c).getMyOrgs(token);
-      orgs = result.orgs;
+      const [orgResult, invResult] = await Promise.all([
+        api(c).getMyOrgs(token),
+        api(c).listMyInvitations(token),
+      ]);
+      orgs = orgResult.orgs;
+      invitations = invResult.invitations;
     } catch {
       // Non-critical
     }
@@ -643,6 +649,7 @@ app.get("/dashboard", async (c) => {
         username={user.username}
         packages={packages}
         orgs={orgs}
+        invitations={invitations}
         syncMeta={syncMeta}
         activeTab={activeTab}
       />
@@ -681,6 +688,185 @@ app.get("/publisher/:slug", async (c) => {
   }
 });
 
+// Org Settings (auth required, owner/admin only)
+app.get("/org/:name/settings", async (c) => {
+  const user = c.get("user");
+  const token = c.get("token");
+  if (!user || !token) return c.redirect("/login");
+
+  const name = c.req.param("name");
+  try {
+    // Step 1: Check membership first (no admin-only APIs yet)
+    const [org, membersResult] = await Promise.all([
+      api(c).getOrg(name),
+      api(c).getOrgMembers(name, token),
+    ]);
+
+    const currentMember = membersResult.members.find((m: OrgMember) => m.username === user.username);
+    if (!currentMember || !["owner", "admin"].includes(currentMember.role)) {
+      return c.redirect(`/org/${name}`);
+    }
+
+    // Step 2: Now safe to fetch admin-only data
+    let invitations: OrgInvitation[] = [];
+    try {
+      const invResult = await api(c).listOrgInvitations(name, token);
+      invitations = invResult.invitations;
+    } catch {
+      // Non-critical — show settings without invitations
+    }
+
+    const meta = { ...defaultMeta(), title: `Settings — ${org.display_name || org.name} — ${SITE_NAME}` };
+    return c.html(
+      <Layout meta={meta} currentPath={`/org/${name}/settings`} user={user}>
+        <OrgSettingsPage
+          org={org}
+          members={membersResult.members}
+          invitations={invitations}
+          currentUser={user.username}
+          userRole={currentMember.role}
+          success={c.req.query("success") || undefined}
+        />
+      </Layout>
+    );
+  } catch (err) {
+    if (err instanceof ApiError && (err.status === 404 || err.status === 403)) {
+      return c.redirect(`/org/${name}`);
+    }
+    throw err;
+  }
+});
+
+// Org invite form action
+app.post("/org/:name/invite", async (c) => {
+  const user = c.get("user");
+  const token = c.get("token");
+  if (!user || !token) return c.redirect("/login");
+
+  const name = c.req.param("name");
+  const body = await c.req.parseBody();
+  const username = String(body.username ?? "").trim();
+  const role = String(body.role ?? "member").trim();
+
+  try {
+    await api(c).inviteOrgMember(name, username, role, token);
+    return c.redirect(`/org/${name}/settings?success=${encodeURIComponent(`Invited ${username}`)}`);
+  } catch (err) {
+    if (err instanceof ApiError) {
+      // Reload settings page with error — fetch members first, invitations separately
+      try {
+        const [org, membersResult] = await Promise.all([
+          api(c).getOrg(name),
+          api(c).getOrgMembers(name, token),
+        ]);
+        const currentMember = membersResult.members.find((m: OrgMember) => m.username === user.username);
+        let invitations: OrgInvitation[] = [];
+        try {
+          const invResult = await api(c).listOrgInvitations(name, token);
+          invitations = invResult.invitations;
+        } catch { /* non-critical */ }
+        const meta = { ...defaultMeta(), title: `Settings — ${org.display_name || org.name} — ${SITE_NAME}` };
+        const apiMsg = err.body?.message;
+        return c.html(
+          <Layout meta={meta} currentPath={`/org/${name}/settings`} user={user}>
+            <OrgSettingsPage
+              org={org}
+              members={membersResult.members}
+              invitations={invitations}
+              currentUser={user.username}
+              userRole={currentMember?.role ?? "member"}
+              error={typeof apiMsg === "string" ? apiMsg : err.message}
+            />
+          </Layout>,
+          err.status >= 500 ? 500 : 422,
+        );
+      } catch {
+        return c.redirect(`/org/${name}/settings`);
+      }
+    }
+    throw err;
+  }
+});
+
+// Cancel invitation form action
+app.post("/org/:name/invitations/:id/cancel", async (c) => {
+  const token = c.get("token");
+  if (!token) return c.redirect("/login");
+
+  const name = c.req.param("name");
+  const invId = c.req.param("id");
+  try {
+    await api(c).cancelOrgInvitation(name, invId, token);
+  } catch {
+    // Best-effort, redirect anyway
+  }
+  return c.redirect(`/org/${name}/settings`);
+});
+
+// Toggle member visibility form action
+app.post("/org/:name/members/:username/visibility", async (c) => {
+  const user = c.get("user");
+  const token = c.get("token");
+  if (!user || !token) return c.redirect("/login");
+
+  const name = c.req.param("name");
+  const username = c.req.param("username");
+
+  // Only allow self
+  if (username !== user.username) return c.redirect(`/org/${name}/settings`);
+
+  const body = await c.req.parseBody();
+  const visibility = String(body.visibility ?? "private");
+
+  try {
+    await api(c).updateMemberVisibility(name, user.username, visibility, token);
+  } catch {
+    // Best-effort
+  }
+  return c.redirect(`/org/${name}/settings`);
+});
+
+// Remove member form action
+app.post("/org/:name/members/:username/remove", async (c) => {
+  const token = c.get("token");
+  if (!token) return c.redirect("/login");
+
+  const name = c.req.param("name");
+  const username = c.req.param("username");
+
+  try {
+    await api(c).removeMember(name, username!, token);
+    return c.redirect(`/org/${name}/settings?success=${encodeURIComponent(`Removed ${username}`)}`);
+  } catch {
+    return c.redirect(`/org/${name}/settings`);
+  }
+});
+
+// Accept/decline invitation form actions (from dashboard)
+app.post("/invitations/:id/accept", async (c) => {
+  const token = c.get("token");
+  if (!token) return c.redirect("/login");
+  const id = c.req.param("id");
+  try {
+    await api(c).acceptInvitation(id, token);
+  } catch {
+    // Best-effort
+  }
+  return c.redirect("/dashboard?tab=orgs");
+});
+
+app.post("/invitations/:id/decline", async (c) => {
+  const token = c.get("token");
+  if (!token) return c.redirect("/login");
+  const id = c.req.param("id");
+  try {
+    await api(c).declineInvitation(id, token);
+  } catch {
+    // Best-effort
+  }
+  return c.redirect("/dashboard?tab=orgs");
+});
+
 // Organization page
 app.get("/org/:name", async (c) => {
   const name = c.req.param("name");
@@ -690,23 +876,37 @@ app.get("/org/:name", async (c) => {
       api(c).getOrgPackages(name, c.get("token")),
     ]);
 
-    // Members require auth — best-effort
+    // Members: auth users see all members, public users see only public members
     let members: OrgMember[] | null = null;
+    let userRole: string | null = null;
     const token = c.get("token");
+    const user = c.get("user");
     if (token) {
       try {
         const result = await api(c).getOrgMembers(name, token);
         members = result.members;
+        if (user) {
+          const currentMember = members?.find((m: OrgMember) => m.username === user.username);
+          userRole = currentMember?.role ?? null;
+        }
       } catch {
-        // Not a member or API error — leave as null to show appropriate message
+        // Not a member — fall through to public members
+      }
+    }
+    if (!members) {
+      try {
+        const result = await api(c).getPublicMembers(name);
+        members = result.members;
+      } catch {
+        // leave as null
       }
     }
 
     const meta = { ...defaultMeta(), title: `${org.display_name || org.name} — ${SITE_NAME}` };
     c.header("Cache-Control", "public, s-maxage=60, stale-while-revalidate=120");
     return c.html(
-      <Layout meta={meta} currentPath={`/org/${name}`} user={c.get("user")}>
-        <OrgPage org={org} members={members} packages={pkgResult.packages} />
+      <Layout meta={meta} currentPath={`/org/${name}`} user={user}>
+        <OrgPage org={org} members={members} packages={pkgResult.packages} userRole={userRole} />
       </Layout>
     );
   } catch (err) {

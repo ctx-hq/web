@@ -8,16 +8,25 @@ export const OrgPage: FC<{
   org: OrgDetail;
   members: OrgMember[] | null;
   packages: PackageSummary[];
-}> = ({ org, members, packages }) => (
+  userRole?: string | null;
+}> = ({ org, members, packages, userRole }) => (
   <Container class="py-10">
     <div class="mb-6">
       <h1 class="mb-1 text-xl font-semibold font-heading">
         {org.display_name || org.name}
       </h1>
       <p class="text-sm text-muted-foreground">@{org.name}</p>
-      <div class="mt-2 flex gap-4 text-sm text-muted-foreground">
+      <div class="mt-2 flex items-center gap-4 text-sm text-muted-foreground">
         <span>{org.members} {org.members === 1 ? "member" : "members"}</span>
         <span>{org.packages} {org.packages === 1 ? "package" : "packages"}</span>
+        {(userRole === "owner" || userRole === "admin") && (
+          <a
+            href={`/org/${org.name}/settings`}
+            class="cn-button-size-xs border border-border bg-background px-2 text-xs font-medium hover:bg-muted"
+          >
+            Settings
+          </a>
+        )}
       </div>
     </div>
 
