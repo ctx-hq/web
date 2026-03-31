@@ -4,6 +4,7 @@ import { Icon } from "./ui/icon";
 import { Button } from "./ui/button";
 
 const NAV_LINKS: Array<{ href: string; label: string }> = [
+  { href: "/mcp", label: "MCP Hub" },
   { href: "/search", label: "Search" },
   { href: "/stats", label: "Stats" },
   { href: "/docs", label: "Docs" },

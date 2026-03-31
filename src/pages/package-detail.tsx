@@ -1,5 +1,5 @@
 import type { FC, PropsWithChildren } from "hono/jsx";
-import type { PackageDetail as PackageDetailType, ManifestInfo } from "../lib/types";
+import type { PackageDetail as PackageDetailType, ManifestInfo, MCPDetail } from "../lib/types";
 import { Container } from "../components/ui/container";
 import { Icon } from "../components/ui/icon";
 import { Badge } from "../components/badge";
@@ -9,9 +9,13 @@ import { TrustBadge } from "../components/trust-badge";
 import { VisibilityBadge } from "../components/visibility-badge";
 import { PublisherLink } from "../components/publisher-link";
 import { DistTagList } from "../components/dist-tag-list";
+import { MCPAgentConfigs } from "../components/mcp-agent-configs";
+import { MCPToolsList } from "../components/mcp-tools-list";
+import { MCPEnvVars } from "../components/mcp-env-vars";
+import { MCPCompatibility } from "../components/mcp-compatibility";
 import { formatNumber, formatDate } from "../lib/format";
 import { safeRepoUrl, buildMetadataRows } from "../lib/package-helpers";
-import { TRUST_TIERS } from "../lib/constants";
+import { TRUST_TIERS, MCP_TRANSPORT_LABELS } from "../lib/constants";
 
 /** Sidebar card wrapper with title. */
 const SidebarSection: FC<PropsWithChildren<{ title: string }>> = ({ title, children }) => (
@@ -34,7 +38,8 @@ export const PackageDetailPage: FC<{
   pkg: PackageDetailType;
   readmeHtml: string;
   manifest?: ManifestInfo | null;
-}> = ({ pkg, readmeHtml, manifest }) => {
+  mcpDetail?: MCPDetail | null;
+}> = ({ pkg, readmeHtml, manifest, mcpDetail }) => {
   const repoUrl = safeRepoUrl(pkg.repository);
   const rows = buildMetadataRows(pkg, formatNumber, formatDate);
   const isAdapter = !!manifest?.source?.github;
@@ -121,6 +126,13 @@ export const PackageDetailPage: FC<{
           {/* Install */}
           <div class="mb-8">
             <InstallTabs fullName={pkg.full_name} pkgType={pkg.type} manifest={manifest} />
+            {/* MCP: per-agent configuration snippets */}
+            {pkg.type === "mcp" && manifest?.mcp && (
+              <MCPAgentConfigs
+                shortName={pkg.full_name.split("/").pop() ?? pkg.full_name}
+                manifest={manifest}
+              />
+            )}
           </div>
 
           {/* README */}
@@ -213,10 +225,10 @@ export const PackageDetailPage: FC<{
                   <MetaRow label="Compatible" value={manifest.cli.compatible} />
                 )}
                 {manifest.mcp?.transport && (
-                  <MetaRow label="Transport" value={manifest.mcp.transport} />
+                  <MetaRow label="Transport" value={MCP_TRANSPORT_LABELS[manifest.mcp.transport] ?? manifest.mcp.transport} />
                 )}
                 {manifest.mcp?.tools && manifest.mcp.tools.length > 0 && (
-                  <MetaRow label="Tools" value={`${manifest.mcp.tools.length} tools`} />
+                  <MCPToolsList tools={manifest.mcp.tools} />
                 )}
                 {manifest.skill?.compatibility && (
                   <MetaRow label="Agents" value={manifest.skill.compatibility} />
@@ -230,6 +242,20 @@ export const PackageDetailPage: FC<{
                   </div>
                 )}
               </dl>
+            </SidebarSection>
+          )}
+
+          {/* MCP: Environment Variables */}
+          {pkg.type === "mcp" && mcpDetail && mcpDetail.env_vars.length > 0 && (
+            <SidebarSection title="Environment">
+              <MCPEnvVars vars={mcpDetail.env_vars as Array<{ name: string; required?: boolean; default?: string; description?: string }>} />
+            </SidebarSection>
+          )}
+
+          {/* MCP: Agent Compatibility */}
+          {pkg.type === "mcp" && manifest?.mcp?.transport && (
+            <SidebarSection title="Compatibility">
+              <MCPCompatibility transport={manifest.mcp.transport} />
             </SidebarSection>
           )}
 

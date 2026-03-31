@@ -34,6 +34,21 @@ export const VISIBILITY_CONFIG: Record<string, { label: string }> = {
   private: { label: "Private" },
 };
 
+/** MCP transport type display labels. */
+export const MCP_TRANSPORT_LABELS: Record<string, string> = {
+  stdio: "STDIO",
+  http: "HTTP",
+  sse: "SSE",
+  "streamable-http": "Streamable HTTP",
+};
+
+/** MCP Hub sort options. */
+export const MCP_SORT_OPTIONS = [
+  { value: "downloads", label: "Downloads" },
+  { value: "newest", label: "Newest" },
+  { value: "recommended", label: "Recommended" },
+] as const;
+
 /** Agent display names for readable output. */
 export const AGENT_DISPLAY_NAMES: Record<string, string> = {
   claude: "Claude", cursor: "Cursor", windsurf: "Windsurf",

@@ -5,7 +5,7 @@ import { Layout } from "./layout";
 import { Container } from "./components/ui/container";
 import { ApiClient, ApiError } from "./lib/api-client";
 import { defaultMeta, searchMeta, packageMeta, docsMeta, escapeHtml } from "./lib/seo";
-import { SITE_NAME, SITE_URL } from "./lib/constants";
+import { SITE_NAME, SITE_URL, DEFAULT_OG_IMAGE } from "./lib/constants";
 import type { SessionUser, PackageSummary, PackageType, SortOption, SearchResult, ManifestInfo, OrgInfo, OrgMember, OrgInvitation, SyncProfileMeta, AgentRanking, RegistryOverview } from "./lib/types";
 import { parseManifest } from "./lib/types";
 import { validateSort } from "./lib/search-url";
@@ -24,6 +24,7 @@ import { PackageStatsPage } from "./pages/package-stats";
 import { DeviceLoginPage } from "./pages/device-login";
 import { CreateOrgPage, validateOrgName } from "./pages/create-org";
 import { OrgSettingsPage } from "./pages/org-settings";
+import { MCPHubPage } from "./pages/mcp-hub";
 
 type Env = {
   Bindings: {
@@ -412,7 +413,7 @@ app.get("/:fullName{@[^/]+/[^/]+}", async (c) => {
     c.header("Cache-Control", "public, s-maxage=300, stale-while-revalidate=600");
     return c.html(
       <Layout meta={meta} currentPath={`/${fullName}`} user={c.get("user")}>
-        <PackageDetailPage pkg={pkg} readmeHtml={readmeHtml} manifest={manifestInfo} />
+        <PackageDetailPage pkg={pkg} readmeHtml={readmeHtml} manifest={manifestInfo} mcpDetail={(pkg as any).mcp_detail ?? null} />
       </Layout>
     );
   } catch (err) {
@@ -1135,6 +1136,57 @@ app.get("/org/:name", async (c) => {
     }
     throw err;
   }
+});
+
+// MCP Hub page
+app.get("/mcp", async (c) => {
+  const api = new ApiClient(c.env.API_BASE_URL);
+  const category = c.req.query("category") ?? "";
+  const sort = c.req.query("sort") ?? "downloads";
+  const page = Math.max(1, parseInt(c.req.query("page") ?? "1", 10));
+  const limit = 18;
+  const offset = (page - 1) * limit;
+
+  let servers: import("./lib/types").MCPHubEntry[] = [];
+  let featured: import("./lib/types").MCPHubEntry[] | null = null;
+  let categories: import("./lib/types").MCPCategoryCount[] = [];
+  let total = 0;
+
+  try {
+    const [hubResult, featuredResult] = await Promise.all([
+      api.getMCPHub({ category, sort, limit, offset }),
+      page === 1 && !category ? api.getMCPFeatured() : Promise.resolve(null),
+    ]);
+    servers = hubResult.servers;
+    total = hubResult.total;
+    categories = hubResult.categories;
+    if (featuredResult) featured = featuredResult.servers;
+  } catch (err) {
+    console.error("MCP Hub fetch failed:", err);
+  }
+
+  const meta = {
+    title: "MCP Hub — Discover MCP Servers | getctx.org",
+    description: "Browse and install MCP (Model Context Protocol) servers for AI agents. Categorized directory with one-command installation.",
+    url: `${SITE_URL}/mcp`,
+    ogImage: DEFAULT_OG_IMAGE,
+    type: "website",
+  };
+
+  return c.html(
+    <Layout meta={meta} currentPath="/mcp" user={c.get("user")}>
+      <MCPHubPage
+        servers={servers}
+        featured={featured}
+        categories={categories}
+        total={total}
+        category={category}
+        sort={sort}
+        page={page}
+        limit={limit}
+      />
+    </Layout>
+  );
 });
 
 // Stats page

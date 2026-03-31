@@ -4,6 +4,9 @@
 .env.*
 !.env.example
 
+# ===== Claude Code =====
+.claude/
+
 # ===== IDE =====
 .idea/
 .vscode/

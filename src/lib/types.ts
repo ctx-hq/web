@@ -64,7 +64,15 @@ export interface SearchResult {
 export interface ManifestInfo {
   source?: { github?: string; path?: string; ref?: string };
   skill?: { entry?: string; tags?: string[]; compatibility?: string; user_invocable?: boolean };
-  mcp?: { transport?: string; command?: string; url?: string; tools?: string[] };
+  mcp?: {
+    transport?: string;
+    command?: string;
+    args?: string[];
+    url?: string;
+    tools?: string[];
+    resources?: string[];
+    env?: Array<{ name: string; required?: boolean; default?: string; description?: string }>;
+  };
   cli?: { binary?: string; verify?: string; compatible?: string };
   install?: { brew?: string; npm?: string; pip?: string; cargo?: string };
 }
@@ -204,6 +212,36 @@ export interface AppNotification {
 }
 
 // --- Rename types ---
+
+// --- MCP Hub types ---
+
+export interface MCPHubEntry {
+  full_name: string;
+  description: string;
+  transport: string;
+  tools_count: number;
+  downloads: number;
+  publisher_slug?: string;
+  category: string;
+  version?: string;
+}
+
+export interface MCPCategoryCount {
+  slug: string;
+  name: string;
+  count: number;
+}
+
+export interface MCPDetail {
+  transport: string;
+  command: string;
+  args: string[];
+  url: string;
+  env_vars: Array<{ name: string; required?: boolean; default?: string; description?: string }>;
+  tools: string[];
+  resources: string[];
+  category: string;
+}
 
 export interface RenameResult {
   old_name?: string;
