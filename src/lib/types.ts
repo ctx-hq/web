@@ -32,7 +32,7 @@ export interface PackageDetail {
   downloads: number;
   trust_tier?: TrustTier;
   visibility?: Visibility;
-  publisher?: { slug: string; kind: "user" | "org" } | null;
+  publisher?: { slug: string; kind: "user" | "org"; avatar_url?: string } | null;
   dist_tags?: Record<string, string>;
   versions: VersionSummary[];
   collection_members?: CollectionMemberSummary[] | null;

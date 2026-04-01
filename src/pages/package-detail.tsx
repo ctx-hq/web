@@ -72,7 +72,7 @@ export const PackageDetailPage: FC<{
         </div>
         {pkg.publisher && (
           <div class="mb-1">
-            <PublisherLink slug={pkg.publisher.slug} />
+            <PublisherLink slug={pkg.publisher.slug} avatar={pkg.publisher.avatar_url} />
           </div>
         )}
         {pkg.description && (
