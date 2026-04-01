@@ -257,7 +257,7 @@ app.get("/search", async (c) => {
 });
 
 // Agent-readable .ctx endpoint: proxy to API (respects package visibility)
-app.get("/:fullName{@[^/]+/[^/]+\\.ctx}", async (c) => {
+app.get("/package/:fullName{@[^/]+/[^/]+\\.ctx}", async (c) => {
   const fullName = c.req.param("fullName").replace(/\.ctx$/, "");
   const apiBase = c.env.API_BASE_URL;
   const token = c.get("token");
@@ -283,7 +283,7 @@ app.get("/:fullName{@[^/]+/[^/]+\\.ctx}", async (c) => {
 });
 
 // Package settings: /@scope/name/settings
-app.get("/:fullName{@[^/]+/[^/]+}/settings", async (c) => {
+app.get("/package/:fullName{@[^/]+/[^/]+}/settings", async (c) => {
   const user = c.get("user");
   const token = c.get("token");
   if (!user || !token) return c.redirect("/login");
@@ -306,7 +306,7 @@ app.get("/:fullName{@[^/]+/[^/]+}/settings", async (c) => {
 
   const meta = { ...defaultMeta(), title: `${fullName} Settings — ${SITE_NAME}` };
   return c.html(
-    <Layout meta={meta} currentPath={`/${fullName}/settings`} user={user}>
+    <Layout meta={meta} currentPath={`/package/${fullName}/settings`} user={user}>
       <PackageSettingsPage
         fullName={fullName}
         scope={scope}
@@ -320,7 +320,7 @@ app.get("/:fullName{@[^/]+/[^/]+}/settings", async (c) => {
 });
 
 // Package settings POST actions
-app.post("/:fullName{@[^/]+/[^/]+}/settings/visibility", async (c) => {
+app.post("/package/:fullName{@[^/]+/[^/]+}/settings/visibility", async (c) => {
   const token = c.get("token");
   if (!token) return c.redirect("/login");
   const fullName = c.req.param("fullName");
@@ -328,12 +328,12 @@ app.post("/:fullName{@[^/]+/[^/]+}/settings/visibility", async (c) => {
   try {
     await api(c).setVisibility(fullName, body.visibility as string, token);
   } catch {
-    return c.redirect(`/${fullName}/settings?error=Failed+to+update+visibility`);
+    return c.redirect(`/package/${fullName}/settings?error=Failed+to+update+visibility`);
   }
-  return c.redirect(`/${fullName}/settings`);
+  return c.redirect(`/package/${fullName}/settings`);
 });
 
-app.post("/:fullName{@[^/]+/[^/]+}/settings/rename", async (c) => {
+app.post("/package/:fullName{@[^/]+/[^/]+}/settings/rename", async (c) => {
   const token = c.get("token");
   if (!token) return c.redirect("/login");
   const fullName = c.req.param("fullName");
@@ -341,34 +341,34 @@ app.post("/:fullName{@[^/]+/[^/]+}/settings/rename", async (c) => {
   try {
     const result = await api(c).renamePackage(fullName, body.new_name as string, fullName, token);
     const newName = result.new_name ?? fullName;
-    return c.redirect(`/${newName}/settings`);
+    return c.redirect(`/package/${newName}/settings`);
   } catch {
-    return c.redirect(`/${fullName}/settings?error=Failed+to+rename+package`);
+    return c.redirect(`/package/${fullName}/settings?error=Failed+to+rename+package`);
   }
 });
 
-app.post("/:fullName{@[^/]+/[^/]+}/settings/transfer", async (c) => {
+app.post("/package/:fullName{@[^/]+/[^/]+}/settings/transfer", async (c) => {
   const token = c.get("token");
   if (!token) return c.redirect("/login");
   const fullName = c.req.param("fullName");
   const body = await c.req.parseBody();
   try {
     await api(c).initiateTransfer(fullName, body.to as string, "", token);
-    return c.redirect(`/${fullName}/settings?error=Transfer+request+sent`);
+    return c.redirect(`/package/${fullName}/settings?error=Transfer+request+sent`);
   } catch {
-    return c.redirect(`/${fullName}/settings?error=Failed+to+initiate+transfer`);
+    return c.redirect(`/package/${fullName}/settings?error=Failed+to+initiate+transfer`);
   }
 });
 
 // Package stats: /@scope/name/stats
-app.get("/:fullName{@[^/]+/[^/]+}/stats", async (c) => {
+app.get("/package/:fullName{@[^/]+/[^/]+}/stats", async (c) => {
   const fullName = c.req.param("fullName");
   try {
     const stats = await api(c).getPackageStats(fullName, c.get("token"));
     const meta = { ...defaultMeta(), title: `${fullName} Stats — ${SITE_NAME}` };
     c.header("Cache-Control", "public, s-maxage=60, stale-while-revalidate=120");
     return c.html(
-      <Layout meta={meta} currentPath={`/${fullName}/stats`} user={c.get("user")}>
+      <Layout meta={meta} currentPath={`/package/${fullName}/stats`} user={c.get("user")}>
         <PackageStatsPage fullName={fullName} stats={stats} />
       </Layout>
     );
@@ -389,7 +389,7 @@ app.get("/:fullName{@[^/]+/[^/]+}/stats", async (c) => {
 });
 
 // Package detail: /@scope/name
-app.get("/:fullName{@[^/]+/[^/]+}", async (c) => {
+app.get("/package/:fullName{@[^/]+/[^/]+}", async (c) => {
   const fullName = c.req.param("fullName");
 
   try {
@@ -412,7 +412,7 @@ app.get("/:fullName{@[^/]+/[^/]+}", async (c) => {
     const meta = packageMeta(pkg);
     c.header("Cache-Control", "public, s-maxage=300, stale-while-revalidate=600");
     return c.html(
-      <Layout meta={meta} currentPath={`/${fullName}`} user={c.get("user")}>
+      <Layout meta={meta} currentPath={`/package/${fullName}`} user={c.get("user")}>
         <PackageDetailPage pkg={pkg} readmeHtml={readmeHtml} manifest={manifestInfo} mcpDetail={(pkg as any).mcp_detail ?? null} />
       </Layout>
     );
@@ -764,9 +764,9 @@ app.get("/dashboard", async (c) => {
   );
 });
 
-// Publisher profile
-app.get("/publisher/:slug", async (c) => {
-  const slug = c.req.param("slug");
+// Publisher profile — vanity URL: /@slug
+app.get("/@:slug", async (c) => {
+  const slug = c.req.param("slug")!;
   try {
     const [publisher, pkgResult] = await Promise.all([
       api(c).getPublisher(slug),
@@ -775,7 +775,7 @@ app.get("/publisher/:slug", async (c) => {
     const meta = { ...defaultMeta(), title: `@${slug} — ${SITE_NAME}` };
     c.header("Cache-Control", "public, s-maxage=60, stale-while-revalidate=120");
     return c.html(
-      <Layout meta={meta} currentPath={`/publisher/${slug}`} user={c.get("user")}>
+      <Layout meta={meta} currentPath={`/@${slug}`} user={c.get("user")}>
         <PublisherPage publisher={publisher} packages={pkgResult.packages} />
       </Layout>
     );
@@ -1255,7 +1255,7 @@ app.get("/sitemap.xml", async (c) => {
     `<url><loc>${SITE_URL}/search</loc><priority>0.8</priority></url>`,
     `<url><loc>${SITE_URL}/docs</loc><priority>0.8</priority></url>`,
     ...packages.map(
-      (p) => `<url><loc>${SITE_URL}/${escapeHtml(p.full_name)}</loc><priority>0.6</priority></url>`
+      (p) => `<url><loc>${SITE_URL}/package/${escapeHtml(p.full_name)}</loc><priority>0.6</priority></url>`
     ),
   ];
 

@@ -9,7 +9,7 @@ import { VisibilityBadge } from "./visibility-badge";
 
 export const PackageCard: FC<{ pkg: PackageSummary }> = ({ pkg }) => (
   <a
-    href={`/${pkg.full_name}`}
+    href={`/package/${pkg.full_name}`}
     class="cn-card block transition-all hover:ring-foreground/25"
   >
     <div class="p-5">

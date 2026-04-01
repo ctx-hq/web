@@ -59,7 +59,7 @@ describe("package detail routes", () => {
       .mockResolvedValueOnce(apiJson(fakePkg))
       .mockResolvedValueOnce(apiJson(fakeVersion));
 
-    const res = await req("/@test/existing");
+    const res = await req("/package/@test/existing");
     expect(res.status).toBe(200);
     const html = await res.text();
     expect(html).toContain("test/existing");
@@ -68,7 +68,7 @@ describe("package detail routes", () => {
   it("returns 404 for missing packages not in mock data", async () => {
     mockFetch.mockResolvedValueOnce(api404());
 
-    const res = await req("/@unknown/nonexistent");
+    const res = await req("/package/@unknown/nonexistent");
     expect(res.status).toBe(404);
     const html = await res.text();
     expect(html).toContain("not found");
@@ -79,14 +79,14 @@ describe("package detail routes", () => {
       .mockResolvedValueOnce(apiJson(fakePkg))
       .mockResolvedValueOnce(apiJson({ ...fakeVersion, readme: "" }));
 
-    const res = await req("/@test/existing");
+    const res = await req("/package/@test/existing");
     const html = await res.text();
-    expect(html).toContain("/@test/existing");
+    expect(html).toContain("/package/@test/existing");
     expect(html).not.toContain("%2F");
   });
 
   it("URL-encoded /@scope%2Fname does NOT match package route (returns 404)", async () => {
-    const res = await req("/@test%2Fexisting");
+    const res = await req("/package/@test%2Fexisting");
     expect(res.status).toBe(404);
   });
 
@@ -97,7 +97,7 @@ describe("package detail routes", () => {
       .mockResolvedValueOnce(apiJson(fakePkg))
       .mockResolvedValueOnce(apiJson(fakeVersion));
 
-    const res = await req("/@test/existing");
+    const res = await req("/package/@test/existing");
     const html = await res.text();
     expect(html).toContain('href="/search"');
     expect(html).toContain("Back to search");
@@ -108,7 +108,7 @@ describe("package detail routes", () => {
       .mockResolvedValueOnce(apiJson(fakePkg))
       .mockResolvedValueOnce(apiJson(fakeVersion));
 
-    const res = await req("/@test/existing");
+    const res = await req("/package/@test/existing");
     const html = await res.text();
     expect(html).toContain("@test/existing");
   });
@@ -118,7 +118,7 @@ describe("package detail routes", () => {
       .mockResolvedValueOnce(apiJson(fakePkg))
       .mockResolvedValueOnce(apiJson(fakeVersion));
 
-    const res = await req("/@test/existing");
+    const res = await req("/package/@test/existing");
     const html = await res.text();
     expect(html).toContain("cn-badge-variant-type-skill");
   });
@@ -128,7 +128,7 @@ describe("package detail routes", () => {
       .mockResolvedValueOnce(apiJson(fakePkg))
       .mockResolvedValueOnce(apiJson(fakeVersion));
 
-    const res = await req("/@test/existing");
+    const res = await req("/package/@test/existing");
     const html = await res.text();
     expect(html).toContain("A test package for automated testing");
   });
@@ -138,7 +138,7 @@ describe("package detail routes", () => {
       .mockResolvedValueOnce(apiJson(fakePkg))
       .mockResolvedValueOnce(apiJson(fakeVersion));
 
-    const res = await req("/@test/existing");
+    const res = await req("/package/@test/existing");
     const html = await res.text();
     expect(html).toContain("install-tabs");
     expect(html).toContain("ctx install @test/existing");
@@ -149,7 +149,7 @@ describe("package detail routes", () => {
       .mockResolvedValueOnce(apiJson(fakePkg))
       .mockResolvedValueOnce(apiJson(fakeVersion));
 
-    const res = await req("/@test/existing");
+    const res = await req("/package/@test/existing");
     const html = await res.text();
     expect(html).toContain("cn-install-tab");
     expect(html).toContain("cn-install-tab-active");
@@ -162,7 +162,7 @@ describe("package detail routes", () => {
       .mockResolvedValueOnce(apiJson(fakePkg))
       .mockResolvedValueOnce(apiJson(fakeVersion));
 
-    const res = await req("/@test/existing");
+    const res = await req("/package/@test/existing");
     const html = await res.text();
     expect(html).toContain('role="tablist"');
     expect(html).toContain('role="tab"');
@@ -177,7 +177,7 @@ describe("package detail routes", () => {
       .mockResolvedValueOnce(apiJson(fakePkg))
       .mockResolvedValueOnce(apiJson(fakeVersion));
 
-    const res = await req("/@test/existing");
+    const res = await req("/package/@test/existing");
     const html = await res.text();
     const installTabsSection = html.slice(
       html.indexOf('class="install-tabs'),
@@ -194,7 +194,7 @@ describe("package detail routes", () => {
       .mockResolvedValueOnce(apiJson(fakePkg))
       .mockResolvedValueOnce(apiJson(fakeVersion));
 
-    const res = await req("/@test/existing");
+    const res = await req("/package/@test/existing");
     const html = await res.text();
     expect(html).toContain("class=\"prose\"");
     expect(html).toContain("Hello");
@@ -205,7 +205,7 @@ describe("package detail routes", () => {
       .mockResolvedValueOnce(apiJson(fakePkg))
       .mockResolvedValueOnce(apiJson({ ...fakeVersion, readme: "" }));
 
-    const res = await req("/@test/existing");
+    const res = await req("/package/@test/existing");
     const html = await res.text();
     expect(html).toContain("No README available");
   });
@@ -215,7 +215,7 @@ describe("package detail routes", () => {
       .mockResolvedValueOnce(apiJson(fakePkg))
       .mockResolvedValueOnce(new Response("error", { status: 500 }));
 
-    const res = await req("/@test/existing");
+    const res = await req("/package/@test/existing");
     const html = await res.text();
     expect(html).toContain("No README available");
   });
@@ -227,7 +227,7 @@ describe("package detail routes", () => {
       .mockResolvedValueOnce(apiJson(fakePkg))
       .mockResolvedValueOnce(apiJson(fakeVersion));
 
-    const res = await req("/@test/existing");
+    const res = await req("/package/@test/existing");
     const html = await res.text();
     expect(html).toContain("1.0.0");
   });
@@ -237,7 +237,7 @@ describe("package detail routes", () => {
       .mockResolvedValueOnce(apiJson(fakePkg))
       .mockResolvedValueOnce(apiJson(fakeVersion));
 
-    const res = await req("/@test/existing");
+    const res = await req("/package/@test/existing");
     const html = await res.text();
     expect(html).toContain("MIT");
   });
@@ -247,7 +247,7 @@ describe("package detail routes", () => {
       .mockResolvedValueOnce(apiJson(fakePkg))
       .mockResolvedValueOnce(apiJson(fakeVersion));
 
-    const res = await req("/@test/existing");
+    const res = await req("/package/@test/existing");
     const html = await res.text();
     expect(html).toContain("42");
   });
@@ -257,7 +257,7 @@ describe("package detail routes", () => {
       .mockResolvedValueOnce(apiJson(fakePkg))
       .mockResolvedValueOnce(apiJson(fakeVersion));
 
-    const res = await req("/@test/existing");
+    const res = await req("/package/@test/existing");
     const html = await res.text();
     expect(html).toContain("https://github.com/test/existing");
     expect(html).toContain("GitHub");
@@ -268,7 +268,7 @@ describe("package detail routes", () => {
       .mockResolvedValueOnce(apiJson({ ...fakePkg, repository: "" }))
       .mockResolvedValueOnce(apiJson(fakeVersion));
 
-    const res = await req("/@test/existing");
+    const res = await req("/package/@test/existing");
     const html = await res.text();
     expect(html).not.toContain("github-logo");
   });
@@ -278,7 +278,7 @@ describe("package detail routes", () => {
       .mockResolvedValueOnce(apiJson({ ...fakePkg, license: "" }))
       .mockResolvedValueOnce(apiJson(fakeVersion));
 
-    const res = await req("/@test/existing");
+    const res = await req("/package/@test/existing");
     const html = await res.text();
     // License should not appear as a metadata label
     expect(html).not.toContain(">License<");
@@ -291,7 +291,7 @@ describe("package detail routes", () => {
       .mockResolvedValueOnce(apiJson(fakePkg))
       .mockResolvedValueOnce(apiJson(fakeVersion));
 
-    const res = await req("/@test/existing");
+    const res = await req("/package/@test/existing");
     const html = await res.text();
     expect(html).toContain("/search?q=testing");
     expect(html).toContain("/search?q=automation");
@@ -302,7 +302,7 @@ describe("package detail routes", () => {
       .mockResolvedValueOnce(apiJson({ ...fakePkg, keywords: [] }))
       .mockResolvedValueOnce(apiJson(fakeVersion));
 
-    const res = await req("/@test/existing");
+    const res = await req("/package/@test/existing");
     const html = await res.text();
     expect(html).not.toContain(">Keywords<");
   });
@@ -312,7 +312,7 @@ describe("package detail routes", () => {
       .mockResolvedValueOnce(apiJson(fakePkg))
       .mockResolvedValueOnce(apiJson(fakeVersion));
 
-    const res = await req("/@test/existing");
+    const res = await req("/package/@test/existing");
     const html = await res.text();
     expect(html).toContain("linux");
     expect(html).toContain("macos");
@@ -323,7 +323,7 @@ describe("package detail routes", () => {
       .mockResolvedValueOnce(apiJson({ ...fakePkg, platforms: [] }))
       .mockResolvedValueOnce(apiJson(fakeVersion));
 
-    const res = await req("/@test/existing");
+    const res = await req("/package/@test/existing");
     const html = await res.text();
     expect(html).not.toContain(">Platforms<");
   });
@@ -335,7 +335,7 @@ describe("package detail routes", () => {
       .mockResolvedValueOnce(apiJson(fakePkg))
       .mockResolvedValueOnce(apiJson(fakeVersion));
 
-    const res = await req("/@test/existing");
+    const res = await req("/package/@test/existing");
     const html = await res.text();
     expect(html).toContain("0.9.0"); // second version
     expect(html).toContain("2024-12-01");
@@ -346,7 +346,7 @@ describe("package detail routes", () => {
       .mockResolvedValueOnce(apiJson({ ...fakePkg, versions: [] }))
       .mockResolvedValueOnce(apiJson(fakeVersion));
 
-    const res = await req("/@test/existing");
+    const res = await req("/package/@test/existing");
     const html = await res.text();
     expect(html).not.toContain(">Versions<");
   });
@@ -358,7 +358,7 @@ describe("package detail routes", () => {
       .mockResolvedValueOnce(apiJson(fakePkg))
       .mockResolvedValueOnce(apiJson(fakeVersion));
 
-    const res = await req("/@test/existing");
+    const res = await req("/package/@test/existing");
     const cc = res.headers.get("Cache-Control");
     expect(cc).toContain("s-maxage=300");
   });
@@ -366,14 +366,14 @@ describe("package detail routes", () => {
   it("network error returns 500", async () => {
     mockFetch.mockRejectedValueOnce(new Error("network error"));
 
-    const res = await req("/@anthropic/code-review");
+    const res = await req("/package/@anthropic/code-review");
     expect(res.status).toBe(500);
   });
 
   it("404 for unknown package", async () => {
     mockFetch.mockResolvedValueOnce(api404());
 
-    const res = await req("/@totally/unknown");
+    const res = await req("/package/@totally/unknown");
     expect(res.status).toBe(404);
   });
 });
@@ -384,7 +384,7 @@ describe(".ctx endpoint", () => {
       new Response("# skill content", { status: 200 }),
     );
 
-    const res = await req("/@test/existing.ctx");
+    const res = await req("/package/@test/existing.ctx");
     expect(res.status).toBe(200);
     const text = await res.text();
     expect(text).toContain("skill content");
@@ -394,14 +394,14 @@ describe(".ctx endpoint", () => {
   it("returns 404 when API says not found", async () => {
     mockFetch.mockResolvedValueOnce(api404());
 
-    const res = await req("/@test/missing.ctx");
+    const res = await req("/package/@test/missing.ctx");
     expect(res.status).toBe(404);
   });
 
   it("returns 502 on network error", async () => {
     mockFetch.mockRejectedValueOnce(new Error("timeout"));
 
-    const res = await req("/@test/existing.ctx");
+    const res = await req("/package/@test/existing.ctx");
     expect(res.status).toBe(502);
   });
 
@@ -410,7 +410,7 @@ describe(".ctx endpoint", () => {
       new Response("ok", { status: 200 }),
     );
 
-    await req("/@test/existing.ctx");
+    await req("/package/@test/existing.ctx");
     const calledUrl = mockFetch.mock.calls[0][0];
     expect(calledUrl).toBe("https://api.test/@test/existing.ctx");
   });
@@ -420,7 +420,7 @@ describe(".ctx endpoint", () => {
       new Response("# content", { status: 200 }),
     );
 
-    const res = await req("/@test/existing.ctx");
+    const res = await req("/package/@test/existing.ctx");
     expect(res.status).toBe(200);
     const cc = res.headers.get("Cache-Control") ?? "";
     expect(cc).toContain("public");
@@ -432,7 +432,7 @@ describe(".ctx endpoint", () => {
       new Response("# content", { status: 200 }),
     );
 
-    await req("/@test/existing.ctx");
+    await req("/package/@test/existing.ctx");
     // Find the .ctx API call (not /v1/me)
     const ctxCall = mockFetch.mock.calls.find(
       (call) => typeof call[0] === "string" && call[0].includes(".ctx"),
@@ -450,7 +450,7 @@ describe(".ctx endpoint", () => {
       return Promise.resolve(new Response("# content", { status: 200 }));
     });
 
-    const res = await app.request("/@test/existing.ctx", {
+    const res = await app.request("/package/@test/existing.ctx", {
       headers: { Cookie: "__Host-ctx_session=valid-token" },
     }, ENV);
     expect(res.status).toBe(200);
@@ -472,7 +472,7 @@ describe(".ctx endpoint", () => {
       return Promise.resolve(new Response("# content", { status: 200 }));
     });
 
-    const res = await app.request("/@test/existing.ctx", {
+    const res = await app.request("/package/@test/existing.ctx", {
       headers: { Cookie: "__Host-ctx_session=valid-token" },
     }, ENV);
     const cc = res.headers.get("Cache-Control") ?? "";
@@ -489,7 +489,7 @@ describe(".ctx endpoint", () => {
       return Promise.resolve(new Response("# content", { status: 200 }));
     });
 
-    await app.request("/@test/existing.ctx", {
+    await app.request("/package/@test/existing.ctx", {
       headers: { Cookie: "__Host-ctx_session=valid-token" },
     }, ENV);
 

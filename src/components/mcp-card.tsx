@@ -7,7 +7,7 @@ import { Icon } from "./ui/icon";
 
 export const MCPCard: FC<{ server: MCPHubEntry }> = ({ server }) => (
   <a
-    href={`/${server.full_name}`}
+    href={`/package/${server.full_name}`}
     class="cn-card block transition-all hover:ring-foreground/25"
   >
     <article class="p-5">

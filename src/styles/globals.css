@@ -61,6 +61,8 @@
   --color-type-mcp-bg: oklch(0.977 0.014 308.299);
   --color-type-cli: oklch(0.637 0.194 149.214);
   --color-type-cli-bg: oklch(0.982 0.018 155.826);
+  --color-type-collection: oklch(0.646 0.174 55.932);
+  --color-type-collection-bg: oklch(0.98 0.016 56.259);
 
   /* --- Fonts --- */
   --font-sans: "Roboto Slab", "Georgia", serif;
@@ -92,6 +94,7 @@
   --color-type-skill-bg: oklch(0.25 0.06 254.604);
   --color-type-mcp-bg: oklch(0.25 0.06 308.299);
   --color-type-cli-bg: oklch(0.25 0.06 155.826);
+  --color-type-collection-bg: oklch(0.25 0.06 56.259);
 }
 
 /* Theme toggle helpers */
@@ -193,6 +196,10 @@ html:not(.dark) .light-hidden { display: none; }
   @apply bg-type-cli-bg text-type-cli border-type-cli/20;
 }
 
+.cn-badge-variant-type-collection {
+  @apply bg-type-collection-bg text-type-collection border-type-collection/20;
+}
+
 /* Active state for filter pills */
 .cn-badge-active.cn-badge-variant-type-skill {
   @apply bg-type-skill text-white;
@@ -204,6 +211,10 @@ html:not(.dark) .light-hidden { display: none; }
 
 .cn-badge-active.cn-badge-variant-type-cli {
   @apply bg-type-cli text-white;
+}
+
+.cn-badge-active.cn-badge-variant-type-collection {
+  @apply bg-type-collection text-white;
 }
 
 .cn-badge-active.cn-badge-variant-default {

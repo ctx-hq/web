@@ -4,7 +4,7 @@ import { describe, it, expect } from "vitest";
 describe("publisher-link", () => {
   function buildPublisherHref(slug?: string | null): string | null {
     if (!slug) return null;
-    return `/publisher/${encodeURIComponent(slug)}`;
+    return `/@${encodeURIComponent(slug)}`;
   }
 
   function buildPublisherLabel(slug?: string | null): string | null {
@@ -13,7 +13,7 @@ describe("publisher-link", () => {
   }
 
   it("renders correct href for a slug", () => {
-    expect(buildPublisherHref("hong")).toBe("/publisher/hong");
+    expect(buildPublisherHref("hong")).toBe("/@hong");
   });
 
   it("renders correct label for a slug", () => {
@@ -21,7 +21,7 @@ describe("publisher-link", () => {
   });
 
   it("encodes special characters in slug", () => {
-    expect(buildPublisherHref("my org")).toBe("/publisher/my%20org");
+    expect(buildPublisherHref("my org")).toBe("/@my%20org");
   });
 
   it("returns null for null slug", () => {

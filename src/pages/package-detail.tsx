@@ -119,6 +119,18 @@ export const PackageDetailPage: FC<{
         )}
       </div>
 
+      {/* Part of Collection */}
+      {pkg.part_of_collections && pkg.part_of_collections.length > 0 && (
+        <div class="mb-4 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+          <span>Part of:</span>
+          {pkg.part_of_collections.map((col) => (
+            <a href={`/package/${col.full_name}`} class="cn-badge cn-badge-variant-type-collection hover:opacity-80 transition-opacity">
+              {col.full_name}
+            </a>
+          ))}
+        </div>
+      )}
+
       {/* Main + Sidebar layout */}
       <div class="lg:flex lg:gap-8">
         {/* Main content */}
@@ -134,6 +146,32 @@ export const PackageDetailPage: FC<{
               />
             )}
           </div>
+
+          {/* Collection Members */}
+          {pkg.type === "collection" && pkg.collection_members && pkg.collection_members.length > 0 && (
+            <div class="mb-8">
+              <h2 class="mb-4 text-lg font-semibold font-heading">
+                Included Packages ({pkg.collection_members.length})
+              </h2>
+              <div class="grid gap-3 sm:grid-cols-2">
+                {pkg.collection_members.map((member) => (
+                  <a
+                    href={`/package/${member.full_name}`}
+                    class="cn-card block p-4 transition-all hover:ring-1 hover:ring-foreground/25"
+                  >
+                    <div class="mb-1 flex items-center justify-between gap-1">
+                      <span class="min-w-0 truncate text-sm font-medium font-heading">{member.full_name}</span>
+                      <Badge type={member.type} />
+                    </div>
+                    <p class="line-clamp-2 text-xs text-muted-foreground">{member.description}</p>
+                    {member.version && (
+                      <span class="mt-1 inline-block text-xs text-muted-foreground">v{member.version}</span>
+                    )}
+                  </a>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* README */}
           {readmeHtml ? (
@@ -178,7 +216,7 @@ export const PackageDetailPage: FC<{
                     <dt class="text-muted-foreground">Publisher</dt>
                     <dd>
                       <a
-                        href={`/publisher/${encodeURIComponent(pkg.publisher.slug)}`}
+                        href={`/@${encodeURIComponent(pkg.publisher.slug)}`}
                         class="text-xs font-medium hover:text-foreground"
                       >
                         @{pkg.publisher.slug}
@@ -196,7 +234,7 @@ export const PackageDetailPage: FC<{
                   <dt class="text-muted-foreground">Stats</dt>
                   <dd>
                     <a
-                      href={`/${pkg.full_name}/stats`}
+                      href={`/package/${pkg.full_name}/stats`}
                       class="text-xs font-medium hover:text-foreground"
                     >
                       View stats

@@ -28,7 +28,7 @@ export const PackageSettingsPage: FC<{
         <section class="mb-8">
           <h2 class="mb-4 text-sm font-semibold font-heading">Visibility</h2>
           <div class="cn-card p-5">
-            <form method="post" action={`/${encodeURIComponent(fullName)}/settings/visibility`}>
+            <form method="post" action={`/package/${encodeURIComponent(fullName)}/settings/visibility`}>
               <div class="flex items-center gap-4">
                 <label class="flex items-center gap-2 text-sm">
                   <input type="radio" name="visibility" value="public" checked={visibility === "public"} />
@@ -65,7 +65,7 @@ export const PackageSettingsPage: FC<{
                     </p>
                   </div>
                 </div>
-                <form method="post" action={`/${encodeURIComponent(fullName)}/settings/rename`} class="flex items-end gap-3">
+                <form method="post" action={`/package/${encodeURIComponent(fullName)}/settings/rename`} class="flex items-end gap-3">
                   <div class="flex-1">
                     <label class="block text-xs text-muted-foreground mb-1">New name</label>
                     <div class="flex items-center gap-1">
@@ -87,7 +87,7 @@ export const PackageSettingsPage: FC<{
                     </p>
                   </div>
                 </div>
-                <form method="post" action={`/${encodeURIComponent(fullName)}/settings/transfer`} class="flex items-end gap-3">
+                <form method="post" action={`/package/${encodeURIComponent(fullName)}/settings/transfer`} class="flex items-end gap-3">
                   <div class="flex-1">
                     <label class="block text-xs text-muted-foreground mb-1">Target scope</label>
                     <input type="text" name="to" placeholder="@orgname" required class="cn-input text-sm" />

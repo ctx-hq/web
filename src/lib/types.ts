@@ -1,6 +1,6 @@
 export type SessionUser = { username: string; avatar_url?: string };
 
-export type PackageType = "skill" | "mcp" | "cli";
+export type PackageType = "skill" | "mcp" | "cli" | "collection";
 
 export type SortOption = "downloads" | "newest";
 
@@ -35,8 +35,17 @@ export interface PackageDetail {
   publisher?: { slug: string; kind: "user" | "org" } | null;
   dist_tags?: Record<string, string>;
   versions: VersionSummary[];
+  collection_members?: CollectionMemberSummary[] | null;
+  part_of_collections?: { full_name: string; description: string }[] | null;
   created_at: string;
   updated_at: string;
+}
+
+export interface CollectionMemberSummary {
+  full_name: string;
+  type: PackageType;
+  description: string;
+  version: string;
 }
 
 export interface VersionSummary {
@@ -182,7 +191,11 @@ export interface SyncPackageEntry {
 export interface PublisherProfile {
   slug: string;
   kind: "user" | "org";
+  avatar_url?: string | null;
+  bio?: string | null;
+  website?: string | null;
   packages: number;
+  total_downloads?: number | null;
   created_at: string;
 }
 
