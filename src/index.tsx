@@ -765,8 +765,9 @@ app.get("/dashboard", async (c) => {
 });
 
 // Publisher profile — vanity URL: /@slug
-app.get("/@:slug", async (c) => {
-  const slug = c.req.param("slug")!;
+// Uses regex constraint to match paths starting with @ (e.g., /@biao29)
+app.get("/:slug{@[^/]+}", async (c) => {
+  const slug = c.req.param("slug")!.replace(/^@/, "");
   try {
     const [publisher, pkgResult] = await Promise.all([
       api(c).getPublisher(slug),

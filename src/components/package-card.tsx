@@ -30,7 +30,7 @@ export const PackageCard: FC<{ pkg: PackageSummary }> = ({ pkg }) => (
       )}
       <p class="mb-2 line-clamp-2 text-sm text-muted-foreground">{pkg.description}</p>
       <div class="flex items-center gap-3 text-xs text-muted-foreground">
-        <span>v{pkg.version}</span>
+        {pkg.version && <span>v{pkg.version}</span>}
         <span class="inline-flex items-center gap-0.5">
           <Icon name="download" class="size-3" />
           {formatDownloads(pkg.downloads)}
