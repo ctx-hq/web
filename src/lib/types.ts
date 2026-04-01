@@ -16,7 +16,7 @@ export interface PackageSummary {
   downloads: number;
   repository: string;
   trust_tier?: TrustTier;
-  publisher_slug?: string;
+  owner_slug?: string;
   visibility?: Visibility;
 }
 
@@ -32,7 +32,7 @@ export interface PackageDetail {
   downloads: number;
   trust_tier?: TrustTier;
   visibility?: Visibility;
-  publisher?: { slug: string; kind: "user" | "org"; avatar_url?: string } | null;
+  owner?: { slug: string; kind: "user" | "org" | "system"; avatar_url?: string } | null;
   dist_tags?: Record<string, string>;
   versions: VersionSummary[];
   collection_members?: CollectionMemberSummary[] | null;
@@ -162,7 +162,7 @@ export interface AgentRanking {
 export interface RegistryOverview {
   total_packages: number;
   total_downloads: number;
-  total_publishers: number;
+  total_owners: number;
   breakdown: { type: string; count: number; percentage: number }[];
 }
 
@@ -186,9 +186,9 @@ export interface SyncPackageEntry {
   syncable: boolean;
 }
 
-// --- Publisher types ---
+// --- Profile types ---
 
-export interface PublisherProfile {
+export interface Profile {
   slug: string;
   kind: "user" | "org";
   avatar_url?: string | null;
@@ -234,7 +234,7 @@ export interface MCPHubEntry {
   transport: string;
   tools_count: number;
   downloads: number;
-  publisher_slug?: string;
+  owner_slug?: string;
   category: string;
   version?: string;
 }

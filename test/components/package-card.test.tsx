@@ -76,7 +76,7 @@ describe("package-card", () => {
     expect(pkg.trust_tier).toBeUndefined();
   });
 
-  it("includes publisher_slug in PackageSummary", () => {
+  it("includes owner_slug in PackageSummary", () => {
     const pkg: PackageSummary = {
       full_name: "hong/my-tool",
       type: "cli",
@@ -84,24 +84,24 @@ describe("package-card", () => {
       version: "2.0.0",
       downloads: 200,
       repository: "",
-      publisher_slug: "hong",
+      owner_slug: "hong",
     };
-    expect(pkg.publisher_slug).toBe("hong");
+    expect(pkg.owner_slug).toBe("hong");
   });
 
-  it("handles undefined publisher_slug (optional field)", () => {
+  it("handles undefined owner_slug (optional field)", () => {
     const pkg: PackageSummary = {
       full_name: "test/no-pub",
       type: "mcp",
-      description: "No publisher",
+      description: "No owner",
       version: "0.1.0",
       downloads: 0,
       repository: "",
     };
-    expect(pkg.publisher_slug).toBeUndefined();
+    expect(pkg.owner_slug).toBeUndefined();
   });
 
-  it("combines trust_tier and publisher_slug", () => {
+  it("combines trust_tier and owner_slug", () => {
     const pkg: PackageSummary = {
       full_name: "acme/enterprise-tool",
       type: "cli",
@@ -110,10 +110,10 @@ describe("package-card", () => {
       downloads: 10000,
       repository: "https://github.com/acme/enterprise-tool",
       trust_tier: "reviewed",
-      publisher_slug: "acme",
+      owner_slug: "acme",
     };
     expect(pkg.trust_tier).toBe("reviewed");
-    expect(pkg.publisher_slug).toBe("acme");
+    expect(pkg.owner_slug).toBe("acme");
     expect(`/@${pkg.full_name}`).toBe("/@acme/enterprise-tool");
   });
 });

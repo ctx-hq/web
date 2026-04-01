@@ -41,10 +41,10 @@ export const StatsPage: FC<{
             <div class="cn-card p-4">
               <dt class="mb-1 flex items-center gap-1.5 text-xs text-muted-foreground">
                 <Icon name="user" class="size-3" />
-                Publishers
+                Owners
               </dt>
               <dd class="text-lg font-semibold font-heading">
-                {formatNumber(overview.total_publishers)}
+                {formatNumber(overview.total_owners)}
               </dd>
             </div>
           </dl>

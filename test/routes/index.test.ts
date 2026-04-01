@@ -395,8 +395,8 @@ describe("real app routes", () => {
       if (typeof url === "string" && url.includes("/v1/me")) {
         return Promise.resolve(apiJson({ username: "hong" }));
       }
-      if (typeof url === "string" && url.includes("/v1/publishers/")) {
-        return Promise.resolve(apiJson({ publisher: { slug: "hong", kind: "user" }, packages: [], total: 0 }));
+      if (typeof url === "string" && url.includes("/v1/profiles/")) {
+        return Promise.resolve(apiJson({ owner: { slug: "hong", kind: "user" }, packages: [], total: 0 }));
       }
       return Promise.resolve(apiJson({ packages: [], total: 0 }));
     });

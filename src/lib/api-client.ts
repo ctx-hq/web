@@ -1,6 +1,6 @@
 import type {
   PackageSummary, PackageDetail, SearchResult, VersionDetail,
-  PackageStats, PublisherProfile, OrgDetail, OrgMember, OrgInfo,
+  PackageStats, Profile, OrgDetail, OrgMember, OrgInfo,
   OrgInvitation, PackageAccessEntry,
   AgentRanking, RegistryOverview, SyncProfileMeta, SyncPackageEntry,
   TransferRequest, AppNotification, RenameResult,
@@ -83,18 +83,18 @@ export class ApiClient {
     return this.get("/v1/mcp/categories");
   }
 
-  // --- Publisher APIs ---
+  // --- Profile APIs ---
 
-  async getPublisher(slug: string): Promise<PublisherProfile> {
-    return this.get(`/v1/publishers/${encodeURIComponent(slug)}`);
+  async getProfile(slug: string): Promise<Profile> {
+    return this.get(`/v1/profiles/${encodeURIComponent(slug)}`);
   }
 
-  async getPublisherPackages(slug: string, opts?: { type?: string; limit?: number; offset?: number }, token?: string | null): Promise<{ publisher: { slug: string; kind: string }; packages: PackageSummary[] }> {
+  async getProfilePackages(slug: string, opts?: { type?: string; limit?: number; offset?: number }, token?: string | null): Promise<{ owner: { slug: string; kind: string }; packages: PackageSummary[] }> {
     const params = new URLSearchParams();
     if (opts?.type) params.set("type", opts.type);
     if (opts?.limit) params.set("limit", String(opts.limit));
     if (opts?.offset) params.set("offset", String(opts.offset));
-    return this.get(`/v1/publishers/${encodeURIComponent(slug)}/packages?${params}`, token);
+    return this.get(`/v1/profiles/${encodeURIComponent(slug)}/packages?${params}`, token);
   }
 
   // --- Org APIs ---

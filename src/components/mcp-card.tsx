@@ -22,9 +22,9 @@ export const MCPCard: FC<{ server: MCPHubEntry }> = ({ server }) => (
           <Badge type="mcp" />
         </div>
       </div>
-      {server.publisher_slug && (
+      {server.owner_slug && (
         <div class="mb-1">
-          <span class="text-xs text-muted-foreground">@{server.publisher_slug}</span>
+          <span class="text-xs text-muted-foreground">@{server.owner_slug}</span>
         </div>
       )}
       <p class="mb-2 line-clamp-2 text-sm text-muted-foreground">

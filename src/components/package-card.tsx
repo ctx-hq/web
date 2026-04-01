@@ -20,11 +20,11 @@ export const PackageCard: FC<{ pkg: PackageSummary }> = ({ pkg }) => (
           <Badge type={pkg.type} />
         </div>
       </div>
-      {(pkg.trust_tier || pkg.publisher_slug) && (
+      {(pkg.trust_tier || pkg.owner_slug) && (
         <div class="mb-1 flex items-center gap-2">
           <TrustBadge tier={pkg.trust_tier} />
-          {pkg.publisher_slug && (
-            <span class="text-xs text-muted-foreground">@{pkg.publisher_slug}</span>
+          {pkg.owner_slug && (
+            <span class="text-xs text-muted-foreground">@{pkg.owner_slug}</span>
           )}
         </div>
       )}

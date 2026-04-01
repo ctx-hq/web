@@ -7,7 +7,7 @@ import { InstallTabs } from "../components/install-tabs";
 import { VersionList } from "../components/version-list";
 import { TrustBadge } from "../components/trust-badge";
 import { VisibilityBadge } from "../components/visibility-badge";
-import { PublisherLink } from "../components/publisher-link";
+import { OwnerLink } from "../components/owner-link";
 import { DistTagList } from "../components/dist-tag-list";
 import { MCPAgentConfigs } from "../components/mcp-agent-configs";
 import { MCPToolsList } from "../components/mcp-tools-list";
@@ -70,9 +70,9 @@ export const PackageDetailPage: FC<{
           <VisibilityBadge visibility={pkg.visibility} />
           <TrustBadge tier={pkg.trust_tier} />
         </div>
-        {pkg.publisher && (
+        {pkg.owner && (
           <div class="mb-1">
-            <PublisherLink slug={pkg.publisher.slug} avatar={pkg.publisher.avatar_url} />
+            <OwnerLink slug={pkg.owner.slug} avatar={pkg.owner.avatar_url} />
           </div>
         )}
         {pkg.description && (
@@ -211,15 +211,15 @@ export const PackageDetailPage: FC<{
                     </dd>
                   </div>
                 )}
-                {pkg.publisher && (
+                {pkg.owner && (
                   <div class="flex items-center justify-between">
-                    <dt class="text-muted-foreground">Publisher</dt>
+                    <dt class="text-muted-foreground">Owner</dt>
                     <dd>
                       <a
-                        href={`/@${encodeURIComponent(pkg.publisher.slug)}`}
+                        href={`/@${encodeURIComponent(pkg.owner.slug)}`}
                         class="text-xs font-medium hover:text-foreground"
                       >
-                        @{pkg.publisher.slug}
+                        @{pkg.owner.slug}
                       </a>
                     </dd>
                   </div>

@@ -122,21 +122,21 @@ describe("ApiClient", () => {
     });
   });
 
-  describe("getPublisher", () => {
+  describe("getProfile", () => {
     it("constructs correct URL", async () => {
       mockFetch.mockResolvedValue(jsonResponse({ slug: "hong", kind: "user", packages: 5, created_at: "2025-01-01T00:00:00Z" }));
-      await client.getPublisher("hong");
+      await client.getProfile("hong");
 
       const url = mockFetch.mock.calls[0][0] as string;
-      expect(url).toContain("/v1/publishers/hong");
+      expect(url).toContain("/v1/profiles/hong");
     });
 
     it("encodes special characters in slug", async () => {
       mockFetch.mockResolvedValue(jsonResponse({ slug: "my org", kind: "org", packages: 0, created_at: "" }));
-      await client.getPublisher("my org");
+      await client.getProfile("my org");
 
       const url = mockFetch.mock.calls[0][0] as string;
-      expect(url).toContain("/v1/publishers/my%20org");
+      expect(url).toContain("/v1/profiles/my%20org");
     });
   });
 
@@ -231,13 +231,13 @@ describe("ApiClient", () => {
     });
   });
 
-  describe("getPublisherPackages", () => {
+  describe("getProfilePackages", () => {
     it("constructs correct URL with params", async () => {
-      mockFetch.mockResolvedValue(jsonResponse({ publisher: { slug: "hong", kind: "user" }, packages: [] }));
-      await client.getPublisherPackages("hong", { type: "skill", limit: 5 });
+      mockFetch.mockResolvedValue(jsonResponse({ owner: { slug: "hong", kind: "user" }, packages: [] }));
+      await client.getProfilePackages("hong", { type: "skill", limit: 5 });
 
       const url = mockFetch.mock.calls[0][0] as string;
-      expect(url).toContain("/v1/publishers/hong/packages");
+      expect(url).toContain("/v1/profiles/hong/packages");
       expect(url).toContain("type=skill");
       expect(url).toContain("limit=5");
     });
@@ -304,9 +304,9 @@ describe("ApiClient", () => {
       expect((opts.headers as Record<string, string>).Authorization).toBe("Bearer my-token");
     });
 
-    it("getPublisherPackages passes Authorization header when token provided", async () => {
-      mockFetch.mockResolvedValue(jsonResponse({ publisher: {}, packages: [] }));
-      await client.getPublisherPackages("hong", {}, "my-token");
+    it("getProfilePackages passes Authorization header when token provided", async () => {
+      mockFetch.mockResolvedValue(jsonResponse({ owner: {}, packages: [] }));
+      await client.getProfilePackages("hong", {}, "my-token");
 
       const opts = mockFetch.mock.calls[0][1] as RequestInit;
       expect((opts.headers as Record<string, string>).Authorization).toBe("Bearer my-token");

@@ -1,8 +1,8 @@
 import { describe, it, expect } from "vitest";
-import type { PublisherProfile, PackageSummary } from "../../src/lib/types";
+import type { Profile, PackageSummary } from "../../src/lib/types";
 
-describe("publisher page", () => {
-  const publisher: PublisherProfile = {
+describe("profile page", () => {
+  const profile: Profile = {
     slug: "hong",
     kind: "user",
     packages: 3,
@@ -15,22 +15,22 @@ describe("publisher page", () => {
     { full_name: "hong/cli-c", type: "cli", description: "A CLI tool", version: "2.1.0", downloads: 200, repository: "" },
   ];
 
-  it("generates correct publisher heading", () => {
-    expect(`@${publisher.slug}`).toBe("@hong");
+  it("generates correct profile heading", () => {
+    expect(`@${profile.slug}`).toBe("@hong");
   });
 
-  it("displays publisher kind as badge", () => {
-    expect(publisher.kind).toBe("user");
+  it("displays profile kind as badge", () => {
+    expect(profile.kind).toBe("user");
   });
 
   it("shows correct package count text (singular)", () => {
-    const p: PublisherProfile = { ...publisher, packages: 1 };
+    const p: Profile = { ...profile, packages: 1 };
     const text = `${p.packages} ${p.packages === 1 ? "package" : "packages"} published`;
     expect(text).toBe("1 package published");
   });
 
   it("shows correct package count text (plural)", () => {
-    const text = `${publisher.packages} ${publisher.packages === 1 ? "package" : "packages"} published`;
+    const text = `${profile.packages} ${profile.packages === 1 ? "package" : "packages"} published`;
     expect(text).toBe("3 packages published");
   });
 
@@ -44,14 +44,14 @@ describe("publisher page", () => {
     expect(emptyPackages.length).toBe(0);
   });
 
-  it("supports org kind publisher", () => {
-    const orgPublisher: PublisherProfile = {
+  it("supports org kind profile", () => {
+    const orgProfile: Profile = {
       slug: "acme-corp",
       kind: "org",
       packages: 12,
       created_at: "2025-02-01T00:00:00Z",
     };
-    expect(orgPublisher.kind).toBe("org");
-    expect(`@${orgPublisher.slug}`).toBe("@acme-corp");
+    expect(orgProfile.kind).toBe("org");
+    expect(`@${orgProfile.slug}`).toBe("@acme-corp");
   });
 });

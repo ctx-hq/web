@@ -66,7 +66,7 @@ describe("registry overview", () => {
   const overview: RegistryOverview = {
     total_packages: 142,
     total_downloads: 28412,
-    total_publishers: 37,
+    total_owners: 37,
     breakdown: [
       { type: "skill", count: 78, percentage: 54.9 },
       { type: "mcp", count: 42, percentage: 29.6 },
@@ -82,8 +82,8 @@ describe("registry overview", () => {
     expect(formatDownloads(overview.total_downloads)).toBe("28.4k");
   });
 
-  it("formats total publishers", () => {
-    expect(formatNumber(overview.total_publishers)).toBe("37");
+  it("formats total owners", () => {
+    expect(formatNumber(overview.total_owners)).toBe("37");
   });
 
   it("computes relative bar widths for breakdown", () => {
@@ -98,7 +98,7 @@ describe("registry overview", () => {
     const unordered: RegistryOverview = {
       total_packages: 100,
       total_downloads: 5000,
-      total_publishers: 10,
+      total_owners: 10,
       breakdown: [
         { type: "cli", count: 15, percentage: 15.0 },
         { type: "skill", count: 60, percentage: 60.0 },
@@ -117,7 +117,7 @@ describe("registry overview", () => {
     const empty: RegistryOverview = {
       total_packages: 0,
       total_downloads: 0,
-      total_publishers: 0,
+      total_owners: 0,
       breakdown: [],
     };
     expect(empty.breakdown.length).toBe(0);
@@ -132,7 +132,7 @@ describe("registry overview", () => {
     const single: RegistryOverview = {
       total_packages: 5,
       total_downloads: 100,
-      total_publishers: 2,
+      total_owners: 2,
       breakdown: [{ type: "skill", count: 5, percentage: 100 }],
     };
     const maxPct = single.breakdown[0].percentage;
@@ -231,7 +231,7 @@ describe("/stats route error isolation", () => {
     mockFetch.mockImplementation((...args: unknown[]) => {
       const url = String(args[0] ?? "");
       if (url.includes("/v1/stats/overview")) {
-        return Promise.resolve(apiJson({ total_packages: 42, total_downloads: 1000, total_publishers: 5, breakdown: [] }));
+        return Promise.resolve(apiJson({ total_packages: 42, total_downloads: 1000, total_owners: 5, breakdown: [] }));
       }
       if (url.includes("/v1/stats/agents") || url.includes("/v1/stats/trending")) {
         return Promise.resolve(api500());

@@ -86,16 +86,16 @@ describe("buildMetadataRows", () => {
 });
 
 describe("package detail v2 fields", () => {
-  it("should support publisher field", () => {
+  it("should support owner field", () => {
     const pkg = {
       full_name: "@hong/my-skill",
-      publisher: { slug: "hong", kind: "user" as const },
+      owner: { slug: "hong", kind: "user" as const },
       dist_tags: { latest: "1.0.0", beta: "2.0.0-beta.1" },
       trust_tier: "structural" as const,
       visibility: "public" as const,
     };
-    expect(pkg.publisher?.slug).toBe("hong");
-    expect(pkg.publisher?.kind).toBe("user");
+    expect(pkg.owner?.slug).toBe("hong");
+    expect(pkg.owner?.kind).toBe("user");
   });
 
   it("should support dist_tags", () => {
@@ -119,9 +119,9 @@ describe("package detail v2 fields", () => {
     });
   });
 
-  it("should handle null publisher gracefully", () => {
-    const pkg: { publisher: { slug: string } | null } = { publisher: null };
-    expect(pkg.publisher?.slug).toBeUndefined();
+  it("should handle null owner gracefully", () => {
+    const pkg: { owner: { slug: string } | null } = { owner: null };
+    expect(pkg.owner?.slug).toBeUndefined();
   });
 
   it("should handle empty dist_tags", () => {

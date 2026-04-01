@@ -17,7 +17,7 @@ import { DocsPage, VALID_DOC_SECTIONS } from "./pages/docs";
 import { LoginPage } from "./pages/login";
 import { DashboardPage } from "./pages/dashboard";
 import { PrivacyPage } from "./pages/privacy";
-import { PublisherPage } from "./pages/publisher";
+import { ProfilePage } from "./pages/profile";
 import { OrgPage } from "./pages/org";
 import { StatsPage } from "./pages/stats";
 import { PackageStatsPage } from "./pages/package-stats";
@@ -686,10 +686,10 @@ app.get("/dashboard", async (c) => {
   const rawTab = c.req.query("tab");
   const activeTab = rawTab && ["packages", "orgs", "notifications", "sync"].includes(rawTab) ? rawTab : "packages";
 
-  // Fetch the user's published packages via publisher API
+  // Fetch the user's published packages via profile API
   let packages: PackageSummary[] = [];
   try {
-    const pkgResult = await api(c).getPublisherPackages(user.username, { limit: 50 }, token);
+    const pkgResult = await api(c).getProfilePackages(user.username, { limit: 50 }, token);
     packages = pkgResult.packages;
   } catch {
     // Non-critical — show dashboard with empty list
@@ -764,20 +764,20 @@ app.get("/dashboard", async (c) => {
   );
 });
 
-// Publisher profile — vanity URL: /@slug
+// Profile page — vanity URL: /@slug
 // Uses regex constraint to match paths starting with @ (e.g., /@biao29)
 app.get("/:slug{@[^/]+}", async (c) => {
   const slug = c.req.param("slug")!.replace(/^@/, "");
   try {
-    const [publisher, pkgResult] = await Promise.all([
-      api(c).getPublisher(slug),
-      api(c).getPublisherPackages(slug, { limit: 50 }, c.get("token")),
+    const [profile, pkgResult] = await Promise.all([
+      api(c).getProfile(slug),
+      api(c).getProfilePackages(slug, { limit: 50 }, c.get("token")),
     ]);
     const meta = { ...defaultMeta(), title: `@${slug} — ${SITE_NAME}` };
     c.header("Cache-Control", "public, s-maxage=60, stale-while-revalidate=120");
     return c.html(
       <Layout meta={meta} currentPath={`/@${slug}`} user={c.get("user")}>
-        <PublisherPage publisher={publisher} packages={pkgResult.packages} />
+        <ProfilePage profile={profile} packages={pkgResult.packages} />
       </Layout>
     );
   } catch (err) {
@@ -785,7 +785,7 @@ app.get("/:slug{@[^/]+}", async (c) => {
       return c.html(
         <Layout meta={{ ...defaultMeta(), title: `Not Found — ${SITE_NAME}` }} user={c.get("user")}>
           <Container class="py-16 text-center">
-            <h1 class="mb-2 text-xl font-semibold font-heading">Publisher not found</h1>
+            <h1 class="mb-2 text-xl font-semibold font-heading">User not found</h1>
             <p class="text-sm text-muted-foreground">@{slug} does not exist.</p>
           </Container>
         </Layout>,

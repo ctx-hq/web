@@ -1,5 +1,5 @@
 import type { FC } from "hono/jsx";
-import type { PublisherProfile, PackageSummary } from "../lib/types";
+import type { Profile, PackageSummary } from "../lib/types";
 import { formatDownloads } from "../lib/format";
 import { avatarUrl } from "../lib/avatar";
 import { Container } from "../components/ui/container";
@@ -16,11 +16,11 @@ function safeWebsiteDisplay(url: string): string {
   }
 }
 
-export const PublisherPage: FC<{
-  publisher: PublisherProfile;
+export const ProfilePage: FC<{
+  profile: Profile;
   packages: PackageSummary[];
-}> = ({ publisher, packages }) => {
-  const imgSrc = publisher.avatar_url || avatarUrl(publisher.slug, 64);
+}> = ({ profile, packages }) => {
+  const imgSrc = profile.avatar_url || avatarUrl(profile.slug, 64);
   const collections = packages.filter((p) => p.type === "collection");
   const nonCollections = packages.filter((p) => p.type !== "collection");
 
@@ -30,41 +30,41 @@ export const PublisherPage: FC<{
       <div class="mb-8 flex items-start gap-5">
         <img
           src={imgSrc}
-          alt={`@${publisher.slug}`}
+          alt={`@${profile.slug}`}
           class="size-16 shrink-0"
           loading="lazy"
         />
         <div class="min-w-0">
           <div class="mb-1 flex flex-wrap items-center gap-2">
-            <h1 class="text-xl font-semibold font-heading">@{publisher.slug}</h1>
-            {publisher.kind === "org" && (
+            <h1 class="text-xl font-semibold font-heading">@{profile.slug}</h1>
+            {profile.kind === "org" && (
               <Badge variant="secondary">org</Badge>
             )}
           </div>
 
-          {publisher.bio && (
-            <p class="mb-2 text-sm text-muted-foreground">{publisher.bio}</p>
+          {profile.bio && (
+            <p class="mb-2 text-sm text-muted-foreground">{profile.bio}</p>
           )}
 
           <div class="flex flex-wrap items-center gap-4 text-xs text-muted-foreground">
-            {publisher.website && (
+            {profile.website && (
               <a
-                href={publisher.website}
+                href={profile.website}
                 target="_blank"
                 rel="noopener noreferrer"
                 class="inline-flex items-center gap-1 hover:text-foreground transition-colors"
               >
                 <Icon name="external-link" class="size-3" />
-                {safeWebsiteDisplay(publisher.website)}
+                {safeWebsiteDisplay(profile.website)}
               </a>
             )}
             <span class="inline-flex items-center gap-1">
               <Icon name="package" class="size-3" />
-              {publisher.packages} {publisher.packages === 1 ? "package" : "packages"}
+              {profile.packages} {profile.packages === 1 ? "package" : "packages"}
             </span>
             <span class="inline-flex items-center gap-1">
               <Icon name="download" class="size-3" />
-              {formatDownloads(publisher.total_downloads ?? 0)} downloads
+              {formatDownloads(profile.total_downloads ?? 0)} downloads
             </span>
           </div>
         </div>

@@ -1,7 +1,7 @@
 import type { FC } from "hono/jsx";
 import { avatarUrl } from "../lib/avatar";
 
-export const PublisherLink: FC<{
+export const OwnerLink: FC<{
   slug?: string | null;
   avatar?: string | null;
 }> = ({ slug, avatar }) => {

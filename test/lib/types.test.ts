@@ -3,7 +3,7 @@ import { parseManifest } from "../../src/lib/types";
 import type {
   ManifestInfo, PackageSummary, PackageDetail, VersionSummary, VersionDetail,
   SearchResult, OrgInfo, OrgDetail, OrgMember, PackageStats, AgentRanking,
-  SyncProfileMeta, SyncPackageEntry, PublisherProfile,
+  SyncProfileMeta, SyncPackageEntry, Profile,
 } from "../../src/lib/types";
 
 describe("parseManifest", () => {
@@ -57,7 +57,7 @@ describe("parseManifest", () => {
 });
 
 describe("type interfaces compile correctly", () => {
-  it("PackageSummary includes trust_tier and publisher_slug", () => {
+  it("PackageSummary includes trust_tier and owner_slug", () => {
     const pkg: PackageSummary = {
       full_name: "test/pkg",
       type: "skill",
@@ -66,10 +66,10 @@ describe("type interfaces compile correctly", () => {
       downloads: 0,
       repository: "",
       trust_tier: "verified",
-      publisher_slug: "test-publisher",
+      owner_slug: "test-owner",
     };
     expect(pkg.trust_tier).toBe("verified");
-    expect(pkg.publisher_slug).toBe("test-publisher");
+    expect(pkg.owner_slug).toBe("test-owner");
   });
 
   it("PackageDetail includes all optional fields", () => {
@@ -84,14 +84,14 @@ describe("type interfaces compile correctly", () => {
       downloads: 0,
       trust_tier: "structural",
       visibility: "unlisted",
-      publisher: { slug: "hong", kind: "user" },
+      owner: { slug: "hong", kind: "user" },
       dist_tags: { latest: "1.0.0" },
       versions: [],
       created_at: "2025-01-01T00:00:00Z",
       updated_at: "2025-01-01T00:00:00Z",
     };
     expect(detail.visibility).toBe("unlisted");
-    expect(detail.publisher!.slug).toBe("hong");
+    expect(detail.owner!.slug).toBe("hong");
   });
 
   it("OrgDetail extends OrgInfo with members and packages", () => {
@@ -120,9 +120,9 @@ describe("type interfaces compile correctly", () => {
     expect(meta.last_pull_at).toBeNull();
   });
 
-  it("PublisherProfile has kind union type", () => {
-    const user: PublisherProfile = { slug: "hong", kind: "user", packages: 5, created_at: "2025-01-01T00:00:00Z" };
-    const org: PublisherProfile = { slug: "acme", kind: "org", packages: 20, created_at: "2025-01-01T00:00:00Z" };
+  it("Profile has kind union type", () => {
+    const user: Profile = { slug: "hong", kind: "user", packages: 5, created_at: "2025-01-01T00:00:00Z" };
+    const org: Profile = { slug: "acme", kind: "org", packages: 20, created_at: "2025-01-01T00:00:00Z" };
     expect(user.kind).toBe("user");
     expect(org.kind).toBe("org");
   });
