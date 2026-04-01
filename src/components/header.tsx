@@ -1,5 +1,6 @@
 import type { FC } from "hono/jsx";
 import type { SessionUser } from "../lib/types";
+import { avatarUrl } from "../lib/avatar";
 import { Icon } from "./ui/icon";
 import { Button } from "./ui/button";
 
@@ -8,10 +9,6 @@ const NAV_LINKS: Array<{ href: string; label: string }> = [
   { href: "/stats", label: "Stats" },
   { href: "/docs", label: "Docs" },
 ];
-
-function avatarUrl(username: string, size: number = 40): string {
-  return `https://source.boringavatars.com/beam/${size}/${encodeURIComponent(username)}?colors=264653,2a9d8f,e9c46a,f4a261,e76f51`;
-}
 
 export const Header: FC<{ currentPath?: string; user?: SessionUser | null; notificationCount?: number }> = ({
   currentPath = "",

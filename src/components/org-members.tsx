@@ -1,10 +1,7 @@
 import type { FC } from "hono/jsx";
 import type { OrgMember } from "../lib/types";
+import { avatarUrl } from "../lib/avatar";
 import { Badge } from "./badge";
-
-function avatarUrl(username: string, size: number = 40): string {
-  return `https://source.boringavatars.com/beam/${size}/${encodeURIComponent(username)}?colors=264653,2a9d8f,e9c46a,f4a261,e76f51`;
-}
 
 export const OrgMembers: FC<{ members: OrgMember[] | null }> = ({ members }) => {
   if (members === null) {
