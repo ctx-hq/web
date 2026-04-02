@@ -42,7 +42,7 @@ export const OrgPage: FC<{
           ) : (
             <div class="grid gap-4 sm:grid-cols-2">
               {packages.map((pkg) => (
-                <PackageCard key={pkg.full_name} pkg={pkg} />
+                <PackageCard key={pkg.full_name} pkg={pkg} showSettings={userRole === "owner" || userRole === "admin"} />
               ))}
             </div>
           )}

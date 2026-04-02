@@ -78,7 +78,7 @@ export const DashboardPage: FC<{
         ) : (
           <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {packages.map((pkg) => (
-              <PackageCard key={pkg.full_name} pkg={pkg} />
+              <PackageCard key={pkg.full_name} pkg={pkg} showSettings />
             ))}
           </div>
         )}

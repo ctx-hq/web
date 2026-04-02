@@ -29,6 +29,8 @@ export interface PackageDetail {
   repository: string;
   keywords: string[];
   platforms: string[];
+  homepage?: string;
+  author?: string;
   downloads: number;
   trust_tier?: TrustTier;
   visibility?: Visibility;

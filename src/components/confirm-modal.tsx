@@ -38,13 +38,13 @@ export const ConfirmModal: FC<{
 }) => (
   <dialog
     id={id}
-    class="m-auto max-w-md rounded-lg border border-border bg-background p-0 shadow-lg backdrop:bg-black/50"
+    class="m-auto max-w-md rounded-none border border-border bg-background p-0 shadow-lg backdrop:bg-black/50"
   >
     <div class="p-6">
       <h3 class="text-base font-semibold font-heading text-red-600 dark:text-red-400">{title}</h3>
       <p class="mt-2 text-sm text-muted-foreground">{description}</p>
       <p class="mt-3 text-sm">
-        Type <code class="rounded bg-muted px-1.5 py-0.5 text-xs font-mono">{confirmText}</code> to confirm:
+        Type <code class="rounded-none bg-muted px-1.5 py-0.5 text-xs font-mono">{confirmText}</code> to confirm:
       </p>
       <form method={method as any} action={action} class="mt-3">
         <input

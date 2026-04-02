@@ -23,8 +23,8 @@ describe("package-card", () => {
       downloads: 100,
       repository: "",
     };
-    const href = `/@${pkg.full_name}`;
-    expect(href).toBe("/@hong/my-skill");
+    const href = `/package/${pkg.full_name}`;
+    expect(href).toBe("/package/hong/my-skill");
   });
 
   it("handles empty description", () => {

@@ -12,7 +12,7 @@ import { validateSort } from "./lib/search-url";
 import { HomePage } from "./pages/home";
 import { SearchPage } from "./pages/search";
 import { PackageDetailPage } from "./pages/package-detail";
-import { PackageSettingsPage } from "./pages/package-settings";
+import { PackageSettingsPage, type PkgSettingsTab } from "./pages/package-settings";
 import { DocsPage, VALID_DOC_SECTIONS } from "./pages/docs";
 import { LoginPage } from "./pages/login";
 import { DashboardPage } from "./pages/dashboard";
@@ -354,6 +354,8 @@ app.get("/package/:fullName{@[^/]+/[^/]+}/settings", async (c) => {
   const name = parts[1];
   const error = c.req.query("error") ?? undefined;
   const success = c.req.query("success") ?? undefined;
+  const validTabs: PkgSettingsTab[] = ["general", "versions", "access", "publish", "danger"];
+  const tab = (validTabs.includes(c.req.query("tab") as PkgSettingsTab) ? c.req.query("tab") : "general") as PkgSettingsTab;
 
   let visibility = "public";
   let deprecated = false;
@@ -362,6 +364,13 @@ app.get("/package/:fullName{@[^/]+/[^/]+}/settings", async (c) => {
   let trustedPublishers: import("./lib/types").TrustedPublisher[] = [];
   let distTags: Record<string, string> = {};
   let accessList: import("./lib/types").PackageAccessEntry[] = [];
+  let description: string | undefined;
+  let keywords: string[] | undefined;
+  let homepage: string | undefined;
+  let repository: string | undefined;
+  let license: string | undefined;
+  let author: string | undefined;
+  let versions: import("./lib/types").VersionSummary[] = [];
 
   try {
     const pkg = await api(c).getPackage(fullName, token);
@@ -369,6 +378,13 @@ app.get("/package/:fullName{@[^/]+/[^/]+}/settings", async (c) => {
     deprecated = pkg.deprecated ?? false;
     deprecationMessage = pkg.deprecation_message;
     canManage = true;
+    description = pkg.description;
+    keywords = pkg.keywords;
+    homepage = pkg.homepage;
+    repository = pkg.repository;
+    license = pkg.license;
+    author = pkg.author;
+    versions = pkg.versions ?? [];
 
     // Load additional data in parallel (best-effort)
     const [tpResult, tagsResult] = await Promise.all([
@@ -398,10 +414,18 @@ app.get("/package/:fullName{@[^/]+/[^/]+}/settings", async (c) => {
         fullName={fullName}
         scope={scope}
         name={name}
+        tab={tab}
         visibility={visibility}
+        description={description}
+        keywords={keywords}
+        homepage={homepage}
+        repository={repository}
+        license={license}
+        author={author}
         deprecated={deprecated}
         deprecationMessage={deprecationMessage}
         distTags={distTags}
+        versions={versions}
         accessList={accessList}
         canManage={canManage}
         trustedPublishers={trustedPublishers}
@@ -421,9 +445,9 @@ app.post("/package/:fullName{@[^/]+/[^/]+}/settings/visibility", async (c) => {
   try {
     await api(c).setVisibility(fullName, body.visibility as string, token);
   } catch {
-    return c.redirect(`/package/${fullName}/settings?error=Failed+to+update+visibility`);
+    return c.redirect(`/package/${fullName}/settings?tab=general&error=Failed+to+update+visibility`);
   }
-  return c.redirect(`/package/${fullName}/settings`);
+  return c.redirect(`/package/${fullName}/settings?tab=general`);
 });
 
 app.post("/package/:fullName{@[^/]+/[^/]+}/settings/rename", async (c) => {
@@ -432,11 +456,15 @@ app.post("/package/:fullName{@[^/]+/[^/]+}/settings/rename", async (c) => {
   const fullName = c.req.param("fullName");
   const body = await c.req.parseBody();
   try {
-    const result = await api(c).renamePackage(fullName, body.new_name as string, fullName, token);
+    const confirm = (body.confirm as string)?.trim();
+    if (confirm !== fullName) {
+      return c.redirect(`/package/${fullName}/settings?tab=danger&error=${encodeURIComponent("Confirmation does not match package name")}`);
+    }
+    const result = await api(c).renamePackage(fullName, body.new_name as string, confirm, token);
     const newName = result.new_name ?? fullName;
-    return c.redirect(`/package/${newName}/settings`);
+    return c.redirect(`/package/${newName}/settings?tab=danger&success=Package+renamed`);
   } catch {
-    return c.redirect(`/package/${fullName}/settings?error=Failed+to+rename+package`);
+    return c.redirect(`/package/${fullName}/settings?tab=danger&error=Failed+to+rename+package`);
   }
 });
 
@@ -446,10 +474,14 @@ app.post("/package/:fullName{@[^/]+/[^/]+}/settings/transfer", async (c) => {
   const fullName = c.req.param("fullName");
   const body = await c.req.parseBody();
   try {
-    await api(c).initiateTransfer(fullName, body.to as string, "", token);
-    return c.redirect(`/package/${fullName}/settings?error=Transfer+request+sent`);
+    const confirm = (body.confirm as string)?.trim();
+    if (confirm !== fullName) {
+      return c.redirect(`/package/${fullName}/settings?tab=danger&error=${encodeURIComponent("Confirmation does not match package name")}`);
+    }
+    await api(c).initiateTransfer(fullName, body.to as string, (body.message as string) ?? "", token);
+    return c.redirect(`/package/${fullName}/settings?tab=danger&success=Transfer+request+sent`);
   } catch {
-    return c.redirect(`/package/${fullName}/settings?error=Failed+to+initiate+transfer`);
+    return c.redirect(`/package/${fullName}/settings?tab=danger&error=Failed+to+initiate+transfer`);
   }
 });
 
@@ -464,10 +496,10 @@ app.post("/package/:fullName{@[^/]+/[^/]+}/settings/trusted-publishers", async (
   const githubRepo = (body.github_repo as string)?.trim() ?? "";
   const workflow = (body.workflow as string)?.trim() ?? "";
   if (!/^[a-zA-Z0-9._-]+\/[a-zA-Z0-9._-]+$/.test(githubRepo)) {
-    return c.redirect(`/package/${fullName}/settings?error=${encodeURIComponent("Invalid repository format. Use owner/repo.")}`);
+    return c.redirect(`/package/${fullName}/settings?tab=publish&error=${encodeURIComponent("Invalid repository format. Use owner/repo.")}`);
   }
   if (!/^[a-zA-Z0-9._-]+\.ya?ml$/.test(workflow)) {
-    return c.redirect(`/package/${fullName}/settings?error=${encodeURIComponent("Invalid workflow filename. Use name.yml or name.yaml.")}`);
+    return c.redirect(`/package/${fullName}/settings?tab=publish&error=${encodeURIComponent("Invalid workflow filename. Use name.yml or name.yaml.")}`);
   }
 
   try {
@@ -478,9 +510,9 @@ app.post("/package/:fullName{@[^/]+/[^/]+}/settings/trusted-publishers", async (
       environment: (body.environment as string)?.trim() || undefined,
     }, token);
   } catch {
-    return c.redirect(`/package/${fullName}/settings?error=Failed+to+add+trusted+publisher`);
+    return c.redirect(`/package/${fullName}/settings?tab=publish&error=Failed+to+add+trusted+publisher`);
   }
-  return c.redirect(`/package/${fullName}/settings`);
+  return c.redirect(`/package/${fullName}/settings?tab=publish`);
 });
 
 // Trusted publishers: delete
@@ -492,9 +524,9 @@ app.post("/package/:fullName{@[^/]+/[^/]+}/settings/trusted-publishers/:tpId/del
   try {
     await api(c).deleteTrustedPublisher(fullName, tpId, token);
   } catch {
-    return c.redirect(`/package/${fullName}/settings?error=Failed+to+remove+trusted+publisher`);
+    return c.redirect(`/package/${fullName}/settings?tab=publish&error=Failed+to+remove+trusted+publisher`);
   }
-  return c.redirect(`/package/${fullName}/settings`);
+  return c.redirect(`/package/${fullName}/settings?tab=publish`);
 });
 
 // Deprecation toggle
@@ -507,10 +539,10 @@ app.post("/package/:fullName{@[^/]+/[^/]+}/settings/deprecate", async (c) => {
   const message = (body.message as string)?.trim() || undefined;
   try {
     await api(c).deprecatePackage(fullName, deprecated, message, token);
-    return c.redirect(`/package/${fullName}/settings?success=${encodeURIComponent(deprecated ? "Package deprecated" : "Deprecation removed")}`);
+    return c.redirect(`/package/${fullName}/settings?tab=general&success=${encodeURIComponent(deprecated ? "Package deprecated" : "Deprecation removed")}`);
   } catch (err) {
     const msg = err instanceof Error ? err.message : "Failed to update deprecation";
-    return c.redirect(`/package/${fullName}/settings?error=${encodeURIComponent(msg)}`);
+    return c.redirect(`/package/${fullName}/settings?tab=general&error=${encodeURIComponent(msg)}`);
   }
 });
 
@@ -523,7 +555,7 @@ app.post("/package/:fullName{@[^/]+/[^/]+}/settings/delete", async (c) => {
   const body = await c.req.parseBody();
   const confirm = (body.confirm as string)?.trim();
   if (!confirm || confirm !== fullName) {
-    return c.redirect(`/package/${fullName}/settings?error=Confirmation+does+not+match+package+name`);
+    return c.redirect(`/package/${fullName}/settings?tab=danger&error=Confirmation+does+not+match+package+name`);
   }
 
   try {
@@ -531,7 +563,7 @@ app.post("/package/:fullName{@[^/]+/[^/]+}/settings/delete", async (c) => {
     return c.redirect("/dashboard?tab=packages");
   } catch (err) {
     const msg = err instanceof Error ? err.message : "Failed to delete package";
-    return c.redirect(`/package/${fullName}/settings?error=${encodeURIComponent(msg)}`);
+    return c.redirect(`/package/${fullName}/settings?tab=danger&error=${encodeURIComponent(msg)}`);
   }
 });
 
@@ -544,14 +576,14 @@ app.post("/package/:fullName{@[^/]+/[^/]+}/settings/dist-tag", async (c) => {
   const tag = (body.tag as string)?.trim();
   const version = (body.version as string)?.trim();
   if (!tag || !version) {
-    return c.redirect(`/package/${fullName}/settings?error=Tag+and+version+are+required`);
+    return c.redirect(`/package/${fullName}/settings?tab=versions&error=Tag+and+version+are+required`);
   }
   try {
     await api(c).setDistTag(fullName, tag, version, token);
-    return c.redirect(`/package/${fullName}/settings?success=${encodeURIComponent("Tag set")}`);
+    return c.redirect(`/package/${fullName}/settings?tab=versions&success=${encodeURIComponent("Tag set")}`);
   } catch (err) {
     const msg = err instanceof Error ? err.message : "Failed to set tag";
-    return c.redirect(`/package/${fullName}/settings?error=${encodeURIComponent(msg)}`);
+    return c.redirect(`/package/${fullName}/settings?tab=versions&error=${encodeURIComponent(msg)}`);
   }
 });
 
@@ -562,10 +594,10 @@ app.post("/package/:fullName{@[^/]+/[^/]+}/settings/dist-tag/:tag/delete", async
   const tag = c.req.param("tag");
   try {
     await api(c).deleteDistTag(fullName, tag, token);
-    return c.redirect(`/package/${fullName}/settings?success=${encodeURIComponent("Tag deleted")}`);
+    return c.redirect(`/package/${fullName}/settings?tab=versions&success=${encodeURIComponent("Tag deleted")}`);
   } catch (err) {
     const msg = err instanceof Error ? err.message : "Failed to delete tag";
-    return c.redirect(`/package/${fullName}/settings?error=${encodeURIComponent(msg)}`);
+    return c.redirect(`/package/${fullName}/settings?tab=versions&error=${encodeURIComponent(msg)}`);
   }
 });
 
@@ -578,7 +610,7 @@ app.post("/package/:fullName{@[^/]+/[^/]+}/settings/access", async (c) => {
   const action = body.action as string;
   const username = (body.username as string)?.trim();
   if (!username) {
-    return c.redirect(`/package/${fullName}/settings?error=Username+is+required`);
+    return c.redirect(`/package/${fullName}/settings?tab=access&error=Username+is+required`);
   }
   try {
     if (action === "add") {
@@ -586,10 +618,87 @@ app.post("/package/:fullName{@[^/]+/[^/]+}/settings/access", async (c) => {
     } else {
       await api(c).updatePackageAccess(fullName, [], [username], token);
     }
-    return c.redirect(`/package/${fullName}/settings?success=${encodeURIComponent("Access updated")}`);
+    return c.redirect(`/package/${fullName}/settings?tab=access&success=${encodeURIComponent("Access updated")}`);
   } catch (err) {
     const msg = err instanceof Error ? err.message : "Failed to update access";
-    return c.redirect(`/package/${fullName}/settings?error=${encodeURIComponent(msg)}`);
+    return c.redirect(`/package/${fullName}/settings?tab=access&error=${encodeURIComponent(msg)}`);
+  }
+});
+
+// Package metadata update
+app.post("/package/:fullName{@[^/]+/[^/]+}/settings/metadata", async (c) => {
+  const token = c.get("token");
+  if (!token) return c.redirect("/login");
+  const fullName = c.req.param("fullName");
+  const body = await c.req.parseBody();
+
+  const metadata: Record<string, unknown> = {};
+  if (body.description !== undefined) metadata.description = (body.description as string).trim();
+  if (body.homepage !== undefined) metadata.homepage = (body.homepage as string).trim();
+  if (body.repository !== undefined) metadata.repository = (body.repository as string).trim();
+  if (body.license !== undefined) metadata.license = (body.license as string).trim();
+  if (body.author !== undefined) metadata.author = (body.author as string).trim();
+  if (body.keywords !== undefined) {
+    const raw = (body.keywords as string).trim();
+    metadata.keywords = raw ? raw.split(",").map((k: string) => k.trim()).filter(Boolean) : [];
+  }
+
+  try {
+    await api(c).updateMetadata(fullName, metadata as any, token);
+    return c.redirect(`/package/${fullName}/settings?tab=general&success=${encodeURIComponent("Metadata updated")}`);
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : "Failed to update metadata";
+    return c.redirect(`/package/${fullName}/settings?tab=general&error=${encodeURIComponent(msg)}`);
+  }
+});
+
+// Version yank
+app.post("/package/:fullName{@[^/]+/[^/]+}/settings/versions/:version/yank", async (c) => {
+  const token = c.get("token");
+  if (!token) return c.redirect("/login");
+  const fullName = c.req.param("fullName");
+  const version = c.req.param("version");
+  try {
+    await api(c).yankVersion(fullName, version, token);
+    return c.redirect(`/package/${fullName}/settings?tab=versions&success=${encodeURIComponent(`Version ${version} yanked`)}`);
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : "Failed to yank version";
+    return c.redirect(`/package/${fullName}/settings?tab=versions&error=${encodeURIComponent(msg)}`);
+  }
+});
+
+// Version unyank
+app.post("/package/:fullName{@[^/]+/[^/]+}/settings/versions/:version/unyank", async (c) => {
+  const token = c.get("token");
+  if (!token) return c.redirect("/login");
+  const fullName = c.req.param("fullName");
+  const version = c.req.param("version");
+  try {
+    await api(c).unyankVersion(fullName, version, token);
+    return c.redirect(`/package/${fullName}/settings?tab=versions&success=${encodeURIComponent(`Version ${version} restored`)}`);
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : "Failed to unyank version";
+    return c.redirect(`/package/${fullName}/settings?tab=versions&error=${encodeURIComponent(msg)}`);
+  }
+});
+
+// Version delete
+app.post("/package/:fullName{@[^/]+/[^/]+}/settings/versions/:version/delete", async (c) => {
+  const token = c.get("token");
+  if (!token) return c.redirect("/login");
+  const fullName = c.req.param("fullName");
+  const version = c.req.param("version");
+  const body = await c.req.parseBody();
+  const confirm = (body.confirm as string)?.trim();
+  if (confirm !== `${fullName}@${version}`) {
+    return c.redirect(`/package/${fullName}/settings?tab=versions&error=${encodeURIComponent("Confirmation does not match")}`);
+  }
+  try {
+    await api(c).deleteVersion(fullName, version, token);
+    return c.redirect(`/package/${fullName}/settings?tab=versions&success=${encodeURIComponent(`Version ${version} deleted`)}`);
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : "Failed to delete version";
+    return c.redirect(`/package/${fullName}/settings?tab=versions&error=${encodeURIComponent(msg)}`);
   }
 });
 
@@ -646,7 +755,7 @@ app.get("/package/:fullName{@[^/]+/[^/]+}", async (c) => {
     c.header("Cache-Control", "public, s-maxage=300, stale-while-revalidate=600");
     return c.html(
       <Layout meta={meta} currentPath={`/package/${fullName}`} user={c.get("user")}>
-        <PackageDetailPage pkg={pkg} readmeHtml={readmeHtml} manifest={manifestInfo} mcpDetail={(pkg as any).mcp_detail ?? null} isLoggedIn={!!c.get("user")} />
+        <PackageDetailPage pkg={pkg} readmeHtml={readmeHtml} manifest={manifestInfo} mcpDetail={(pkg as any).mcp_detail ?? null} isLoggedIn={!!c.get("user")} canManage={!!c.get("user") && !!pkg.owner && (pkg.owner.slug === (c.get("user") as any)?.username || pkg.owner.kind === "org")} />
       </Layout>
     );
   } catch (err) {

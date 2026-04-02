@@ -313,6 +313,21 @@ export class ApiClient {
 
   // --- Package Management APIs ---
 
+  async updateMetadata(fullName: string, body: {
+    description?: string; keywords?: string[]; homepage?: string;
+    repository?: string; license?: string; author?: string;
+  }, token: string): Promise<void> {
+    return this.patch(`/v1/packages/${encodeURIComponent(fullName)}/metadata`, body as Record<string, unknown>, token);
+  }
+
+  async yankVersion(fullName: string, version: string, token: string): Promise<void> {
+    return this.post(`/v1/packages/${encodeURIComponent(fullName)}/versions/${encodeURIComponent(version)}/yank`, {}, token);
+  }
+
+  async unyankVersion(fullName: string, version: string, token: string): Promise<void> {
+    return this.post(`/v1/packages/${encodeURIComponent(fullName)}/versions/${encodeURIComponent(version)}/unyank`, {}, token);
+  }
+
   async deprecatePackage(fullName: string, deprecated: boolean, message: string | undefined, token: string): Promise<void> {
     const body: Record<string, unknown> = { deprecated };
     if (message !== undefined) body.message = message;

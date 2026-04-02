@@ -41,7 +41,8 @@ export const PackageDetailPage: FC<{
   manifest?: ManifestInfo | null;
   mcpDetail?: MCPDetail | null;
   isLoggedIn?: boolean;
-}> = ({ pkg, readmeHtml, manifest, mcpDetail, isLoggedIn }) => {
+  canManage?: boolean;
+}> = ({ pkg, readmeHtml, manifest, mcpDetail, isLoggedIn, canManage }) => {
   const repoUrl = safeRepoUrl(pkg.repository);
   const rows = buildMetadataRows(pkg, formatNumber, formatDate);
   const isAdapter = !!manifest?.source?.github;
@@ -71,6 +72,16 @@ export const PackageDetailPage: FC<{
           )}
           <VisibilityBadge visibility={pkg.visibility} />
           <TrustBadge tier={pkg.trust_tier} />
+          {canManage && (
+            <a
+              href={`/package/${pkg.full_name}/settings`}
+              class="inline-flex items-center gap-1 px-2 py-1 text-xs text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+              aria-label="Package settings"
+            >
+              <Icon name="settings" class="size-3.5" />
+              Settings
+            </a>
+          )}
         </div>
         {pkg.owner && (
           <div class="mb-1">
@@ -82,7 +93,7 @@ export const PackageDetailPage: FC<{
         )}
         {/* Adapter source banner */}
         {isAdapter && sourceGithub && (
-          <div class="mt-2 flex items-center gap-1.5 rounded border border-border bg-muted/50 px-3 py-1.5 text-sm text-muted-foreground">
+          <div class="mt-2 flex items-center gap-1.5 border border-border bg-muted/50 px-3 py-1.5 text-sm text-muted-foreground">
             <Icon name="github-logo" class="size-3.5" />
             <span>
               Adapts{" "}
