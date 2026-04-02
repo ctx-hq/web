@@ -61,6 +61,12 @@ coverage/
 # ===== Playwright =====
 .playwright-mcp/
 
+# ===== Screenshots =====
+*.png
+*.jpg
+*.jpeg
+!public/**
+
 # ===== Temp =====
 tmp/
 !tmp/.gitkeep

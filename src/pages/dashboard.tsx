@@ -1,5 +1,5 @@
 import type { FC } from "hono/jsx";
-import type { PackageSummary, OrgInfo, OrgInvitation, SyncProfileMeta, TransferRequest, AppNotification, StarredPackage } from "../lib/types";
+import type { PackageSummary, OrgInfo, OrgInvitation, SyncProfileMeta, TransferRequest, AppNotification, StarredPackage, StarList, ClaimablePackage, Claim } from "../lib/types";
 import { Container } from "../components/ui/container";
 import { Button } from "../components/ui/button";
 import { Icon } from "../components/ui/icon";
@@ -12,6 +12,7 @@ const TABS = [
   { key: "stars", label: "Stars", href: "/dashboard?tab=stars" },
   { key: "orgs", label: "My Orgs", href: "/dashboard?tab=orgs" },
   { key: "notifications", label: "Notifications", href: "/dashboard?tab=notifications" },
+  { key: "claims", label: "Claims", href: "/dashboard?tab=claims" },
   { key: "sync", label: "Sync", href: "/dashboard?tab=sync" },
 ] as const;
 
@@ -19,14 +20,18 @@ export const DashboardPage: FC<{
   username: string;
   packages: PackageSummary[];
   stars?: StarredPackage[];
+  starLists?: StarList[];
   orgs?: OrgInfo[];
   invitations?: OrgInvitation[];
   transfers?: TransferRequest[];
   notifications?: AppNotification[];
   notificationCount?: number;
+  claimablePackages?: ClaimablePackage[];
+  claims?: Claim[];
   syncMeta?: SyncProfileMeta | null;
   activeTab?: string;
-}> = ({ username, packages, stars = [], orgs = [], invitations = [], transfers = [], notifications = [], notificationCount = 0, syncMeta = null, activeTab = "packages" }) => (
+  activeListId?: string;
+}> = ({ username, packages, stars = [], starLists = [], orgs = [], invitations = [], transfers = [], notifications = [], notificationCount = 0, claimablePackages = [], claims = [], syncMeta = null, activeTab = "packages", activeListId }) => (
   <Container class="py-10">
     <h1 class="mb-6 text-xl font-semibold font-heading">Dashboard</h1>
     <p class="mb-4 text-sm text-muted-foreground">Signed in as @{username}</p>
@@ -45,7 +50,7 @@ export const DashboardPage: FC<{
         >
           {tab.label}
           {tab.key === "notifications" && notificationCount > 0 && (
-            <span class="ml-1.5 inline-flex size-5 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">
+            <span class="ml-1.5 inline-flex size-5 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
               {notificationCount > 99 ? "99+" : notificationCount}
             </span>
           )}
@@ -83,7 +88,79 @@ export const DashboardPage: FC<{
     {/* Stars tab */}
     {activeTab === "stars" && (
       <section>
-        <h2 class="mb-4 text-sm font-semibold font-heading">Starred packages</h2>
+        {/* Star Lists management */}
+        <div class="mb-6">
+          <div class="mb-3 flex items-center justify-between">
+            <h2 class="text-sm font-semibold font-heading">Star Lists</h2>
+          </div>
+          {starLists.length > 0 && (
+            <div class="mb-4 space-y-2">
+              {starLists.map((list) => (
+                <div class="cn-card flex items-center justify-between p-4" key={list.id}>
+                  <div>
+                    <span class="text-sm font-medium">{list.name}</span>
+                    {list.description && (
+                      <p class="mt-0.5 text-xs text-muted-foreground">{list.description}</p>
+                    )}
+                    <span class="text-xs text-muted-foreground">
+                      {list.star_count} {list.star_count === 1 ? "package" : "packages"}
+                    </span>
+                  </div>
+                  <form method="post" action={`/stars/lists/${list.id}/delete`} onsubmit={`return confirm('Delete list "${list.name}"?')`}>
+                    <button
+                      type="submit"
+                      class="cn-button cn-button-variant-ghost cn-button-size-icon-xs text-muted-foreground hover:text-destructive"
+                      title={`Delete list "${list.name}"`}
+                      aria-label={`Delete star list ${list.name}`}
+                    >
+                      <Icon name="trash" class="size-3.5" />
+                    </button>
+                  </form>
+                </div>
+              ))}
+            </div>
+          )}
+          <form method="post" action="/stars/lists/create" class="flex items-end gap-2">
+            <div class="flex-1">
+              <label for="list-name" class="mb-1 block text-xs text-muted-foreground">New list</label>
+              <input
+                type="text"
+                id="list-name"
+                name="name"
+                required
+                placeholder="e.g. Favorites, Work tools..."
+                class="cn-input w-full"
+              />
+            </div>
+            <button type="submit" class="cn-button cn-button-variant-outline cn-button-size-default">
+              Create
+            </button>
+          </form>
+        </div>
+
+        {/* Star list filter + Starred packages */}
+        <div class="mb-4 flex items-center justify-between">
+          <h2 class="text-sm font-semibold font-heading">Starred packages</h2>
+          {starLists.length > 0 && (
+            <nav class="flex gap-1 text-xs" aria-label="Filter by list">
+              <a
+                href="/dashboard?tab=stars"
+                class={`px-2 py-1 transition-colors ${!activeListId ? "bg-foreground text-background font-medium" : "text-muted-foreground hover:text-foreground border border-border"}`}
+              >
+                All
+              </a>
+              {starLists.map((list) => (
+                <a
+                  key={list.id}
+                  href={`/dashboard?tab=stars&list=${encodeURIComponent(list.id)}`}
+                  class={`px-2 py-1 transition-colors ${activeListId === list.id ? "bg-foreground text-background font-medium" : "text-muted-foreground hover:text-foreground border border-border"}`}
+                >
+                  {list.name}
+                </a>
+              ))}
+            </nav>
+          )}
+        </div>
         {stars.length === 0 ? (
           <div class="cn-card p-8 text-center">
             <Icon name="star" class="mx-auto mb-4 size-12 text-muted-foreground" />
@@ -254,7 +331,19 @@ export const DashboardPage: FC<{
         )}
 
         {/* Notifications list */}
-        <h2 class="mb-3 text-sm font-semibold font-heading">Notifications</h2>
+        <div class="mb-3 flex items-center justify-between">
+          <h2 class="text-sm font-semibold font-heading">Notifications</h2>
+          {notifications.some((n) => !n.read) && (
+            <form method="post" action="/notifications/mark-all-read">
+              <button
+                type="submit"
+                class="cn-button cn-button-variant-outline cn-button-size-xs"
+              >
+                Mark all read
+              </button>
+            </form>
+          )}
+        </div>
         {notifications.length === 0 ? (
           <div class="cn-card p-8 text-center">
             <Icon name="bell" class="mx-auto mb-4 size-12 text-muted-foreground" />
@@ -272,18 +361,98 @@ export const DashboardPage: FC<{
                   {n.body && (
                     <p class="mt-0.5 text-xs text-muted-foreground">{n.body}</p>
                   )}
-                  <p class="mt-1 text-[10px] text-muted-foreground">{n.created_at}</p>
+                  <p class="mt-1 text-xs text-muted-foreground">{n.created_at}</p>
                 </div>
-                {!n.read && (
-                  <form method="post" action={`/notifications/${n.id}/read`}>
+                <div class="flex items-center gap-2">
+                  {!n.read && (
+                    <form method="post" action={`/notifications/${n.id}/read`}>
+                      <button
+                        type="submit"
+                        class="cn-button cn-button-variant-ghost cn-button-size-xs"
+                        title="Mark as read"
+                      >
+                        Mark read
+                      </button>
+                    </form>
+                  )}
+                  <form method="post" action={`/notifications/${n.id}/dismiss`}>
                     <button
                       type="submit"
-                      class="cn-button-size-xs border border-border bg-background px-3 text-xs text-muted-foreground hover:bg-muted"
+                      class="cn-button cn-button-variant-ghost cn-button-size-icon-xs text-muted-foreground hover:text-foreground"
+                      title="Dismiss"
+                      aria-label={`Dismiss notification: ${n.title}`}
                     >
-                      Mark read
+                      <Icon name="x" class="size-3.5" />
                     </button>
                   </form>
-                )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
+    )}
+
+    {/* Claims tab */}
+    {activeTab === "claims" && (
+      <section>
+        {/* Claimable packages */}
+        {claimablePackages.length > 0 && (
+          <div class="mb-6">
+            <h2 class="mb-3 text-sm font-semibold font-heading">
+              Claimable Packages ({claimablePackages.length})
+            </h2>
+            <p class="mb-3 text-xs text-muted-foreground">
+              These system-owned packages match your GitHub repos. Claim them to move them under your account.
+            </p>
+            <div class="space-y-2">
+              {claimablePackages.map((pkg) => (
+                <div class="cn-card flex items-center justify-between p-4" key={pkg.package_id}>
+                  <div>
+                    <span class="text-sm font-medium">{pkg.full_name}</span>
+                    <p class="mt-0.5 text-xs text-muted-foreground">{pkg.description}</p>
+                    <p class="mt-0.5 text-xs text-muted-foreground">
+                      Source: {pkg.source_repo} &middot; {pkg.downloads} downloads
+                    </p>
+                  </div>
+                  <form method="post" action="/claims">
+                    <input type="hidden" name="package_id" value={pkg.package_id} />
+                    <button
+                      type="submit"
+                      class="cn-button cn-button-variant-default cn-button-size-xs"
+                    >
+                      Claim
+                    </button>
+                  </form>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Claim history */}
+        <h2 class="mb-3 text-sm font-semibold font-heading">Claim History</h2>
+        {claims.length === 0 && claimablePackages.length === 0 ? (
+          <div class="cn-card p-8 text-center">
+            <Icon name="package" class="mx-auto mb-4 size-12 text-muted-foreground" />
+            <p class="text-sm font-medium font-heading">No claims</p>
+            <p class="mx-auto mt-1.5 max-w-xs text-xs text-muted-foreground">
+              When system-owned packages match your GitHub repos, you can claim them here.
+            </p>
+          </div>
+        ) : claims.length === 0 ? (
+          <p class="text-sm text-muted-foreground">No claims yet.</p>
+        ) : (
+          <div class="space-y-2">
+            {claims.map((claim) => (
+              <div class="cn-card flex items-center justify-between p-4" key={claim.id}>
+                <div>
+                  <span class="text-sm font-medium">{claim.full_name || claim.package_id}</span>
+                  <p class="mt-0.5 text-xs text-muted-foreground">{claim.created_at}</p>
+                </div>
+                <Badge variant={claim.status === "approved" ? "default" : claim.status === "rejected" ? "destructive" : "secondary"}>
+                  {claim.status}
+                </Badge>
               </div>
             ))}
           </div>

@@ -263,6 +263,78 @@ export class ApiClient {
     return this.post(`/v1/orgs/${encodeURIComponent(orgName)}/dissolve`, body, token);
   }
 
+  // --- Profile & Account APIs ---
+
+  async updateProfile(body: { bio?: string; website?: string }, token: string): Promise<void> {
+    return this.patch("/v1/me/profile", body as Record<string, unknown>, token);
+  }
+
+  async deleteAccount(token: string): Promise<void> {
+    return this.doDelete("/v1/me", token);
+  }
+
+  // --- Notification bulk APIs ---
+
+  async markAllNotificationsRead(token: string): Promise<{ marked_read: number }> {
+    return this.patch("/v1/me/notifications/read-all", {}, token);
+  }
+
+  // --- Star List APIs ---
+
+  async listStarLists(token: string): Promise<{ lists: import("./types").StarList[] }> {
+    return this.get("/v1/me/star-lists", token);
+  }
+
+  async createStarList(body: { name: string; description?: string; visibility?: string }, token: string): Promise<import("./types").StarList> {
+    return this.post("/v1/me/star-lists", body as Record<string, unknown>, token);
+  }
+
+  async updateStarList(id: string, body: { name?: string; description?: string; visibility?: string }, token: string): Promise<void> {
+    return this.patch(`/v1/me/star-lists/${encodeURIComponent(id)}`, body as Record<string, unknown>, token);
+  }
+
+  async deleteStarList(id: string, token: string): Promise<void> {
+    return this.doDelete(`/v1/me/star-lists/${encodeURIComponent(id)}`, token);
+  }
+
+  // --- Claim APIs ---
+
+  async listClaimable(token: string): Promise<{ packages: import("./types").ClaimablePackage[] }> {
+    return this.get("/v1/me/claimable", token);
+  }
+
+  async claimPackage(packageId: string, token: string): Promise<{ ok: boolean; full_name: string; message: string }> {
+    return this.post("/v1/me/claims", { package_id: packageId }, token);
+  }
+
+  async listClaims(token: string): Promise<{ claims: import("./types").Claim[] }> {
+    return this.get("/v1/me/claims", token);
+  }
+
+  // --- Package Management APIs ---
+
+  async deprecatePackage(fullName: string, deprecated: boolean, message: string | undefined, token: string): Promise<void> {
+    const body: Record<string, unknown> = { deprecated };
+    if (message !== undefined) body.message = message;
+    return this.patch(`/v1/packages/${encodeURIComponent(fullName)}/deprecation`, body, token);
+  }
+
+  async deletePackage(fullName: string, token: string): Promise<void> {
+    return this.doDelete(`/v1/packages/${encodeURIComponent(fullName)}`, token);
+  }
+
+  async deleteVersion(fullName: string, version: string, token: string): Promise<void> {
+    return this.doDelete(`/v1/packages/${encodeURIComponent(fullName)}/versions/${encodeURIComponent(version)}`, token);
+  }
+
+  async setDistTag(fullName: string, tag: string, version: string, token: string): Promise<void> {
+    return this.put(`/v1/packages/${encodeURIComponent(fullName)}/tags/${encodeURIComponent(tag)}`, { version }, token);
+  }
+
+  async deleteDistTag(fullName: string, tag: string, token: string): Promise<void> {
+    return this.doDelete(`/v1/packages/${encodeURIComponent(fullName)}/tags/${encodeURIComponent(tag)}`, token);
+  }
+
   // --- Token Management ---
 
   async listTokens(token: string): Promise<{ tokens: import("./types").TokenInfo[] }> {
@@ -304,8 +376,9 @@ export class ApiClient {
     return this.doDelete(`/v1/packages/${encodeURIComponent(fullName)}/star`, token);
   }
 
-  async listMyStars(token: string): Promise<{ stars: StarredPackage[] }> {
-    return this.get("/v1/me/stars", token);
+  async listMyStars(token: string, listId?: string): Promise<{ stars: StarredPackage[] }> {
+    const qs = listId ? `?list=${encodeURIComponent(listId)}` : "";
+    return this.get(`/v1/me/stars${qs}`, token);
   }
 
   // --- Trusted Publishers ---

@@ -37,6 +37,8 @@ export interface PackageDetail {
   versions: VersionSummary[];
   collection_members?: CollectionMemberSummary[] | null;
   part_of_collections?: { full_name: string; description: string }[] | null;
+  deprecated?: boolean;
+  deprecation_message?: string;
   star_count?: number;
   is_starred?: boolean;
   created_at: string;
@@ -316,6 +318,38 @@ export interface StarredPackage {
   type: string;
   description: string;
   starred_at: string;
+}
+
+// --- Star List types ---
+
+export interface StarList {
+  id: string;
+  name: string;
+  slug: string;
+  description?: string;
+  visibility: "public" | "private";
+  star_count: number;
+  created_at: string;
+}
+
+// --- Claim types ---
+
+export interface ClaimablePackage {
+  package_id: string;
+  full_name: string;
+  source_repo: string;
+  description: string;
+  downloads: number;
+}
+
+export interface Claim {
+  id: string;
+  package_id: string;
+  github_repo: string;
+  status: "pending" | "approved" | "rejected";
+  created_at: string;
+  resolved_at?: string;
+  full_name?: string;
 }
 
 export interface TrustedPublisher {

@@ -276,6 +276,45 @@ html:not(.dark) .light-hidden { display: none; }
   @apply flex items-center gap-2 border border-destructive/30 bg-destructive/5 px-3 py-2.5 text-sm text-destructive;
 }
 
+.cn-form-banner-success {
+  @apply flex items-center gap-2 border border-green-600/30 bg-green-600/5 px-3 py-2.5 text-sm text-green-700;
+}
+
+/* --- Dropdown Menu --- */
+.cn-dropdown-menu {
+  @apply absolute right-0 top-full mt-1 z-50 min-w-[200px] border border-border bg-card text-card-foreground shadow-md;
+  display: none;
+}
+.cn-dropdown-menu[data-open] {
+  display: block;
+}
+.cn-dropdown-item {
+  @apply flex items-center gap-2 w-full px-3 py-2 text-sm text-foreground transition-colors;
+  min-height: 1.75rem;
+}
+.cn-dropdown-item:hover,
+.cn-dropdown-item:focus-visible {
+  @apply bg-muted outline-none;
+}
+.cn-dropdown-separator {
+  @apply border-t border-border my-1;
+}
+.cn-dropdown-label {
+  @apply px-3 py-1.5 text-xs text-muted-foreground font-medium;
+}
+
+/* --- Settings Nav --- */
+.cn-settings-nav-item {
+  @apply flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground transition-colors;
+  min-height: 1.75rem;
+}
+.cn-settings-nav-item:hover {
+  @apply bg-muted text-foreground;
+}
+.cn-settings-nav-item[aria-current="page"] {
+  @apply bg-muted text-foreground font-medium;
+}
+
 /* --- Install Tabs (underline style, lighter weight than search tabs) --- */
 .cn-install-tab {
   @apply inline-flex cursor-pointer items-center gap-1.5 pb-2 pt-2.5 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground -mb-px border-b-2 border-transparent;

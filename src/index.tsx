@@ -26,7 +26,9 @@ import { CreateOrgPage, validateOrgName } from "./pages/create-org";
 import { OrgSettingsPage } from "./pages/org-settings";
 import { MCPHubPage } from "./pages/mcp-hub";
 import { SubmitPage } from "./pages/submit";
-import { SettingsTokensPage } from "./pages/settings-tokens";
+import { SettingsTokensSection } from "./pages/settings-tokens";
+import { SettingsPage } from "./pages/settings";
+import type { SettingsTab } from "./pages/settings";
 
 type Env = {
   Bindings: {
@@ -351,21 +353,39 @@ app.get("/package/:fullName{@[^/]+/[^/]+}/settings", async (c) => {
   const scope = parts[0];
   const name = parts[1];
   const error = c.req.query("error") ?? undefined;
+  const success = c.req.query("success") ?? undefined;
 
   let visibility = "public";
+  let deprecated = false;
+  let deprecationMessage: string | undefined;
   let canManage = false;
   let trustedPublishers: import("./lib/types").TrustedPublisher[] = [];
+  let distTags: Record<string, string> = {};
+  let accessList: import("./lib/types").PackageAccessEntry[] = [];
+
   try {
     const pkg = await api(c).getPackage(fullName, token);
     visibility = pkg.visibility ?? "public";
+    deprecated = pkg.deprecated ?? false;
+    deprecationMessage = pkg.deprecation_message;
     canManage = true;
 
-    // Load trusted publishers (best-effort — don't fail the page)
-    try {
-      const tpData = await api(c).listTrustedPublishers(fullName, token);
-      trustedPublishers = tpData.trusted_publishers ?? [];
-    } catch {
-      // Token may lack manage-access scope; ignore
+    // Load additional data in parallel (best-effort)
+    const [tpResult, tagsResult] = await Promise.all([
+      api(c).listTrustedPublishers(fullName, token).catch(() => ({ trusted_publishers: [] as import("./lib/types").TrustedPublisher[] })),
+      api(c).getPackageTags(fullName).catch(() => ({ tags: {} as Record<string, string> })),
+    ]);
+    trustedPublishers = tpResult.trusted_publishers ?? [];
+    distTags = tagsResult.tags ?? {};
+
+    // Load ACL for private packages
+    if (visibility === "private") {
+      try {
+        const aclResult = await api(c).getPackageAccess(fullName, token);
+        accessList = aclResult.access ?? [];
+      } catch {
+        // Token may lack manage-access scope
+      }
     }
   } catch {
     // Package not found or no access
@@ -379,9 +399,14 @@ app.get("/package/:fullName{@[^/]+/[^/]+}/settings", async (c) => {
         scope={scope}
         name={name}
         visibility={visibility}
+        deprecated={deprecated}
+        deprecationMessage={deprecationMessage}
+        distTags={distTags}
+        accessList={accessList}
         canManage={canManage}
         trustedPublishers={trustedPublishers}
         error={error}
+        success={success}
       />
     </Layout>
   );
@@ -470,6 +495,102 @@ app.post("/package/:fullName{@[^/]+/[^/]+}/settings/trusted-publishers/:tpId/del
     return c.redirect(`/package/${fullName}/settings?error=Failed+to+remove+trusted+publisher`);
   }
   return c.redirect(`/package/${fullName}/settings`);
+});
+
+// Deprecation toggle
+app.post("/package/:fullName{@[^/]+/[^/]+}/settings/deprecate", async (c) => {
+  const token = c.get("token");
+  if (!token) return c.redirect("/login");
+  const fullName = c.req.param("fullName");
+  const body = await c.req.parseBody();
+  const deprecated = body.deprecated === "true";
+  const message = (body.message as string)?.trim() || undefined;
+  try {
+    await api(c).deprecatePackage(fullName, deprecated, message, token);
+    return c.redirect(`/package/${fullName}/settings?success=${encodeURIComponent(deprecated ? "Package deprecated" : "Deprecation removed")}`);
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : "Failed to update deprecation";
+    return c.redirect(`/package/${fullName}/settings?error=${encodeURIComponent(msg)}`);
+  }
+});
+
+// Package deletion
+app.post("/package/:fullName{@[^/]+/[^/]+}/settings/delete", async (c) => {
+  const token = c.get("token");
+  if (!token) return c.redirect("/login");
+  const fullName = c.req.param("fullName");
+
+  const body = await c.req.parseBody();
+  const confirm = (body.confirm as string)?.trim();
+  if (!confirm || confirm !== fullName) {
+    return c.redirect(`/package/${fullName}/settings?error=Confirmation+does+not+match+package+name`);
+  }
+
+  try {
+    await api(c).deletePackage(fullName, token);
+    return c.redirect("/dashboard?tab=packages");
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : "Failed to delete package";
+    return c.redirect(`/package/${fullName}/settings?error=${encodeURIComponent(msg)}`);
+  }
+});
+
+// Dist-tag management
+app.post("/package/:fullName{@[^/]+/[^/]+}/settings/dist-tag", async (c) => {
+  const token = c.get("token");
+  if (!token) return c.redirect("/login");
+  const fullName = c.req.param("fullName");
+  const body = await c.req.parseBody();
+  const tag = (body.tag as string)?.trim();
+  const version = (body.version as string)?.trim();
+  if (!tag || !version) {
+    return c.redirect(`/package/${fullName}/settings?error=Tag+and+version+are+required`);
+  }
+  try {
+    await api(c).setDistTag(fullName, tag, version, token);
+    return c.redirect(`/package/${fullName}/settings?success=${encodeURIComponent("Tag set")}`);
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : "Failed to set tag";
+    return c.redirect(`/package/${fullName}/settings?error=${encodeURIComponent(msg)}`);
+  }
+});
+
+app.post("/package/:fullName{@[^/]+/[^/]+}/settings/dist-tag/:tag/delete", async (c) => {
+  const token = c.get("token");
+  if (!token) return c.redirect("/login");
+  const fullName = c.req.param("fullName");
+  const tag = c.req.param("tag");
+  try {
+    await api(c).deleteDistTag(fullName, tag, token);
+    return c.redirect(`/package/${fullName}/settings?success=${encodeURIComponent("Tag deleted")}`);
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : "Failed to delete tag";
+    return c.redirect(`/package/${fullName}/settings?error=${encodeURIComponent(msg)}`);
+  }
+});
+
+// Package access control
+app.post("/package/:fullName{@[^/]+/[^/]+}/settings/access", async (c) => {
+  const token = c.get("token");
+  if (!token) return c.redirect("/login");
+  const fullName = c.req.param("fullName");
+  const body = await c.req.parseBody();
+  const action = body.action as string;
+  const username = (body.username as string)?.trim();
+  if (!username) {
+    return c.redirect(`/package/${fullName}/settings?error=Username+is+required`);
+  }
+  try {
+    if (action === "add") {
+      await api(c).updatePackageAccess(fullName, [username], [], token);
+    } else {
+      await api(c).updatePackageAccess(fullName, [], [username], token);
+    }
+    return c.redirect(`/package/${fullName}/settings?success=${encodeURIComponent("Access updated")}`);
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : "Failed to update access";
+    return c.redirect(`/package/${fullName}/settings?error=${encodeURIComponent(msg)}`);
+  }
 });
 
 // Package stats: /@scope/name/stats
@@ -743,36 +864,126 @@ app.post("/api/device/authorize", async (c) => {
 });
 
 // Create Organization (auth required)
-// --- Token Management ---
+// --- Settings Hub ---
 
-app.get("/settings/tokens", async (c) => {
+app.get("/settings/tokens", (c) => {
+  const qs = c.req.query("error") || c.req.query("success") ? `&${new URL(c.req.url).searchParams}` : "";
+  return c.redirect(`/settings?tab=tokens${qs}`);
+});
+
+app.get("/settings", async (c) => {
   const user = c.get("user");
   const token = c.get("token");
-  if (!user || !token) return c.redirect("/login?redirect=/settings/tokens");
+  const settingsPath = new URL(c.req.url).pathname + new URL(c.req.url).search;
+  if (!user || !token) return c.redirect(`/login?redirect=${encodeURIComponent(settingsPath)}`);
 
-  let tokens: import("./lib/types").TokenInfo[] = [];
-  let error: string | undefined;
-  try {
-    const result = await api(c).listTokens(token);
-    tokens = result.tokens;
-  } catch (err) {
-    error = "Failed to load tokens";
-    console.error("Token list error:", err);
-  }
+  const tab = (c.req.query("tab") || "profile") as SettingsTab;
+  const validTabs: SettingsTab[] = ["profile", "tokens", "account"];
+  const activeTab = validTabs.includes(tab) ? tab : "profile";
 
-  // Read newly created token from ephemeral cookie (not URL) and clear it immediately
-  const newToken = getCookie(c, "__Host-new_token") as string | undefined;
-  if (newToken) {
-    deleteCookie(c, "__Host-new_token", { path: "/", secure: true, httpOnly: true, sameSite: "Strict" });
-  }
+  let error = c.req.query("error") || undefined;
   const success = c.req.query("success") || undefined;
+  let profile: import("./lib/types").Profile | undefined;
+  let tokens: import("./lib/types").TokenInfo[] = [];
+  let newToken: string | undefined;
 
-  const meta = { ...defaultMeta(), title: `API Tokens — ${SITE_NAME}` };
+  if (activeTab === "profile") {
+    try {
+      profile = await api(c).getProfile(user.username);
+    } catch {
+      // Profile may not exist yet — show empty form
+    }
+  } else if (activeTab === "tokens") {
+    try {
+      const result = await api(c).listTokens(token);
+      tokens = result.tokens;
+    } catch (err) {
+      error = "Failed to load tokens";
+      console.error("Token list error:", err);
+    }
+    // Read newly created token from ephemeral cookie
+    newToken = getCookie(c, "__Host-new_token") as string | undefined;
+    if (newToken) {
+      deleteCookie(c, "__Host-new_token", { path: "/", secure: true, httpOnly: true, sameSite: "Strict" });
+    }
+  }
+
+  const meta = { ...defaultMeta(), title: `Settings — ${SITE_NAME}` };
   return c.html(
-    <Layout meta={meta} currentPath="/settings/tokens" user={user}>
-      <SettingsTokensPage tokens={tokens} newToken={newToken} error={error} success={success} />
+    <Layout meta={meta} currentPath="/settings" user={user}>
+      <SettingsPage
+        user={user}
+        tab={activeTab}
+        profile={profile}
+        tokens={tokens}
+        newToken={newToken}
+        error={error}
+        success={success}
+      />
     </Layout>
   );
+});
+
+app.post("/settings/profile/update", async (c) => {
+  const user = c.get("user");
+  const token = c.get("token");
+  if (!user || !token) return c.redirect("/login");
+
+  const body = await c.req.parseBody();
+  const bio = (body.bio as string)?.trim() ?? "";
+  const website = (body.website as string)?.trim() ?? "";
+
+  try {
+    await api(c).updateProfile({ bio, website }, token);
+    return c.redirect(`/settings?tab=profile&success=${encodeURIComponent("Profile updated")}`);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Failed to update profile";
+    return c.redirect(`/settings?tab=profile&error=${encodeURIComponent(message)}`);
+  }
+});
+
+app.post("/settings/account/rename", async (c) => {
+  const user = c.get("user");
+  const token = c.get("token");
+  if (!user || !token) return c.redirect("/login");
+
+  const body = await c.req.parseBody();
+  const newUsername = (body.new_username as string)?.trim();
+  const confirm = (body.confirm as string)?.trim();
+
+  if (!newUsername || !confirm) {
+    return c.redirect("/settings?tab=account&error=All+fields+are+required");
+  }
+
+  try {
+    await api(c).renameUser(newUsername, confirm, token);
+    return c.redirect(`/settings?tab=account&success=${encodeURIComponent("Username updated successfully")}`);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Failed to rename account";
+    return c.redirect(`/settings?tab=account&error=${encodeURIComponent(message)}`);
+  }
+});
+
+app.post("/settings/account/delete", async (c) => {
+  const user = c.get("user");
+  const token = c.get("token");
+  if (!user || !token) return c.redirect("/login");
+
+  const deleteBody = await c.req.parseBody();
+  const deleteConfirm = (deleteBody.confirm as string)?.trim();
+  if (!deleteConfirm || deleteConfirm !== user.username) {
+    return c.redirect("/settings?tab=account&error=Confirmation+does+not+match+your+username");
+  }
+
+  try {
+    await api(c).deleteAccount(token);
+    // Clear session and redirect to home
+    deleteCookie(c, "__Host-ctx_session", { path: "/", secure: true, httpOnly: true, sameSite: "Strict" });
+    return c.redirect("/");
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Failed to delete account";
+    return c.redirect(`/settings?tab=account&error=${encodeURIComponent(message)}`);
+  }
 });
 
 app.post("/settings/tokens/create", async (c) => {
@@ -782,7 +993,7 @@ app.post("/settings/tokens/create", async (c) => {
 
   const body = await c.req.parseBody();
   const name = (body.name as string)?.trim();
-  if (!name) return c.redirect("/settings/tokens?error=Token+name+is+required");
+  if (!name) return c.redirect("/settings?tab=tokens&error=Token+name+is+required");
 
   const expiresInDays = body.expires_in_days ? parseInt(body.expires_in_days as string) : undefined;
 
@@ -817,10 +1028,10 @@ app.post("/settings/tokens/create", async (c) => {
       path: "/",
       maxAge: 60,
     });
-    return c.redirect("/settings/tokens");
+    return c.redirect("/settings?tab=tokens");
   } catch (err) {
     const message = err instanceof Error ? err.message : "Failed to create token";
-    return c.redirect(`/settings/tokens?error=${encodeURIComponent(message)}`);
+    return c.redirect(`/settings?tab=tokens&error=${encodeURIComponent(message)}`);
   }
 });
 
@@ -832,10 +1043,10 @@ app.post("/settings/tokens/:id/revoke", async (c) => {
   const tokenId = c.req.param("id");
   try {
     await api(c).revokeToken(tokenId, token);
-    return c.redirect("/settings/tokens?success=Token+revoked");
+    return c.redirect(`/settings?tab=tokens&success=${encodeURIComponent("Token revoked")}`);
   } catch (err) {
     const message = err instanceof Error ? err.message : "Failed to revoke token";
-    return c.redirect(`/settings/tokens?error=${encodeURIComponent(message)}`);
+    return c.redirect(`/settings?tab=tokens&error=${encodeURIComponent(message)}`);
   }
 });
 
@@ -917,7 +1128,7 @@ app.get("/dashboard", async (c) => {
   }
 
   const rawTab = c.req.query("tab");
-  const activeTab = rawTab && ["packages", "stars", "orgs", "notifications", "sync"].includes(rawTab) ? rawTab : "packages";
+  const activeTab = rawTab && ["packages", "stars", "orgs", "notifications", "claims", "sync"].includes(rawTab) ? rawTab : "packages";
 
   // Fetch the user's published packages via profile API
   let packages: PackageSummary[] = [];
@@ -968,12 +1179,34 @@ app.get("/dashboard", async (c) => {
     // Non-critical
   }
 
-  // Fetch starred packages if on stars tab
+  // Fetch starred packages and star lists if on stars tab
   let stars: StarredPackage[] = [];
+  let starLists: import("./lib/types").StarList[] = [];
+  const activeListId = c.req.query("list") || undefined;
   if (activeTab === "stars") {
     try {
-      const result = await api(c).listMyStars(token);
-      stars = result.stars ?? [];
+      const [starResult, listResult] = await Promise.all([
+        api(c).listMyStars(token, activeListId),
+        api(c).listStarLists(token),
+      ]);
+      stars = starResult.stars ?? [];
+      starLists = listResult.lists ?? [];
+    } catch {
+      // Non-critical
+    }
+  }
+
+  // Fetch claimable packages and claims if on claims tab
+  let claimablePackages: import("./lib/types").ClaimablePackage[] = [];
+  let claimsList: import("./lib/types").Claim[] = [];
+  if (activeTab === "claims") {
+    try {
+      const [claimableResult, claimsResult] = await Promise.all([
+        api(c).listClaimable(token),
+        api(c).listClaims(token),
+      ]);
+      claimablePackages = claimableResult.packages ?? [];
+      claimsList = claimsResult.claims ?? [];
     } catch {
       // Non-critical
     }
@@ -997,13 +1230,17 @@ app.get("/dashboard", async (c) => {
         username={user.username}
         packages={packages}
         stars={stars}
+        starLists={starLists}
         orgs={orgs}
         invitations={invitations}
         transfers={transfers}
         notifications={notifications}
         notificationCount={notificationCount}
+        claimablePackages={claimablePackages}
+        claims={claimsList}
         syncMeta={syncMeta}
         activeTab={activeTab}
+        activeListId={activeListId}
       />
     </Layout>
   );
@@ -1324,6 +1561,73 @@ app.post("/notifications/:id/read", async (c) => {
     // Best-effort
   }
   return c.redirect("/dashboard?tab=notifications");
+});
+
+// Mark all notifications as read
+app.post("/notifications/mark-all-read", async (c) => {
+  const token = c.get("token");
+  if (!token) return c.redirect("/login");
+  try {
+    await api(c).markAllNotificationsRead(token);
+  } catch {
+    // Best-effort
+  }
+  return c.redirect("/dashboard?tab=notifications");
+});
+
+// Dismiss notification
+app.post("/notifications/:id/dismiss", async (c) => {
+  const token = c.get("token");
+  if (!token) return c.redirect("/login");
+  const id = c.req.param("id");
+  try {
+    await api(c).dismissNotification(id, token);
+  } catch {
+    // Best-effort
+  }
+  return c.redirect("/dashboard?tab=notifications");
+});
+
+// Star lists CRUD
+app.post("/stars/lists/create", async (c) => {
+  const token = c.get("token");
+  if (!token) return c.redirect("/login");
+  const body = await c.req.parseBody();
+  const name = (body.name as string)?.trim();
+  if (!name) return c.redirect("/dashboard?tab=stars");
+  try {
+    await api(c).createStarList({ name }, token);
+  } catch {
+    // Best-effort
+  }
+  return c.redirect("/dashboard?tab=stars");
+});
+
+app.post("/stars/lists/:id/delete", async (c) => {
+  const token = c.get("token");
+  if (!token) return c.redirect("/login");
+  const id = c.req.param("id");
+  try {
+    await api(c).deleteStarList(id, token);
+  } catch {
+    // Best-effort
+  }
+  return c.redirect("/dashboard?tab=stars");
+});
+
+// Claims
+app.post("/claims", async (c) => {
+  const token = c.get("token");
+  if (!token) return c.redirect("/login");
+  const body = await c.req.parseBody();
+  const packageId = body.package_id as string;
+  if (!packageId) return c.redirect("/dashboard?tab=claims");
+  try {
+    await api(c).claimPackage(packageId, token);
+  } catch {
+    // Best-effort
+  }
+  return c.redirect("/dashboard?tab=claims");
 });
 
 // Organization page

@@ -16,6 +16,58 @@ document.getElementById('mobile-nav-toggle')?.addEventListener('click',function(
   document.getElementById('mobile-nav')?.classList.toggle('hidden');
 });
 
+/* --- User dropdown --- */
+(function(){
+  var trigger=document.getElementById('user-dropdown-trigger');
+  var menu=document.getElementById('user-dropdown-menu');
+  if(!trigger||!menu)return;
+
+  function isOpen(){return menu.hasAttribute('data-open')}
+
+  function open(){
+    menu.setAttribute('data-open','');
+    trigger.setAttribute('aria-expanded','true');
+    var first=menu.querySelector('[role="menuitem"]');
+    if(first)first.focus();
+  }
+
+  function close(){
+    menu.removeAttribute('data-open');
+    trigger.setAttribute('aria-expanded','false');
+  }
+
+  trigger.addEventListener('click',function(e){
+    e.stopPropagation();
+    if(isOpen()){close();trigger.focus()}else{open()}
+  });
+
+  // Click outside to close
+  document.addEventListener('click',function(e){
+    if(isOpen()&&!menu.contains(e.target)&&!trigger.contains(e.target))close();
+  });
+
+  // Keyboard navigation
+  trigger.addEventListener('keydown',function(e){
+    if(e.key==='ArrowDown'||e.key==='Enter'||e.key===' '){
+      e.preventDefault();
+      if(!isOpen())open();
+    }
+  });
+
+  menu.addEventListener('keydown',function(e){
+    var items=Array.from(menu.querySelectorAll('[role="menuitem"]'));
+    var idx=items.indexOf(document.activeElement);
+    switch(e.key){
+      case 'Escape':e.preventDefault();close();trigger.focus();break;
+      case 'ArrowDown':e.preventDefault();items[(idx+1)%items.length].focus();break;
+      case 'ArrowUp':e.preventDefault();items[(idx-1+items.length)%items.length].focus();break;
+      case 'Home':e.preventDefault();items[0].focus();break;
+      case 'End':e.preventDefault();items[items.length-1].focus();break;
+      case 'Tab':close();break;
+    }
+  });
+})();
+
 /* --- Copy buttons (swap only the text label, keep SVG icons) --- */
 document.addEventListener('click',function(e){
   var btn=e.target&&e.target.closest?e.target.closest('[data-copy]'):null;

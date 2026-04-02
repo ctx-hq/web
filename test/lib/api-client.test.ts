@@ -436,4 +436,183 @@ describe("ApiClient", () => {
       expect(url).toContain("/v1/me/tokens/tok-1");
     });
   });
+
+  describe("updateProfile", () => {
+    it("uses PATCH method", async () => {
+      mockFetch.mockResolvedValue(jsonResponse({ ok: true }));
+      await client.updateProfile({ bio: "Hello", website: "https://example.com" }, "my-token");
+
+      const opts = mockFetch.mock.calls[0][1] as RequestInit;
+      expect(opts.method).toBe("PATCH");
+    });
+
+    it("constructs correct URL", async () => {
+      mockFetch.mockResolvedValue(jsonResponse({ ok: true }));
+      await client.updateProfile({ bio: "Hello" }, "my-token");
+
+      const url = mockFetch.mock.calls[0][0] as string;
+      expect(url).toContain("/v1/me/profile");
+    });
+
+    it("sends correct body", async () => {
+      mockFetch.mockResolvedValue(jsonResponse({ ok: true }));
+      await client.updateProfile({ bio: "Bio text", website: "https://site.com" }, "my-token");
+
+      const opts = mockFetch.mock.calls[0][1] as RequestInit;
+      const parsed = JSON.parse(opts.body as string);
+      expect(parsed.bio).toBe("Bio text");
+      expect(parsed.website).toBe("https://site.com");
+    });
+  });
+
+  describe("deleteAccount", () => {
+    it("uses DELETE method", async () => {
+      mockFetch.mockResolvedValue(new Response(null, { status: 204 }));
+      await client.deleteAccount("my-token");
+
+      const opts = mockFetch.mock.calls[0][1] as RequestInit;
+      expect(opts.method).toBe("DELETE");
+    });
+
+    it("constructs correct URL", async () => {
+      mockFetch.mockResolvedValue(new Response(null, { status: 204 }));
+      await client.deleteAccount("my-token");
+
+      const url = mockFetch.mock.calls[0][0] as string;
+      expect(url).toContain("/v1/me");
+      expect(url).not.toContain("/v1/me/");
+    });
+  });
+
+  describe("markAllNotificationsRead", () => {
+    it("uses PATCH method", async () => {
+      mockFetch.mockResolvedValue(jsonResponse({ marked_read: 3 }));
+      await client.markAllNotificationsRead("my-token");
+
+      const opts = mockFetch.mock.calls[0][1] as RequestInit;
+      expect(opts.method).toBe("PATCH");
+    });
+
+    it("constructs correct URL", async () => {
+      mockFetch.mockResolvedValue(jsonResponse({ marked_read: 0 }));
+      await client.markAllNotificationsRead("my-token");
+
+      const url = mockFetch.mock.calls[0][0] as string;
+      expect(url).toContain("/v1/me/notifications/read-all");
+    });
+  });
+
+  describe("star list CRUD", () => {
+    it("listStarLists constructs correct URL", async () => {
+      mockFetch.mockResolvedValue(jsonResponse({ lists: [] }));
+      await client.listStarLists("my-token");
+
+      const url = mockFetch.mock.calls[0][0] as string;
+      expect(url).toContain("/v1/me/star-lists");
+    });
+
+    it("createStarList uses POST method", async () => {
+      mockFetch.mockResolvedValue(jsonResponse({ id: "1", name: "Favorites", slug: "favorites" }));
+      await client.createStarList({ name: "Favorites" }, "my-token");
+
+      const opts = mockFetch.mock.calls[0][1] as RequestInit;
+      expect(opts.method).toBe("POST");
+    });
+
+    it("updateStarList uses PATCH method", async () => {
+      mockFetch.mockResolvedValue(jsonResponse({ updated: true }));
+      await client.updateStarList("list-1", { name: "Updated" }, "my-token");
+
+      const opts = mockFetch.mock.calls[0][1] as RequestInit;
+      expect(opts.method).toBe("PATCH");
+      const url = mockFetch.mock.calls[0][0] as string;
+      expect(url).toContain("/v1/me/star-lists/list-1");
+    });
+
+    it("deleteStarList uses DELETE method", async () => {
+      mockFetch.mockResolvedValue(new Response(null, { status: 204 }));
+      await client.deleteStarList("list-1", "my-token");
+
+      const opts = mockFetch.mock.calls[0][1] as RequestInit;
+      expect(opts.method).toBe("DELETE");
+    });
+  });
+
+  describe("claims", () => {
+    it("listClaimable constructs correct URL", async () => {
+      mockFetch.mockResolvedValue(jsonResponse({ packages: [] }));
+      await client.listClaimable("my-token");
+
+      const url = mockFetch.mock.calls[0][0] as string;
+      expect(url).toContain("/v1/me/claimable");
+    });
+
+    it("claimPackage uses POST method", async () => {
+      mockFetch.mockResolvedValue(jsonResponse({ ok: true, full_name: "@alice/pkg", message: "Claimed" }));
+      await client.claimPackage("pkg-id-1", "my-token");
+
+      const opts = mockFetch.mock.calls[0][1] as RequestInit;
+      expect(opts.method).toBe("POST");
+      const parsed = JSON.parse(opts.body as string);
+      expect(parsed.package_id).toBe("pkg-id-1");
+    });
+
+    it("listClaims constructs correct URL", async () => {
+      mockFetch.mockResolvedValue(jsonResponse({ claims: [] }));
+      await client.listClaims("my-token");
+
+      const url = mockFetch.mock.calls[0][0] as string;
+      expect(url).toContain("/v1/me/claims");
+    });
+  });
+
+  describe("package management", () => {
+    it("deprecatePackage uses PATCH method", async () => {
+      mockFetch.mockResolvedValue(jsonResponse({ ok: true }));
+      await client.deprecatePackage("scope/name", true, "Use other pkg", "my-token");
+
+      const opts = mockFetch.mock.calls[0][1] as RequestInit;
+      expect(opts.method).toBe("PATCH");
+      const url = mockFetch.mock.calls[0][0] as string;
+      expect(url).toContain("/v1/packages/scope%2Fname/deprecation");
+    });
+
+    it("deletePackage uses DELETE method", async () => {
+      mockFetch.mockResolvedValue(new Response(null, { status: 204 }));
+      await client.deletePackage("scope/name", "my-token");
+
+      const opts = mockFetch.mock.calls[0][1] as RequestInit;
+      expect(opts.method).toBe("DELETE");
+    });
+
+    it("setDistTag uses PUT method", async () => {
+      mockFetch.mockResolvedValue(jsonResponse({ ok: true }));
+      await client.setDistTag("scope/name", "latest", "1.0.0", "my-token");
+
+      const opts = mockFetch.mock.calls[0][1] as RequestInit;
+      expect(opts.method).toBe("PUT");
+      const url = mockFetch.mock.calls[0][0] as string;
+      expect(url).toContain("/v1/packages/scope%2Fname/tags/latest");
+    });
+
+    it("deleteDistTag uses DELETE method", async () => {
+      mockFetch.mockResolvedValue(new Response(null, { status: 204 }));
+      await client.deleteDistTag("scope/name", "beta", "my-token");
+
+      const opts = mockFetch.mock.calls[0][1] as RequestInit;
+      expect(opts.method).toBe("DELETE");
+      const url = mockFetch.mock.calls[0][0] as string;
+      expect(url).toContain("/v1/packages/scope%2Fname/tags/beta");
+    });
+
+    it("deleteVersion uses DELETE method", async () => {
+      mockFetch.mockResolvedValue(new Response(null, { status: 204 }));
+      await client.deleteVersion("scope/name", "1.0.0", "my-token");
+
+      const opts = mockFetch.mock.calls[0][1] as RequestInit;
+      expect(opts.method).toBe("DELETE");
+      const url = mockFetch.mock.calls[0][0] as string;
+      expect(url).toContain("/v1/packages/scope%2Fname/versions/1.0.0");
+    });
+  });
 });

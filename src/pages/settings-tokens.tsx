@@ -1,6 +1,5 @@
 import type { FC } from "hono/jsx";
 import type { TokenInfo } from "../lib/types";
-import { Container } from "../components/ui/container";
 import { ENDPOINT_SCOPES } from "../lib/types";
 
 function timeAgo(dateStr: string | null): string {
@@ -12,20 +11,14 @@ function timeAgo(dateStr: string | null): string {
   return `${Math.floor(diff / 86_400_000)}d ago`;
 }
 
-export const SettingsTokensPage: FC<{
+/** Tokens section — reusable inside the unified Settings page. */
+export const SettingsTokensSection: FC<{
   tokens: TokenInfo[];
   newToken?: string;
   error?: string;
   success?: string;
 }> = ({ tokens, newToken, error, success }) => (
-  <Container class="py-10">
-    <div class="mb-6">
-      <h1 class="mb-1 text-xl font-semibold font-heading">API Tokens</h1>
-      <p class="text-sm text-muted-foreground">
-        Manage tokens for CI/CD publishing and machine-to-machine access.
-      </p>
-    </div>
-
+  <>
     {error && (
       <div class="cn-card mb-6 border-destructive/50 bg-destructive/5 p-4">
         <p class="text-sm text-destructive">{error}</p>
@@ -194,5 +187,5 @@ export const SettingsTokensPage: FC<{
         </div>
       )}
     </div>
-  </Container>
+  </>
 );

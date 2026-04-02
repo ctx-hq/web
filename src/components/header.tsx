@@ -57,48 +57,66 @@ export const Header: FC<{ currentPath?: string; user?: SessionUser | null; notif
         {user ? (
           <div class="flex items-center gap-3">
             <a
-              href="/settings/tokens"
-              class="text-muted-foreground hover:text-foreground transition-colors"
-              title="API Tokens"
-            >
-              <Icon name="key" class="size-4" />
-            </a>
-            <a
               href="/dashboard?tab=notifications"
               class="relative text-muted-foreground hover:text-foreground transition-colors"
               title="Notifications"
             >
               <Icon name="bell" class="size-4" />
               {notificationCount > 0 && (
-                <span class="absolute -right-1.5 -top-1.5 flex size-4 items-center justify-center rounded-full bg-primary text-[9px] font-bold text-primary-foreground">
+                <span class="absolute -right-1.5 -top-1.5 flex size-5 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
                   {notificationCount > 9 ? "9+" : notificationCount}
                 </span>
               )}
             </a>
-            <a
-              href="/dashboard"
-              class={`flex items-center gap-2 text-sm transition-colors ${
-                currentPath === "/dashboard"
-                  ? "text-foreground font-medium"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              <img
-                src={user.avatar_url || avatarUrl(user.username, 20)}
-                alt=""
-                class="size-5 rounded-full border border-border bg-muted"
-                loading="lazy"
-                data-avatar-fallback
-              />
-              {user.username}
-            </a>
-            <a
-              href="/logout"
-              class="text-sm text-muted-foreground hover:text-foreground transition-colors"
-              title="Sign out"
-            >
-              <Icon name="sign-out" class="size-4" />
-            </a>
+            <div class="relative">
+              <button
+                id="user-dropdown-trigger"
+                class="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+                aria-expanded="false"
+                aria-haspopup="menu"
+              >
+                <img
+                  src={user.avatar_url || avatarUrl(user.username, 20)}
+                  alt=""
+                  class="size-5 rounded-full border border-border bg-muted"
+                  loading="lazy"
+                  data-avatar-fallback
+                />
+                {user.username}
+                <Icon name="caret-down" class="size-3.5" />
+              </button>
+              <div
+                id="user-dropdown-menu"
+                role="menu"
+                aria-labelledby="user-dropdown-trigger"
+                class="cn-dropdown-menu"
+              >
+                <div class="cn-dropdown-label">Signed in as @{user.username}</div>
+                <div class="cn-dropdown-separator" />
+                <a role="menuitem" tabindex={-1} class="cn-dropdown-item" href="/dashboard">
+                  <Icon name="package" class="size-4" />
+                  Dashboard
+                </a>
+                <a role="menuitem" tabindex={-1} class="cn-dropdown-item" href="/dashboard?tab=stars">
+                  <Icon name="star" class="size-4" />
+                  My Stars
+                </a>
+                <a role="menuitem" tabindex={-1} class="cn-dropdown-item" href="/dashboard?tab=orgs">
+                  <Icon name="users-three" class="size-4" />
+                  My Orgs
+                </a>
+                <div class="cn-dropdown-separator" />
+                <a role="menuitem" tabindex={-1} class="cn-dropdown-item" href="/settings">
+                  <Icon name="gear" class="size-4" />
+                  Settings
+                </a>
+                <div class="cn-dropdown-separator" />
+                <a role="menuitem" tabindex={-1} class="cn-dropdown-item" href="/logout">
+                  <Icon name="sign-out" class="size-4" />
+                  Sign out
+                </a>
+              </div>
+            </div>
           </div>
         ) : (
           <Button variant="default" size="sm" href="/login">
@@ -143,6 +161,7 @@ export const Header: FC<{ currentPath?: string; user?: SessionUser | null; notif
         })}
         {user ? (
           <>
+            <div class="border-t border-border my-1" />
             <a href="/dashboard" class="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
               <img
                 src={user.avatar_url || avatarUrl(user.username, 16)}
@@ -152,6 +171,24 @@ export const Header: FC<{ currentPath?: string; user?: SessionUser | null; notif
                 data-avatar-fallback
               />
               {user.username}
+            </a>
+            <a href="/dashboard?tab=notifications" class="text-sm text-muted-foreground hover:text-foreground">
+              Notifications
+              {notificationCount > 0 && (
+                <span class="ml-1 inline-flex size-5 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
+                  {notificationCount > 9 ? "9+" : notificationCount}
+                </span>
+              )}
+            </a>
+            <a href="/dashboard?tab=stars" class="text-sm text-muted-foreground hover:text-foreground">
+              My Stars
+            </a>
+            <a href="/dashboard?tab=orgs" class="text-sm text-muted-foreground hover:text-foreground">
+              My Orgs
+            </a>
+            <div class="border-t border-border my-1" />
+            <a href="/settings" class="text-sm text-muted-foreground hover:text-foreground">
+              Settings
             </a>
             <a href="/logout" class="text-sm text-muted-foreground hover:text-foreground">
               Sign out
