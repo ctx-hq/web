@@ -40,7 +40,8 @@ export const PackageDetailPage: FC<{
   readmeHtml: string;
   manifest?: ManifestInfo | null;
   mcpDetail?: MCPDetail | null;
-}> = ({ pkg, readmeHtml, manifest, mcpDetail }) => {
+  isLoggedIn?: boolean;
+}> = ({ pkg, readmeHtml, manifest, mcpDetail, isLoggedIn }) => {
   const repoUrl = safeRepoUrl(pkg.repository);
   const rows = buildMetadataRows(pkg, formatNumber, formatDate);
   const isAdapter = !!manifest?.source?.github;
@@ -215,6 +216,32 @@ export const PackageDetailPage: FC<{
 
         {/* Sidebar — sticky on desktop, stacked on mobile */}
         <aside class="mt-8 w-full space-y-4 lg:mt-0 lg:w-80 lg:shrink-0 lg:sticky lg:top-6 lg:self-start">
+          {/* Star button */}
+          <div class="cn-card p-4">
+            <div class="flex items-center justify-between">
+              {isLoggedIn ? (
+                <form method="post" action={`/package/${pkg.full_name}/${pkg.is_starred ? "unstar" : "star"}`}>
+                  <button
+                    type="submit"
+                    class={`cn-button cn-button-variant-outline cn-button-size-xs inline-flex items-center gap-1.5 ${
+                      pkg.is_starred ? "text-yellow-600" : ""
+                    }`}
+                    aria-label={pkg.is_starred ? `Unstar ${pkg.full_name}` : `Star ${pkg.full_name}`}
+                  >
+                    <Icon name="star" class={`size-4 ${pkg.is_starred ? "text-yellow-500" : ""}`} />
+                    {pkg.is_starred ? "Starred" : "Star"}
+                  </button>
+                </form>
+              ) : (
+                <span class="inline-flex items-center gap-1.5 text-sm text-muted-foreground">
+                  <Icon name="star" class="size-4" />
+                  Stars
+                </span>
+              )}
+              <span class="text-sm font-medium tabular-nums">{formatNumber(pkg.star_count ?? 0)}</span>
+            </div>
+          </div>
+
           {/* Metadata card */}
           <div class="hidden lg:block">
             <SidebarSection title="Details">

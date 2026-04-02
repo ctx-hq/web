@@ -37,6 +37,8 @@ export interface PackageDetail {
   versions: VersionSummary[];
   collection_members?: CollectionMemberSummary[] | null;
   part_of_collections?: { full_name: string; description: string }[] | null;
+  star_count?: number;
+  is_starred?: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -281,3 +283,54 @@ export interface RenameResult {
   new_username?: string;
   packages_updated?: number;
 }
+
+// Token management
+export interface TokenInfo {
+  id: string;
+  name: string;
+  endpoint_scopes: string[];
+  package_scopes: string[];
+  token_type: string;
+  created_at: string;
+  last_used_at: string | null;
+  expires_at: string | null;
+}
+
+// --- Category & Keyword types ---
+
+export interface CategoryInfo {
+  slug: string;
+  name: string;
+  description: string;
+  parent_slug: string | null;
+  package_count: number;
+}
+
+export interface KeywordInfo {
+  slug: string;
+  usage_count: number;
+}
+
+export interface StarredPackage {
+  full_name: string;
+  type: string;
+  description: string;
+  starred_at: string;
+}
+
+export interface TrustedPublisher {
+  id: string;
+  provider: string;
+  github_repo: string;
+  workflow: string;
+  environment: string | null;
+  created_at: string;
+}
+
+export const ENDPOINT_SCOPES = [
+  "publish",
+  "yank",
+  "read-private",
+  "manage-access",
+  "manage-org",
+] as const;

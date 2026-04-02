@@ -5,6 +5,7 @@ import type {
   AgentRanking, RegistryOverview, SyncProfileMeta, SyncPackageEntry,
   TransferRequest, AppNotification, RenameResult,
   MCPHubEntry, MCPCategoryCount,
+  CategoryInfo, KeywordInfo, StarredPackage,
 } from "./types";
 
 export class ApiClient {
@@ -12,19 +13,21 @@ export class ApiClient {
 
   // --- Package APIs ---
 
-  async search(query: string, opts?: { type?: string; platform?: string; limit?: number; offset?: number }, token?: string | null): Promise<SearchResult> {
+  async search(query: string, opts?: { type?: string; platform?: string; category?: string; limit?: number; offset?: number }, token?: string | null): Promise<SearchResult> {
     const params = new URLSearchParams({ q: query });
     if (opts?.type) params.set("type", opts.type);
     if (opts?.platform) params.set("platform", opts.platform);
+    if (opts?.category) params.set("category", opts.category);
     if (opts?.limit) params.set("limit", String(opts.limit));
     if (opts?.offset) params.set("offset", String(opts.offset));
     return this.get(`/v1/search?${params}`, token);
   }
 
-  async listPackages(opts?: { type?: string; sort?: string; limit?: number; offset?: number }, token?: string | null): Promise<{ packages: PackageSummary[]; total: number }> {
+  async listPackages(opts?: { type?: string; sort?: string; category?: string; limit?: number; offset?: number }, token?: string | null): Promise<{ packages: PackageSummary[]; total: number }> {
     const params = new URLSearchParams();
     if (opts?.type) params.set("type", opts.type);
     if (opts?.sort) params.set("sort", opts.sort);
+    if (opts?.category) params.set("category", opts.category);
     if (opts?.limit) params.set("limit", String(opts.limit));
     if (opts?.offset) params.set("offset", String(opts.offset));
     return this.get(`/v1/packages?${params}`, token);
@@ -258,6 +261,65 @@ export class ApiClient {
     const body: Record<string, string> = { action, confirm };
     if (transferTo) body.transfer_to = transferTo;
     return this.post(`/v1/orgs/${encodeURIComponent(orgName)}/dissolve`, body, token);
+  }
+
+  // --- Token Management ---
+
+  async listTokens(token: string): Promise<{ tokens: import("./types").TokenInfo[] }> {
+    return this.get("/v1/me/tokens", token);
+  }
+
+  async createToken(body: {
+    name: string;
+    expires_in_days?: number;
+    endpoint_scopes?: string[];
+    package_scopes?: string[];
+    token_type?: string;
+  }, token: string): Promise<{ id: string; token: string; name: string }> {
+    return this.post("/v1/me/tokens", body as Record<string, unknown>, token);
+  }
+
+  async revokeToken(tokenId: string, token: string): Promise<void> {
+    return this.doDelete(`/v1/me/tokens/${encodeURIComponent(tokenId)}`, token);
+  }
+
+  // --- Discovery: Categories, Keywords, Stars ---
+
+  async getCategories(): Promise<{ categories: CategoryInfo[] }> {
+    return this.get("/v1/categories");
+  }
+
+  async getKeywords(limit?: number): Promise<{ keywords: KeywordInfo[] }> {
+    const params = new URLSearchParams();
+    if (limit) params.set("limit", String(limit));
+    const qs = params.toString();
+    return this.get(`/v1/keywords${qs ? `?${qs}` : ""}`);
+  }
+
+  async starPackage(fullName: string, token: string): Promise<void> {
+    return this.post(`/v1/packages/${encodeURIComponent(fullName)}/star`, {}, token);
+  }
+
+  async unstarPackage(fullName: string, token: string): Promise<void> {
+    return this.doDelete(`/v1/packages/${encodeURIComponent(fullName)}/star`, token);
+  }
+
+  async listMyStars(token: string): Promise<{ stars: StarredPackage[] }> {
+    return this.get("/v1/me/stars", token);
+  }
+
+  // --- Trusted Publishers ---
+
+  async listTrustedPublishers(fullName: string, token: string): Promise<{ trusted_publishers: import("./types").TrustedPublisher[] }> {
+    return this.get(`/v1/packages/${encodeURIComponent(fullName)}/trusted-publishers`, token);
+  }
+
+  async addTrustedPublisher(fullName: string, body: { provider: string; github_repo: string; workflow: string; environment?: string }, token: string): Promise<import("./types").TrustedPublisher> {
+    return this.post(`/v1/packages/${encodeURIComponent(fullName)}/trusted-publishers`, body as Record<string, unknown>, token);
+  }
+
+  async deleteTrustedPublisher(fullName: string, id: string, token: string): Promise<void> {
+    return this.doDelete(`/v1/packages/${encodeURIComponent(fullName)}/trusted-publishers/${encodeURIComponent(id)}`, token);
   }
 
   // --- Submissions ---

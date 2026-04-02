@@ -1,5 +1,5 @@
 import type { FC } from "hono/jsx";
-import type { PackageSummary, PackageType, SortOption } from "../lib/types";
+import type { PackageSummary, PackageType, SortOption, CategoryInfo, KeywordInfo } from "../lib/types";
 import { PACKAGE_TYPES, SORT_OPTIONS } from "../lib/constants";
 import { Container } from "../components/ui/container";
 import { Button } from "../components/ui/button";
@@ -9,9 +9,15 @@ import { PackageCard } from "../components/package-card";
 import { Badge } from "../components/badge";
 import { searchUrl, resultCountText } from "../lib/search-url";
 
-/** Build a filter URL preserving query and sort, resetting page to 1. */
-function filterUrl(query: string, type: PackageType | undefined, sort?: string): string {
-  return searchUrl(query, type, 1, sort);
+/** Build a filter URL preserving query, sort, and category, resetting page to 1. */
+function filterUrl(query: string, type: PackageType | undefined, sort?: string, category?: string): string {
+  const params = new URLSearchParams();
+  if (query) params.set("q", query);
+  if (type) params.set("type", type);
+  if (sort && sort !== "downloads") params.set("sort", sort);
+  if (category) params.set("category", category);
+  const qs = params.toString();
+  return qs ? `/search?${qs}` : "/search";
 }
 
 /** Sort selector — native <select> in a form for SSR compatibility. */
@@ -58,7 +64,10 @@ export const SearchPage: FC<{
   page?: number;
   totalPages?: number;
   apiError?: boolean;
-}> = ({ query, type, sort = "downloads", packages, total, page = 1, totalPages = 1, apiError }) => {
+  categories?: CategoryInfo[];
+  keywords?: KeywordInfo[];
+  category?: string;
+}> = ({ query, type, sort = "downloads", packages, total, page = 1, totalPages = 1, apiError, categories = [], keywords = [], category }) => {
   const countText = resultCountText(total, query, type);
   const hasResults = packages.length > 0;
 
@@ -69,13 +78,42 @@ export const SearchPage: FC<{
         <SearchBox value={query} selectedType={type} />
       </div>
 
+      {/* Category pills */}
+      {categories.length > 0 && (
+        <nav class="mb-4 flex flex-wrap gap-2" role="navigation" aria-label="Filter by category">
+          <a
+            href={filterUrl(query, type, sort)}
+            class={[
+              "cn-badge shrink-0 whitespace-nowrap",
+              !category ? "cn-badge-variant-default cn-badge-active" : "cn-badge-variant-secondary",
+            ].join(" ")}
+            aria-current={!category ? "page" : undefined}
+          >
+            All categories
+          </a>
+          {categories.map((cat) => (
+            <a
+              href={filterUrl(query, type, sort, cat.slug)}
+              class={[
+                "cn-badge shrink-0 whitespace-nowrap",
+                category === cat.slug ? "cn-badge-variant-default cn-badge-active" : "cn-badge-variant-secondary",
+              ].join(" ")}
+              aria-current={category === cat.slug ? "page" : undefined}
+            >
+              {cat.name}
+              <span class="ml-1 text-xs tabular-nums text-muted-foreground">({cat.package_count})</span>
+            </a>
+          ))}
+        </nav>
+      )}
+
       {/* Filter bar: type pills left, count + sort right */}
       <div class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <nav class="flex flex-wrap gap-2" role="navigation" aria-label="Filter by type">
           <Badge
             variant="default"
             active={!type}
-            href={filterUrl(query, undefined, sort)}
+            href={filterUrl(query, undefined, sort, category)}
             class="px-3 py-1"
             aria-current={!type ? "page" : undefined}
           >
@@ -85,7 +123,7 @@ export const SearchPage: FC<{
             <Badge
               type={t}
               active={type === t}
-              href={filterUrl(query, t, sort)}
+              href={filterUrl(query, t, sort, category)}
               class="px-3 py-1"
               aria-current={type === t ? "page" : undefined}
             />
@@ -185,6 +223,24 @@ export const SearchPage: FC<{
             </code>
           </p>
         </div>
+      )}
+
+      {/* Popular keywords */}
+      {keywords.length > 0 && (
+        <section class="mt-10 border-t border-border pt-6">
+          <h2 class="mb-3 text-sm font-semibold font-heading">Popular keywords</h2>
+          <div class="flex flex-wrap gap-2">
+            {keywords.map((kw) => (
+              <Badge
+                variant="secondary"
+                href={`/search?q=${encodeURIComponent(kw.slug)}`}
+              >
+                {kw.slug}
+                <span class="ml-1 text-xs tabular-nums text-muted-foreground">({kw.usage_count})</span>
+              </Badge>
+            ))}
+          </div>
+        </section>
       )}
     </Container>
   );

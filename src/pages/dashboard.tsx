@@ -1,5 +1,5 @@
 import type { FC } from "hono/jsx";
-import type { PackageSummary, OrgInfo, OrgInvitation, SyncProfileMeta, TransferRequest, AppNotification } from "../lib/types";
+import type { PackageSummary, OrgInfo, OrgInvitation, SyncProfileMeta, TransferRequest, AppNotification, StarredPackage } from "../lib/types";
 import { Container } from "../components/ui/container";
 import { Button } from "../components/ui/button";
 import { Icon } from "../components/ui/icon";
@@ -9,6 +9,7 @@ import { Badge } from "../components/badge";
 
 const TABS = [
   { key: "packages", label: "My Packages", href: "/dashboard" },
+  { key: "stars", label: "Stars", href: "/dashboard?tab=stars" },
   { key: "orgs", label: "My Orgs", href: "/dashboard?tab=orgs" },
   { key: "notifications", label: "Notifications", href: "/dashboard?tab=notifications" },
   { key: "sync", label: "Sync", href: "/dashboard?tab=sync" },
@@ -17,6 +18,7 @@ const TABS = [
 export const DashboardPage: FC<{
   username: string;
   packages: PackageSummary[];
+  stars?: StarredPackage[];
   orgs?: OrgInfo[];
   invitations?: OrgInvitation[];
   transfers?: TransferRequest[];
@@ -24,7 +26,7 @@ export const DashboardPage: FC<{
   notificationCount?: number;
   syncMeta?: SyncProfileMeta | null;
   activeTab?: string;
-}> = ({ username, packages, orgs = [], invitations = [], transfers = [], notifications = [], notificationCount = 0, syncMeta = null, activeTab = "packages" }) => (
+}> = ({ username, packages, stars = [], orgs = [], invitations = [], transfers = [], notifications = [], notificationCount = 0, syncMeta = null, activeTab = "packages" }) => (
   <Container class="py-10">
     <h1 class="mb-6 text-xl font-semibold font-heading">Dashboard</h1>
     <p class="mb-4 text-sm text-muted-foreground">Signed in as @{username}</p>
@@ -72,6 +74,47 @@ export const DashboardPage: FC<{
           <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {packages.map((pkg) => (
               <PackageCard key={pkg.full_name} pkg={pkg} />
+            ))}
+          </div>
+        )}
+      </section>
+    )}
+
+    {/* Stars tab */}
+    {activeTab === "stars" && (
+      <section>
+        <h2 class="mb-4 text-sm font-semibold font-heading">Starred packages</h2>
+        {stars.length === 0 ? (
+          <div class="cn-card p-8 text-center">
+            <Icon name="star" class="mx-auto mb-4 size-12 text-muted-foreground" />
+            <p class="text-sm font-medium font-heading">No starred packages</p>
+            <p class="mx-auto mt-1.5 max-w-xs text-xs text-muted-foreground">
+              Star packages you find useful to quickly find them later.
+            </p>
+            <div class="mt-4">
+              <Button variant="outline" size="xs" href="/search">
+                Browse packages
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {stars.map((s) => (
+              <a
+                href={`/package/${s.full_name}`}
+                class="cn-card block transition-all hover:ring-foreground/25"
+              >
+                <div class="p-5">
+                  <div class="mb-1 flex items-center justify-between gap-1">
+                    <span class="min-w-0 truncate text-sm font-medium font-heading">{s.full_name}</span>
+                    <Badge type={s.type as any} />
+                  </div>
+                  <p class="mb-2 line-clamp-2 text-sm text-muted-foreground">{s.description}</p>
+                  <span class="text-xs text-muted-foreground">
+                    Starred {s.starred_at}
+                  </span>
+                </div>
+              </a>
             ))}
           </div>
         )}

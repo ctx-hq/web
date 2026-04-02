@@ -23,9 +23,29 @@ function makePkg(overrides: Partial<{
 
 beforeEach(() => {
   mockFetch.mockReset();
-  // Default: API returns empty results
-  mockFetch.mockResolvedValue(apiJson({ packages: [], total: 0 }));
+  // Default: API returns empty results (use factory to avoid shared Response body)
+  mockFetch.mockImplementation(() => Promise.resolve(apiJson({ packages: [], total: 0 })));
 });
+
+/** Route-based mock: returns custom response for URLs matching a pattern, empty fallback otherwise. */
+function mockApiRoute(pattern: string, data: unknown) {
+  mockFetch.mockImplementation((url: string) => {
+    if (typeof url === "string" && url.includes(pattern)) {
+      return Promise.resolve(apiJson(data));
+    }
+    return Promise.resolve(apiJson({ packages: [], total: 0 }));
+  });
+}
+
+/** Route-based mock that rejects for the matched pattern. */
+function mockApiRouteError(pattern: string, error = "network error") {
+  mockFetch.mockImplementation((url: string) => {
+    if (typeof url === "string" && url.includes(pattern)) {
+      return Promise.reject(new Error(error));
+    }
+    return Promise.resolve(apiJson({ packages: [], total: 0 }));
+  });
+}
 
 const ENV = { API_BASE_URL: "https://api.test", GITHUB_CLIENT_ID: "test-id" };
 
@@ -193,9 +213,7 @@ describe("real app routes", () => {
   });
 
   it("search with q param calls API search", async () => {
-    mockFetch.mockResolvedValueOnce(
-      apiJson({ packages: [makePkg()], total: 1 })
-    );
+    mockApiRoute("/v1/search", { packages: [makePkg()], total: 1 });
 
     const res = await req("/search?q=test");
     expect(res.status).toBe(200);
@@ -210,9 +228,7 @@ describe("real app routes", () => {
   });
 
   it("search with type-only calls listPackages and shows results", async () => {
-    mockFetch.mockResolvedValueOnce(
-      apiJson({ packages: [makePkg({ full_name: "x/y", downloads: 5 })], total: 1 })
-    );
+    mockApiRoute("/v1/packages?", { packages: [makePkg({ full_name: "x/y", downloads: 5 })], total: 1 });
 
     const res = await req("/search?type=skill");
     expect(res.status).toBe(200);
@@ -236,7 +252,7 @@ describe("real app routes", () => {
   });
 
   it("search page shows unavailable state when search API rejects", async () => {
-    mockFetch.mockRejectedValueOnce(new Error("network error"));
+    mockApiRouteError("/v1/search");
     const res = await req("/search?q=test");
     expect(res.status).toBe(200);
     const html = await res.text();
@@ -244,7 +260,7 @@ describe("real app routes", () => {
   });
 
   it("browse page shows unavailable state when list API rejects", async () => {
-    mockFetch.mockRejectedValueOnce(new Error("network error"));
+    mockApiRouteError("/v1/packages");
     const res = await req("/search");
     expect(res.status).toBe(200);
     const html = await res.text();
@@ -289,9 +305,7 @@ describe("real app routes", () => {
   });
 
   it("search with page param passes offset to API", async () => {
-    mockFetch.mockResolvedValueOnce(
-      apiJson({ packages: [], total: 60 })
-    );
+    mockApiRoute("/v1/search", { packages: [], total: 60 });
 
     const res = await req("/search?q=test&page=2");
     expect(res.status).toBe(200);
@@ -304,12 +318,10 @@ describe("real app routes", () => {
   });
 
   it("search shows pagination when total exceeds page size", async () => {
-    mockFetch.mockResolvedValueOnce(
-      apiJson({
-        packages: Array.from({ length: 30 }, (_, i) => makePkg({ full_name: `a/pkg${i}` })),
-        total: 60,
-      })
-    );
+    mockApiRoute("/v1/search", {
+      packages: Array.from({ length: 30 }, (_, i) => makePkg({ full_name: `a/pkg${i}` })),
+      total: 60,
+    });
 
     const res = await req("/search?q=test");
     const html = await res.text();
@@ -318,9 +330,7 @@ describe("real app routes", () => {
   });
 
   it("search page=1 has disabled Prev", async () => {
-    mockFetch.mockResolvedValueOnce(
-      apiJson({ packages: [makePkg()], total: 60 })
-    );
+    mockApiRoute("/v1/search", { packages: [makePkg()], total: 60 });
 
     const res = await req("/search?q=test&page=1");
     const html = await res.text();
@@ -329,9 +339,7 @@ describe("real app routes", () => {
   });
 
   it("search with invalid page defaults to 1", async () => {
-    mockFetch.mockResolvedValueOnce(
-      apiJson({ packages: [], total: 0 })
-    );
+    mockApiRoute("/v1/search", { packages: [], total: 0 });
 
     const res = await req("/search?q=test&page=-5");
     expect(res.status).toBe(200);
@@ -344,9 +352,7 @@ describe("real app routes", () => {
 
   it("search with page beyond total redirects to last page", async () => {
     // API returns total=10 (1 page of 30), but we request page=999
-    mockFetch.mockResolvedValueOnce(
-      apiJson({ packages: [], total: 10 })
-    );
+    mockApiRoute("/v1/search", { packages: [], total: 10 });
 
     const res = await req("/search?q=test&page=999");
     // Should redirect (302) to page 1 (since totalPages=1, clamp omits page param)
@@ -359,9 +365,7 @@ describe("real app routes", () => {
   });
 
   it("search with page beyond multi-page total redirects to last page", async () => {
-    mockFetch.mockResolvedValueOnce(
-      apiJson({ packages: [], total: 60 })
-    );
+    mockApiRoute("/v1/search", { packages: [], total: 60 });
 
     const res = await req("/search?q=test&page=999");
     expect(res.status).toBe(302);
@@ -411,10 +415,21 @@ describe("real app routes", () => {
 });
 
 describe("browse & sort", () => {
+  /** Helper: mock that routes by URL for search-related tests */
+  function mockSearchRoutes(searchData: unknown = { packages: [], total: 0 }) {
+    mockFetch.mockImplementation((url: string) => {
+      if (typeof url === "string" && (url.includes("/v1/packages?") || url.includes("/v1/packages?"))) {
+        return Promise.resolve(apiJson(searchData));
+      }
+      if (typeof url === "string" && url.includes("/v1/search")) {
+        return Promise.resolve(apiJson(searchData));
+      }
+      return Promise.resolve(apiJson({ packages: [], total: 0 }));
+    });
+  }
+
   it("search with no params calls listPackages (browse mode)", async () => {
-    mockFetch.mockResolvedValueOnce(
-      apiJson({ packages: Array.from({ length: 5 }, (_, i) => makePkg({ full_name: `a/pkg${i}` })), total: 5 })
-    );
+    mockApiRoute("/v1/packages", { packages: Array.from({ length: 5 }, (_, i) => makePkg({ full_name: `a/pkg${i}` })), total: 5 });
 
     const res = await req("/search");
     expect(res.status).toBe(200);
@@ -429,7 +444,7 @@ describe("browse & sort", () => {
   });
 
   it("search with sort=newest passes sort to API", async () => {
-    mockFetch.mockResolvedValueOnce(apiJson({ packages: [], total: 0 }));
+    mockSearchRoutes();
     await req("/search?sort=newest");
     expect(mockFetch).toHaveBeenCalledWith(
       expect.stringContaining("sort=created_at"),
@@ -438,14 +453,17 @@ describe("browse & sort", () => {
   });
 
   it("search with sort=downloads omits sort param (API default)", async () => {
-    mockFetch.mockResolvedValueOnce(apiJson({ packages: [], total: 0 }));
+    mockSearchRoutes();
     await req("/search?sort=downloads");
-    const call = mockFetch.mock.calls[0][0] as string;
-    expect(call).not.toContain("sort=");
+    const pkgCall = mockFetch.mock.calls.find(
+      (call) => typeof call[0] === "string" && call[0].includes("/v1/packages?")
+    );
+    expect(pkgCall).toBeDefined();
+    expect(pkgCall![0]).not.toContain("sort=");
   });
 
   it("search with q ignores sort param (uses search API)", async () => {
-    mockFetch.mockResolvedValueOnce(apiJson({ packages: [], total: 0 }));
+    mockSearchRoutes();
     await req("/search?q=test&sort=newest");
     // Should call search API, not listPackages
     expect(mockFetch).toHaveBeenCalledWith(
@@ -455,22 +473,28 @@ describe("browse & sort", () => {
   });
 
   it("invalid sort defaults to downloads (omits sort param)", async () => {
-    mockFetch.mockResolvedValueOnce(apiJson({ packages: [], total: 0 }));
+    mockSearchRoutes();
     await req("/search?sort=invalid");
-    const call = mockFetch.mock.calls[0][0] as string;
-    expect(call).not.toContain("sort=");
+    const pkgCall = mockFetch.mock.calls.find(
+      (call) => typeof call[0] === "string" && call[0].includes("/v1/packages?")
+    );
+    expect(pkgCall).toBeDefined();
+    expect(pkgCall![0]).not.toContain("sort=");
   });
 
   it("sort with type passes both to API", async () => {
-    mockFetch.mockResolvedValueOnce(apiJson({ packages: [], total: 0 }));
+    mockSearchRoutes();
     await req("/search?type=skill&sort=newest");
-    const call = mockFetch.mock.calls[0][0] as string;
-    expect(call).toContain("type=skill");
-    expect(call).toContain("sort=created_at");
+    const pkgCall = mockFetch.mock.calls.find(
+      (call) => typeof call[0] === "string" && call[0].includes("/v1/packages?")
+    );
+    expect(pkgCall).toBeDefined();
+    expect(pkgCall![0]).toContain("type=skill");
+    expect(pkgCall![0]).toContain("sort=created_at");
   });
 
   it("page beyond total preserves sort in redirect", async () => {
-    mockFetch.mockResolvedValueOnce(apiJson({ packages: [], total: 10 }));
+    mockApiRoute("/v1/packages", { packages: [], total: 10 });
     const res = await req("/search?sort=newest&page=999");
     expect(res.status).toBe(302);
     const location = res.headers.get("Location");
@@ -478,16 +502,14 @@ describe("browse & sort", () => {
   });
 
   it("shows type-specific count text", async () => {
-    mockFetch.mockResolvedValueOnce(
-      apiJson({ packages: [makePkg()], total: 1 })
-    );
+    mockApiRoute("/v1/packages?", { packages: [makePkg()], total: 1 });
     const res = await req("/search?type=skill");
     const html = await res.text();
     expect(html).toContain("1 skill package");
   });
 
   it("browse mode with 0 API results shows empty state (no mock fallback)", async () => {
-    mockFetch.mockResolvedValueOnce(apiJson({ packages: [], total: 0 }));
+    mockSearchRoutes();
     const res = await req("/search");
     const html = await res.text();
     // API returned empty — should show empty CTA, not mock data
@@ -495,9 +517,7 @@ describe("browse & sort", () => {
   });
 
   it("search page has filter navigation", async () => {
-    mockFetch.mockResolvedValueOnce(
-      apiJson({ packages: [makePkg()], total: 1 })
-    );
+    mockApiRoute("/v1/packages?", { packages: [makePkg()], total: 1 });
     const res = await req("/search?type=skill");
     const html = await res.text();
     expect(html).toContain('aria-label="Filter by type"');
@@ -505,9 +525,7 @@ describe("browse & sort", () => {
   });
 
   it("search page has sort dropdown in browse mode", async () => {
-    mockFetch.mockResolvedValueOnce(
-      apiJson({ packages: [makePkg()], total: 1 })
-    );
+    mockApiRoute("/v1/packages", { packages: [makePkg()], total: 1 });
     const res = await req("/search");
     const html = await res.text();
     expect(html).toContain("sort-select");
@@ -516,18 +534,14 @@ describe("browse & sort", () => {
   });
 
   it("search page hides sort dropdown when query present", async () => {
-    mockFetch.mockResolvedValueOnce(
-      apiJson({ packages: [makePkg()], total: 1 })
-    );
+    mockApiRoute("/v1/search", { packages: [makePkg()], total: 1 });
     const res = await req("/search?q=test");
     const html = await res.text();
     expect(html).not.toContain("sort-select");
   });
 
   it("invalid type param treated as all", async () => {
-    mockFetch.mockResolvedValueOnce(
-      apiJson({ packages: [makePkg()], total: 1 })
-    );
+    mockApiRoute("/v1/packages?", { packages: [makePkg()], total: 1 });
     const res = await req("/search?type=invalid");
     expect(res.status).toBe(200);
     // Should call listPackages without type filter
@@ -540,7 +554,7 @@ describe("browse & sort", () => {
 
 describe("search result text", () => {
   it("query with no results shows helpful message", async () => {
-    mockFetch.mockResolvedValueOnce(apiJson({ packages: [], total: 0 }));
+    mockApiRoute("/v1/search", { packages: [], total: 0 });
     const res = await req("/search?q=nonexistent");
     const html = await res.text();
     expect(html).toContain("No packages found");
@@ -548,12 +562,10 @@ describe("search result text", () => {
   });
 
   it("pagination preserves all params", async () => {
-    mockFetch.mockResolvedValueOnce(
-      apiJson({
-        packages: Array.from({ length: 30 }, (_, i) => makePkg({ full_name: `a/pkg${i}` })),
-        total: 60,
-      })
-    );
+    mockApiRoute("/v1/packages", {
+      packages: Array.from({ length: 30 }, (_, i) => makePkg({ full_name: `a/pkg${i}` })),
+      total: 60,
+    });
     const res = await req("/search?type=mcp&sort=newest");
     const html = await res.text();
     // Next link should preserve type and sort

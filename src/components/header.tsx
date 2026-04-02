@@ -57,6 +57,13 @@ export const Header: FC<{ currentPath?: string; user?: SessionUser | null; notif
         {user ? (
           <div class="flex items-center gap-3">
             <a
+              href="/settings/tokens"
+              class="text-muted-foreground hover:text-foreground transition-colors"
+              title="API Tokens"
+            >
+              <Icon name="key" class="size-4" />
+            </a>
+            <a
               href="/dashboard?tab=notifications"
               class="relative text-muted-foreground hover:text-foreground transition-colors"
               title="Notifications"

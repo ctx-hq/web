@@ -6,7 +6,7 @@ import { Container } from "./components/ui/container";
 import { ApiClient, ApiError } from "./lib/api-client";
 import { defaultMeta, searchMeta, packageMeta, docsMeta, escapeHtml } from "./lib/seo";
 import { SITE_NAME, SITE_URL, DEFAULT_OG_IMAGE } from "./lib/constants";
-import type { SessionUser, PackageSummary, PackageType, SortOption, SearchResult, ManifestInfo, OrgInfo, OrgMember, OrgInvitation, SyncProfileMeta, AgentRanking, RegistryOverview } from "./lib/types";
+import type { SessionUser, PackageSummary, PackageType, SortOption, SearchResult, ManifestInfo, OrgInfo, OrgMember, OrgInvitation, SyncProfileMeta, AgentRanking, RegistryOverview, CategoryInfo, KeywordInfo, StarredPackage } from "./lib/types";
 import { parseManifest } from "./lib/types";
 import { validateSort } from "./lib/search-url";
 import { HomePage } from "./pages/home";
@@ -26,6 +26,7 @@ import { CreateOrgPage, validateOrgName } from "./pages/create-org";
 import { OrgSettingsPage } from "./pages/org-settings";
 import { MCPHubPage } from "./pages/mcp-hub";
 import { SubmitPage } from "./pages/submit";
+import { SettingsTokensPage } from "./pages/settings-tokens";
 
 type Env = {
   Bindings: {
@@ -39,6 +40,27 @@ type Env = {
 };
 
 const app = new Hono<Env>();
+
+// ── CSRF protection — verify Origin/Referer on POST requests ────────────────
+app.use("*", async (c, next) => {
+  if (c.req.method === "POST") {
+    const origin = c.req.header("Origin") || c.req.header("Referer");
+    if (origin) {
+      try {
+        const originUrl = new URL(origin);
+        const siteUrl = new URL(SITE_URL);
+        if (originUrl.host !== siteUrl.host) {
+          return c.text("Forbidden: cross-origin POST", 403);
+        }
+      } catch {
+        return c.text("Forbidden: invalid origin", 403);
+      }
+    }
+    // If no Origin/Referer header, browsers always send Origin on POST forms.
+    // Missing headers could indicate a non-browser client — allow for API compat.
+  }
+  await next();
+});
 
 // ── Security headers middleware ──────────────────────────────────────────────
 app.use("*", async (c, next) => {
@@ -216,6 +238,7 @@ app.get("/search", async (c) => {
     ? (rawType as PackageType)
     : undefined;
   const sort: SortOption = validateSort(c.req.query("sort"));
+  const category = c.req.query("category") ?? undefined;
 
   const PAGE_SIZE = 30;
   const rawPage = parseInt(c.req.query("page") ?? "1", 10);
@@ -223,10 +246,19 @@ app.get("/search", async (c) => {
   const offset = (page - 1) * PAGE_SIZE;
 
   let result: SearchResult = { packages: [], total: 0 };
+  let categories: CategoryInfo[] = [];
+  let keywords: KeywordInfo[] = [];
   let apiError = false;
+
+  // Fetch categories and keywords in parallel with search results
+  const sidePromises = Promise.allSettled([
+    api(c).getCategories(),
+    api(c).getKeywords(30),
+  ]);
+
   if (query) {
     try {
-      result = await api(c).search(query, { type, limit: PAGE_SIZE, offset }, c.get("token"));
+      result = await api(c).search(query, { type, category, limit: PAGE_SIZE, offset }, c.get("token"));
     } catch (e) {
       apiError = true;
       console.error("Search: failed to fetch results", e);
@@ -234,13 +266,19 @@ app.get("/search", async (c) => {
   } else {
     try {
       const sortParam = sort === "newest" ? "created_at" : undefined;
-      const listed = await api(c).listPackages({ type, sort: sortParam, limit: PAGE_SIZE, offset }, c.get("token"));
+      const listed = await api(c).listPackages({ type, sort: sortParam, category, limit: PAGE_SIZE, offset }, c.get("token"));
       result = { packages: listed.packages, total: listed.total };
     } catch (e) {
       apiError = true;
       console.error("Browse: failed to list packages", e);
     }
   }
+
+  // Resolve side data
+  const sideResults = await sidePromises;
+  if (sideResults[0].status === "fulfilled") categories = sideResults[0].value.categories ?? [];
+  if (sideResults[1].status === "fulfilled") keywords = sideResults[1].value.keywords ?? [];
+
   const totalPages = Math.max(1, Math.ceil(result.total / PAGE_SIZE));
 
   // Clamp: if page exceeds totalPages (and there are results), redirect to last valid page
@@ -249,6 +287,7 @@ app.get("/search", async (c) => {
     if (query) params.set("q", query);
     if (type) params.set("type", type);
     if (sort !== "downloads") params.set("sort", sort);
+    if (category) params.set("category", category);
     if (totalPages > 1) params.set("page", String(totalPages));
     const qs = params.toString();
     return c.redirect(qs ? `/search?${qs}` : "/search");
@@ -267,6 +306,9 @@ app.get("/search", async (c) => {
         page={page}
         totalPages={totalPages}
         apiError={apiError}
+        categories={categories}
+        keywords={keywords}
+        category={category}
       />
     </Layout>
   );
@@ -312,10 +354,19 @@ app.get("/package/:fullName{@[^/]+/[^/]+}/settings", async (c) => {
 
   let visibility = "public";
   let canManage = false;
+  let trustedPublishers: import("./lib/types").TrustedPublisher[] = [];
   try {
     const pkg = await api(c).getPackage(fullName, token);
     visibility = pkg.visibility ?? "public";
     canManage = true;
+
+    // Load trusted publishers (best-effort — don't fail the page)
+    try {
+      const tpData = await api(c).listTrustedPublishers(fullName, token);
+      trustedPublishers = tpData.trusted_publishers ?? [];
+    } catch {
+      // Token may lack manage-access scope; ignore
+    }
   } catch {
     // Package not found or no access
   }
@@ -329,6 +380,7 @@ app.get("/package/:fullName{@[^/]+/[^/]+}/settings", async (c) => {
         name={name}
         visibility={visibility}
         canManage={canManage}
+        trustedPublishers={trustedPublishers}
         error={error}
       />
     </Layout>
@@ -374,6 +426,50 @@ app.post("/package/:fullName{@[^/]+/[^/]+}/settings/transfer", async (c) => {
   } catch {
     return c.redirect(`/package/${fullName}/settings?error=Failed+to+initiate+transfer`);
   }
+});
+
+// Trusted publishers: add
+app.post("/package/:fullName{@[^/]+/[^/]+}/settings/trusted-publishers", async (c) => {
+  const token = c.get("token");
+  if (!token) return c.redirect("/login");
+  const fullName = c.req.param("fullName");
+  const body = await c.req.parseBody();
+
+  // Server-side validation
+  const githubRepo = (body.github_repo as string)?.trim() ?? "";
+  const workflow = (body.workflow as string)?.trim() ?? "";
+  if (!/^[a-zA-Z0-9._-]+\/[a-zA-Z0-9._-]+$/.test(githubRepo)) {
+    return c.redirect(`/package/${fullName}/settings?error=${encodeURIComponent("Invalid repository format. Use owner/repo.")}`);
+  }
+  if (!/^[a-zA-Z0-9._-]+\.ya?ml$/.test(workflow)) {
+    return c.redirect(`/package/${fullName}/settings?error=${encodeURIComponent("Invalid workflow filename. Use name.yml or name.yaml.")}`);
+  }
+
+  try {
+    await api(c).addTrustedPublisher(fullName, {
+      provider: "github",
+      github_repo: githubRepo,
+      workflow,
+      environment: (body.environment as string)?.trim() || undefined,
+    }, token);
+  } catch {
+    return c.redirect(`/package/${fullName}/settings?error=Failed+to+add+trusted+publisher`);
+  }
+  return c.redirect(`/package/${fullName}/settings`);
+});
+
+// Trusted publishers: delete
+app.post("/package/:fullName{@[^/]+/[^/]+}/settings/trusted-publishers/:tpId/delete", async (c) => {
+  const token = c.get("token");
+  if (!token) return c.redirect("/login");
+  const fullName = c.req.param("fullName");
+  const tpId = c.req.param("tpId");
+  try {
+    await api(c).deleteTrustedPublisher(fullName, tpId, token);
+  } catch {
+    return c.redirect(`/package/${fullName}/settings?error=Failed+to+remove+trusted+publisher`);
+  }
+  return c.redirect(`/package/${fullName}/settings`);
 });
 
 // Package stats: /@scope/name/stats
@@ -429,7 +525,7 @@ app.get("/package/:fullName{@[^/]+/[^/]+}", async (c) => {
     c.header("Cache-Control", "public, s-maxage=300, stale-while-revalidate=600");
     return c.html(
       <Layout meta={meta} currentPath={`/package/${fullName}`} user={c.get("user")}>
-        <PackageDetailPage pkg={pkg} readmeHtml={readmeHtml} manifest={manifestInfo} mcpDetail={(pkg as any).mcp_detail ?? null} />
+        <PackageDetailPage pkg={pkg} readmeHtml={readmeHtml} manifest={manifestInfo} mcpDetail={(pkg as any).mcp_detail ?? null} isLoggedIn={!!c.get("user")} />
       </Layout>
     );
   } catch (err) {
@@ -446,6 +542,31 @@ app.get("/package/:fullName{@[^/]+/[^/]+}", async (c) => {
     }
     throw err;
   }
+});
+
+// Star / Unstar package (POST forms from package detail page)
+app.post("/package/:fullName{@[^/]+/[^/]+}/star", async (c) => {
+  const token = c.get("token");
+  if (!token) return c.redirect("/login");
+  const fullName = c.req.param("fullName");
+  try {
+    await api(c).starPackage(fullName, token);
+  } catch {
+    // Best-effort
+  }
+  return c.redirect(`/package/${fullName}`);
+});
+
+app.post("/package/:fullName{@[^/]+/[^/]+}/unstar", async (c) => {
+  const token = c.get("token");
+  if (!token) return c.redirect("/login");
+  const fullName = c.req.param("fullName");
+  try {
+    await api(c).unstarPackage(fullName, token);
+  } catch {
+    // Best-effort
+  }
+  return c.redirect(`/package/${fullName}`);
 });
 
 // Docs
@@ -622,6 +743,102 @@ app.post("/api/device/authorize", async (c) => {
 });
 
 // Create Organization (auth required)
+// --- Token Management ---
+
+app.get("/settings/tokens", async (c) => {
+  const user = c.get("user");
+  const token = c.get("token");
+  if (!user || !token) return c.redirect("/login?redirect=/settings/tokens");
+
+  let tokens: import("./lib/types").TokenInfo[] = [];
+  let error: string | undefined;
+  try {
+    const result = await api(c).listTokens(token);
+    tokens = result.tokens;
+  } catch (err) {
+    error = "Failed to load tokens";
+    console.error("Token list error:", err);
+  }
+
+  // Read newly created token from ephemeral cookie (not URL) and clear it immediately
+  const newToken = getCookie(c, "__Host-new_token") as string | undefined;
+  if (newToken) {
+    deleteCookie(c, "__Host-new_token", { path: "/", secure: true, httpOnly: true, sameSite: "Strict" });
+  }
+  const success = c.req.query("success") || undefined;
+
+  const meta = { ...defaultMeta(), title: `API Tokens — ${SITE_NAME}` };
+  return c.html(
+    <Layout meta={meta} currentPath="/settings/tokens" user={user}>
+      <SettingsTokensPage tokens={tokens} newToken={newToken} error={error} success={success} />
+    </Layout>
+  );
+});
+
+app.post("/settings/tokens/create", async (c) => {
+  const user = c.get("user");
+  const token = c.get("token");
+  if (!user || !token) return c.redirect("/login");
+
+  const body = await c.req.parseBody();
+  const name = (body.name as string)?.trim();
+  if (!name) return c.redirect("/settings/tokens?error=Token+name+is+required");
+
+  const expiresInDays = body.expires_in_days ? parseInt(body.expires_in_days as string) : undefined;
+
+  // Collect endpoint scopes from checkboxes
+  const rawScopes = body.endpoint_scopes;
+  const endpointScopes = rawScopes
+    ? (Array.isArray(rawScopes) ? rawScopes as string[] : [rawScopes as string])
+    : undefined;
+
+  // Parse package scopes from comma-separated input
+  const packageScopesRaw = (body.package_scopes as string)?.trim();
+  const packageScopes = packageScopesRaw
+    ? packageScopesRaw.split(",").map((s: string) => s.trim()).filter(Boolean)
+    : undefined;
+
+  const tokenType = (body.token_type as string) || undefined;
+
+  try {
+    const result = await api(c).createToken({
+      name,
+      expires_in_days: expiresInDays,
+      endpoint_scopes: endpointScopes,
+      package_scopes: packageScopes,
+      token_type: tokenType,
+    }, token);
+
+    // Pass token via ephemeral cookie to avoid exposing it in URL/history/logs
+    setCookie(c, "__Host-new_token", result.token, {
+      httpOnly: true,
+      secure: true,
+      sameSite: "Strict",
+      path: "/",
+      maxAge: 60,
+    });
+    return c.redirect("/settings/tokens");
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Failed to create token";
+    return c.redirect(`/settings/tokens?error=${encodeURIComponent(message)}`);
+  }
+});
+
+app.post("/settings/tokens/:id/revoke", async (c) => {
+  const user = c.get("user");
+  const token = c.get("token");
+  if (!user || !token) return c.redirect("/login");
+
+  const tokenId = c.req.param("id");
+  try {
+    await api(c).revokeToken(tokenId, token);
+    return c.redirect("/settings/tokens?success=Token+revoked");
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Failed to revoke token";
+    return c.redirect(`/settings/tokens?error=${encodeURIComponent(message)}`);
+  }
+});
+
 app.get("/orgs/new", async (c) => {
   const user = c.get("user");
   if (!user) {
@@ -700,7 +917,7 @@ app.get("/dashboard", async (c) => {
   }
 
   const rawTab = c.req.query("tab");
-  const activeTab = rawTab && ["packages", "orgs", "notifications", "sync"].includes(rawTab) ? rawTab : "packages";
+  const activeTab = rawTab && ["packages", "stars", "orgs", "notifications", "sync"].includes(rawTab) ? rawTab : "packages";
 
   // Fetch the user's published packages via profile API
   let packages: PackageSummary[] = [];
@@ -751,6 +968,17 @@ app.get("/dashboard", async (c) => {
     // Non-critical
   }
 
+  // Fetch starred packages if on stars tab
+  let stars: StarredPackage[] = [];
+  if (activeTab === "stars") {
+    try {
+      const result = await api(c).listMyStars(token);
+      stars = result.stars ?? [];
+    } catch {
+      // Non-critical
+    }
+  }
+
   // Fetch sync profile if on sync tab
   let syncMeta: SyncProfileMeta | null = null;
   if (activeTab === "sync") {
@@ -768,6 +996,7 @@ app.get("/dashboard", async (c) => {
       <DashboardPage
         username={user.username}
         packages={packages}
+        stars={stars}
         orgs={orgs}
         invitations={invitations}
         transfers={transfers}
@@ -1398,6 +1627,35 @@ async function proxyInstallScript(
 
 app.get("/install.sh", (c) => proxyInstallScript(c, "install.sh"));
 app.get("/install.ps1", (c) => proxyInstallScript(c, "install.ps1"));
+
+// Package-specific install script — proxied to API
+// Usage: curl -fsSL https://getctx.org/install/@scope/package | sh
+app.get("/install/@:scope/:name", async (c) => {
+  const scope = c.req.param("scope");
+  const name = c.req.param("name");
+  try {
+    const upstream = await fetch(
+      `${c.env.API_BASE_URL}/v1/install/${encodeURIComponent(scope!)}/${encodeURIComponent(name!)}`,
+      {
+        headers: { "User-Agent": "getctx.org/install-proxy" },
+        signal: AbortSignal.timeout(10_000),
+      },
+    );
+    const headers: Record<string, string> = {
+      "Content-Type": "text/plain; charset=utf-8",
+      "X-Content-Type-Options": "nosniff",
+    };
+    if (upstream.ok) {
+      headers["Cache-Control"] = "public, s-maxage=300, stale-while-revalidate=600";
+    }
+    return new Response(await upstream.text(), { status: upstream.status, headers });
+  } catch {
+    return new Response("#!/bin/sh\necho 'Error: install script temporarily unavailable.' >&2\nexit 1\n", {
+      status: 502,
+      headers: { "Content-Type": "text/plain; charset=utf-8" },
+    });
+  }
+});
 
 // Robots.txt
 app.get("/robots.txt", (c) => {
