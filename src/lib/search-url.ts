@@ -1,4 +1,5 @@
 import type { PackageType, SortOption } from "./types";
+import { TYPE_DISPLAY_LABELS } from "./constants";
 
 const VALID_SORTS: readonly string[] = ["downloads", "newest"];
 const DEFAULT_SORT: SortOption = "downloads";
@@ -32,11 +33,12 @@ export function resultCountText(total: number, query: string, type?: string): st
     : total === 1 ? "package" : "packages";
 
   if (!query && type) {
-    // "10 mcp packages" — insert type before noun
-    return `${total} ${type} ${noun}`;
+    const label = TYPE_DISPLAY_LABELS[type] ?? type;
+    return `${total} ${label} ${noun}`;
   }
   if (query) {
-    const base = type ? `${total} ${type} ${noun}` : `${total} ${noun}`;
+    const label = type ? TYPE_DISPLAY_LABELS[type] ?? type : undefined;
+    const base = label ? `${total} ${label} ${noun}` : `${total} ${noun}`;
     return `${base} for \u201c${query}\u201d`;
   }
   return `${total} ${noun}`;

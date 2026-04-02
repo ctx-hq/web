@@ -1,5 +1,6 @@
 import type { FC } from "hono/jsx";
 import type { PackageType } from "../lib/types";
+import { TYPE_DISPLAY_LABELS } from "../lib/constants";
 
 type BadgeVariant =
   | "default"
@@ -29,7 +30,7 @@ export const Badge: FC<{
     .filter(Boolean)
     .join(" ");
 
-  const content = children ?? type;
+  const content = children ?? (type ? TYPE_DISPLAY_LABELS[type] ?? type : undefined);
 
   if (href) {
     return (

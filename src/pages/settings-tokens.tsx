@@ -1,6 +1,8 @@
 import type { FC } from "hono/jsx";
 import type { TokenInfo } from "../lib/types";
 import { ENDPOINT_SCOPES } from "../lib/types";
+import { Button } from "../components/ui/button";
+import { Icon } from "../components/ui/icon";
 
 function timeAgo(dateStr: string | null): string {
   if (!dateStr) return "never";
@@ -33,9 +35,15 @@ export const SettingsTokensSection: FC<{
     {newToken && (
       <div class="cn-card mb-6 border-green-600/50 bg-green-600/5 p-4" role="alert">
         <p class="mb-2 text-sm font-medium text-green-700">Token created successfully</p>
-        <code class="block rounded bg-green-50 p-3 font-mono text-sm break-all dark:bg-green-900/20">
-          {newToken}
-        </code>
+        <div class="flex items-center gap-2">
+          <code class="block flex-1 rounded bg-green-50 p-3 font-mono text-sm break-all dark:bg-green-900/20">
+            {newToken}
+          </code>
+          <Button variant="outline" size="sm" type="button" data-copy={newToken} class="shrink-0">
+            <Icon name="copy" class="size-3.5" />
+            Copy
+          </Button>
+        </div>
         <p class="mt-2 text-xs text-muted-foreground">
           Copy this token now. It will not be shown again.
         </p>

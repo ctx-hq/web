@@ -1,4 +1,4 @@
-import { SITE_NAME, SITE_DESCRIPTION, SITE_URL, DEFAULT_OG_IMAGE } from "./constants";
+import { SITE_NAME, SITE_DESCRIPTION, SITE_URL, DEFAULT_OG_IMAGE, TYPE_DISPLAY_LABELS } from "./constants";
 import type { PackageDetail } from "./types";
 
 export interface SeoMeta {
@@ -35,13 +35,14 @@ export function searchMeta(query: string, opts?: { type?: string; sort?: string 
   if (query) params.set("q", query);
   if (opts?.type) params.set("type", opts.type);
 
-  const truncated = query ? query.slice(0, 100) : opts?.type ?? "";
+  const typeLabel = opts?.type ? TYPE_DISPLAY_LABELS[opts.type] ?? opts.type : "";
+  const truncated = query ? query.slice(0, 100) : typeLabel;
   const title = query
     ? `Search: ${truncated} — ${SITE_NAME}`
-    : `Browse ${opts?.type} packages — ${SITE_NAME}`;
+    : `Browse ${typeLabel} packages — ${SITE_NAME}`;
   const description = query
     ? `Search results for "${truncated}" on ${SITE_NAME}`
-    : `Browse ${opts?.type} packages on ${SITE_NAME}`;
+    : `Browse ${typeLabel} packages on ${SITE_NAME}`;
 
   return {
     title,

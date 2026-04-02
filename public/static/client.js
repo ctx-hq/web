@@ -22,17 +22,17 @@ document.getElementById('mobile-nav-toggle')?.addEventListener('click',function(
   var menu=document.getElementById('user-dropdown-menu');
   if(!trigger||!menu)return;
 
-  function isOpen(){return menu.hasAttribute('data-open')}
+  function isOpen(){return !menu.hidden}
 
   function open(){
-    menu.setAttribute('data-open','');
+    menu.hidden=false;
     trigger.setAttribute('aria-expanded','true');
     var first=menu.querySelector('[role="menuitem"]');
     if(first)first.focus();
   }
 
   function close(){
-    menu.removeAttribute('data-open');
+    menu.hidden=true;
     trigger.setAttribute('aria-expanded','false');
   }
 

@@ -13,7 +13,7 @@ describe("user dropdown interaction", () => {
         <button id="user-dropdown-trigger" aria-expanded="false" aria-haspopup="menu">
           Toggle
         </button>
-        <div id="user-dropdown-menu" role="menu" class="cn-dropdown-menu">
+        <div id="user-dropdown-menu" role="menu" class="cn-dropdown-menu" hidden>
           <a role="menuitem" tabindex="-1" href="/dashboard">Dashboard</a>
           <a role="menuitem" tabindex="-1" href="/settings">Settings</a>
           <a role="menuitem" tabindex="-1" href="/logout">Sign out</a>
@@ -23,16 +23,16 @@ describe("user dropdown interaction", () => {
     trigger = document.getElementById("user-dropdown-trigger") as HTMLButtonElement;
     menu = document.getElementById("user-dropdown-menu") as HTMLDivElement;
 
-    // Load the dropdown interaction logic (inline version of client.js logic)
-    const isOpen = () => menu.hasAttribute("data-open");
+    // Mirror the client.js dropdown logic (hidden attribute version)
+    const isOpen = () => !menu.hidden;
     const open = () => {
-      menu.setAttribute("data-open", "");
+      menu.hidden = false;
       trigger.setAttribute("aria-expanded", "true");
       const first = menu.querySelector<HTMLElement>('[role="menuitem"]');
       if (first) first.focus();
     };
     const close = () => {
-      menu.removeAttribute("data-open");
+      menu.hidden = true;
       trigger.setAttribute("aria-expanded", "false");
     };
 
@@ -67,39 +67,39 @@ describe("user dropdown interaction", () => {
   });
 
   it("menu is hidden by default", () => {
-    expect(menu.hasAttribute("data-open")).toBe(false);
+    expect(menu.hidden).toBe(true);
     expect(trigger.getAttribute("aria-expanded")).toBe("false");
   });
 
   it("click opens the menu", () => {
     trigger.click();
-    expect(menu.hasAttribute("data-open")).toBe(true);
+    expect(menu.hidden).toBe(false);
     expect(trigger.getAttribute("aria-expanded")).toBe("true");
   });
 
   it("second click closes the menu", () => {
     trigger.click();
     trigger.click();
-    expect(menu.hasAttribute("data-open")).toBe(false);
+    expect(menu.hidden).toBe(true);
     expect(trigger.getAttribute("aria-expanded")).toBe("false");
   });
 
   it("click outside closes the menu", () => {
     trigger.click();
-    expect(menu.hasAttribute("data-open")).toBe(true);
+    expect(menu.hidden).toBe(false);
     document.body.click();
-    expect(menu.hasAttribute("data-open")).toBe(false);
+    expect(menu.hidden).toBe(true);
   });
 
   it("Escape key closes the menu", () => {
     trigger.click();
     menu.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
-    expect(menu.hasAttribute("data-open")).toBe(false);
+    expect(menu.hidden).toBe(true);
   });
 
   it("ArrowDown on trigger opens menu", () => {
     trigger.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowDown", bubbles: true }));
-    expect(menu.hasAttribute("data-open")).toBe(true);
+    expect(menu.hidden).toBe(false);
   });
 
   it("ArrowDown navigates to next menuitem", () => {
@@ -135,8 +135,6 @@ describe("user dropdown interaction", () => {
   });
 
   it("menu has correct ARIA attributes", () => {
-    expect(menu.getAttribute("role")).toBe("menu");
-    // aria-labelledby is set on the actual component; verify role is correct
     expect(menu.getAttribute("role")).toBe("menu");
     expect(trigger.getAttribute("aria-haspopup")).toBe("menu");
   });

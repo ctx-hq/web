@@ -1,6 +1,6 @@
 import type { FC } from "hono/jsx";
 import type { PackageSummary } from "../lib/types";
-import { SITE_TAGLINE, SITE_DESCRIPTION, PACKAGE_TYPES, PLACEHOLDER_BY_TYPE } from "../lib/constants";
+import { SITE_TAGLINE, SITE_DESCRIPTION, PACKAGE_TYPES, PLACEHOLDER_BY_TYPE, TYPE_DISPLAY_LABELS } from "../lib/constants";
 import { Container } from "../components/ui/container";
 import { Icon } from "../components/ui/icon";
 import { SearchBox } from "../components/search-box";
@@ -45,7 +45,7 @@ export const HomePage: FC<{ trending: PackageSummary[]; apiError?: boolean }> = 
                 data-placeholder={PLACEHOLDER_BY_TYPE[t]}
                 aria-current="false"
               >
-                {t}
+                {TYPE_DISPLAY_LABELS[t] ?? t}
               </a>
             ))}
           </nav>

@@ -283,10 +283,6 @@ html:not(.dark) .light-hidden { display: none; }
 /* --- Dropdown Menu --- */
 .cn-dropdown-menu {
   @apply absolute right-0 top-full mt-1 z-50 min-w-[200px] border border-border bg-card text-card-foreground shadow-md;
-  display: none;
-}
-.cn-dropdown-menu[data-open] {
-  display: block;
 }
 .cn-dropdown-item {
   @apply flex items-center gap-2 w-full px-3 py-2 text-sm text-foreground transition-colors;

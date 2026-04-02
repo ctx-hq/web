@@ -77,19 +77,19 @@ describe("resultCountText", () => {
   });
 
   it("type only", () => {
-    expect(resultCountText(10, "", "mcp")).toBe("10 mcp packages");
+    expect(resultCountText(10, "", "mcp")).toBe("10 MCP packages");
   });
 
   it("type only — singular", () => {
-    expect(resultCountText(1, "", "skill")).toBe("1 skill package");
+    expect(resultCountText(1, "", "skill")).toBe("1 Skill package");
   });
 
   it("query + type", () => {
-    expect(resultCountText(5, "review", "skill")).toBe("5 skill results for \u201creview\u201d");
+    expect(resultCountText(5, "review", "skill")).toBe("5 Skill results for \u201creview\u201d");
   });
 
   it("query + type — singular", () => {
-    expect(resultCountText(1, "lint", "cli")).toBe("1 cli result for \u201clint\u201d");
+    expect(resultCountText(1, "lint", "cli")).toBe("1 CLI result for \u201clint\u201d");
   });
 });
 

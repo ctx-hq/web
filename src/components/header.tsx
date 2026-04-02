@@ -90,6 +90,7 @@ export const Header: FC<{ currentPath?: string; user?: SessionUser | null; notif
                 role="menu"
                 aria-labelledby="user-dropdown-trigger"
                 class="cn-dropdown-menu"
+                hidden
               >
                 <div class="cn-dropdown-label">Signed in as @{user.username}</div>
                 <div class="cn-dropdown-separator" />

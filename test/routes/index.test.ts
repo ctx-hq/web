@@ -271,7 +271,7 @@ describe("real app routes", () => {
   it("search meta uses type when no query", async () => {
     const res = await req("/search?type=mcp");
     const html = await res.text();
-    expect(html).toContain("Browse mcp packages");
+    expect(html).toContain("Browse MCP packages");
   });
 
   it("sitemap returns XML", async () => {
@@ -505,7 +505,7 @@ describe("browse & sort", () => {
     mockApiRoute("/v1/packages?", { packages: [makePkg()], total: 1 });
     const res = await req("/search?type=skill");
     const html = await res.text();
-    expect(html).toContain("1 skill package");
+    expect(html).toContain("1 Skill package");
   });
 
   it("browse mode with 0 API results shows empty state (no mock fallback)", async () => {

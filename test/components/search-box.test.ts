@@ -32,11 +32,11 @@ describe("search-box", () => {
 });
 
 describe("PACKAGE_TYPES order", () => {
-  it("has exactly 4 types", () => {
-    expect(PACKAGE_TYPES).toHaveLength(4);
+  it("has exactly 3 filterable types", () => {
+    expect(PACKAGE_TYPES).toHaveLength(3);
   });
 
-  it("order is skill, cli, mcp, collection", () => {
-    expect(PACKAGE_TYPES).toEqual(["skill", "cli", "mcp", "collection"]);
+  it("order is skill, cli, mcp", () => {
+    expect(PACKAGE_TYPES).toEqual(["skill", "cli", "mcp"]);
   });
 });
