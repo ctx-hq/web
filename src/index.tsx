@@ -551,8 +551,8 @@ app.post("/package/:fullName{@[^/]+/[^/]+}/star", async (c) => {
   const fullName = c.req.param("fullName");
   try {
     await api(c).starPackage(fullName, token);
-  } catch {
-    // Best-effort
+  } catch (err) {
+    console.error("Star failed:", err instanceof Error ? err.message : err);
   }
   return c.redirect(`/package/${fullName}`);
 });
@@ -563,8 +563,8 @@ app.post("/package/:fullName{@[^/]+/[^/]+}/unstar", async (c) => {
   const fullName = c.req.param("fullName");
   try {
     await api(c).unstarPackage(fullName, token);
-  } catch {
-    // Best-effort
+  } catch (err) {
+    console.error("Unstar failed:", err instanceof Error ? err.message : err);
   }
   return c.redirect(`/package/${fullName}`);
 });

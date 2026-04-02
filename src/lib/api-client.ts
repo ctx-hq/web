@@ -297,7 +297,7 @@ export class ApiClient {
   }
 
   async starPackage(fullName: string, token: string): Promise<void> {
-    return this.post(`/v1/packages/${encodeURIComponent(fullName)}/star`, {}, token);
+    return this.put(`/v1/packages/${encodeURIComponent(fullName)}/star`, {}, token);
   }
 
   async unstarPackage(fullName: string, token: string): Promise<void> {
@@ -361,9 +361,21 @@ export class ApiClient {
   }
 
   private async post<T>(path: string, body: Record<string, unknown>, token: string): Promise<T> {
+    return this.mutate("POST", path, body, token);
+  }
+
+  private async put<T>(path: string, body: Record<string, unknown>, token: string): Promise<T> {
+    return this.mutate("PUT", path, body, token);
+  }
+
+  private async patch<T>(path: string, body: Record<string, unknown>, token: string): Promise<T> {
+    return this.mutate("PATCH", path, body, token);
+  }
+
+  private async mutate<T>(method: string, path: string, body: Record<string, unknown>, token: string): Promise<T> {
     const url = `${this.baseUrl}${path}`;
     const resp = await fetch(url, {
-      method: "POST",
+      method,
       headers: {
         "Content-Type": "application/json",
         Accept: "application/json",
@@ -380,26 +392,6 @@ export class ApiClient {
     const text = await resp.text();
     if (!text) return undefined as T;
     return JSON.parse(text) as T;
-  }
-
-  private async patch<T>(path: string, body: Record<string, unknown>, token: string): Promise<T> {
-    const url = `${this.baseUrl}${path}`;
-    const resp = await fetch(url, {
-      method: "PATCH",
-      headers: {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify(body),
-      signal: AbortSignal.timeout(10_000),
-    });
-    if (!resp.ok) {
-      const text = await resp.text().catch(() => "");
-      throw new ApiError(resp.status, text || `API error: ${resp.status}`);
-    }
-    if (resp.status === 204) return undefined as T;
-    return resp.json() as Promise<T>;
   }
 
   private async doDelete<T>(path: string, token: string): Promise<T> {

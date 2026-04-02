@@ -336,4 +336,104 @@ describe("ApiClient", () => {
       expect((opts.headers as Record<string, string>).Authorization).toBeUndefined();
     });
   });
+
+  describe("starPackage", () => {
+    it("uses PUT method", async () => {
+      mockFetch.mockResolvedValue(new Response(null, { status: 204 }));
+      await client.starPackage("scope/name", "my-token");
+
+      const opts = mockFetch.mock.calls[0][1] as RequestInit;
+      expect(opts.method).toBe("PUT");
+    });
+
+    it("constructs correct URL", async () => {
+      mockFetch.mockResolvedValue(new Response(null, { status: 204 }));
+      await client.starPackage("scope/name", "my-token");
+
+      const url = mockFetch.mock.calls[0][0] as string;
+      expect(url).toContain("/v1/packages/scope%2Fname/star");
+    });
+
+    it("sends Authorization header", async () => {
+      mockFetch.mockResolvedValue(new Response(null, { status: 204 }));
+      await client.starPackage("scope/name", "my-token");
+
+      const opts = mockFetch.mock.calls[0][1] as RequestInit;
+      expect((opts.headers as Record<string, string>).Authorization).toBe("Bearer my-token");
+    });
+  });
+
+  describe("createToken", () => {
+    it("sends correct body structure", async () => {
+      mockFetch.mockResolvedValue(jsonResponse({ id: "tok-1", token: "ctx_abc", name: "ci-key" }));
+      const body = {
+        name: "ci-key",
+        expires_in_days: 90,
+        endpoint_scopes: ["publish"],
+        package_scopes: ["@hong/*"],
+        token_type: "personal",
+      };
+      await client.createToken(body, "my-token");
+
+      const opts = mockFetch.mock.calls[0][1] as RequestInit;
+      const parsed = JSON.parse(opts.body as string);
+      expect(parsed.name).toBe("ci-key");
+      expect(parsed.expires_in_days).toBe(90);
+      expect(parsed.endpoint_scopes).toEqual(["publish"]);
+      expect(parsed.package_scopes).toEqual(["@hong/*"]);
+      expect(parsed.token_type).toBe("personal");
+    });
+
+    it("uses POST method", async () => {
+      mockFetch.mockResolvedValue(jsonResponse({ id: "tok-1", token: "ctx_abc", name: "ci-key" }));
+      await client.createToken({ name: "ci-key" }, "my-token");
+
+      const opts = mockFetch.mock.calls[0][1] as RequestInit;
+      expect(opts.method).toBe("POST");
+    });
+
+    it("constructs correct URL", async () => {
+      mockFetch.mockResolvedValue(jsonResponse({ id: "tok-1", token: "ctx_abc", name: "ci-key" }));
+      await client.createToken({ name: "ci-key" }, "my-token");
+
+      const url = mockFetch.mock.calls[0][0] as string;
+      expect(url).toContain("/v1/me/tokens");
+    });
+  });
+
+  describe("listTrustedPublishers", () => {
+    it("calls correct endpoint", async () => {
+      mockFetch.mockResolvedValue(jsonResponse({ trusted_publishers: [] }));
+      await client.listTrustedPublishers("scope/name", "my-token");
+
+      const url = mockFetch.mock.calls[0][0] as string;
+      expect(url).toContain("/v1/packages/scope%2Fname/trusted-publishers");
+    });
+
+    it("sends Authorization header", async () => {
+      mockFetch.mockResolvedValue(jsonResponse({ trusted_publishers: [] }));
+      await client.listTrustedPublishers("scope/name", "my-token");
+
+      const opts = mockFetch.mock.calls[0][1] as RequestInit;
+      expect((opts.headers as Record<string, string>).Authorization).toBe("Bearer my-token");
+    });
+  });
+
+  describe("revokeToken", () => {
+    it("uses DELETE method", async () => {
+      mockFetch.mockResolvedValue(new Response(null, { status: 204 }));
+      await client.revokeToken("tok-1", "my-token");
+
+      const opts = mockFetch.mock.calls[0][1] as RequestInit;
+      expect(opts.method).toBe("DELETE");
+    });
+
+    it("constructs correct URL", async () => {
+      mockFetch.mockResolvedValue(new Response(null, { status: 204 }));
+      await client.revokeToken("tok-1", "my-token");
+
+      const url = mockFetch.mock.calls[0][0] as string;
+      expect(url).toContain("/v1/me/tokens/tok-1");
+    });
+  });
 });
