@@ -54,6 +54,36 @@ describe("parseManifest", () => {
     const result = parseManifest("{}");
     expect(result).toEqual({});
   });
+
+  it("parses manifest with upstream fields", () => {
+    const raw = JSON.stringify({
+      upstream: { npm: "@playwright/mcp", tracking: "npm", version_pattern: "*" },
+    });
+    const result = parseManifest(raw);
+    expect(result!.upstream!.npm).toBe("@playwright/mcp");
+    expect(result!.upstream!.tracking).toBe("npm");
+  });
+
+  it("parses manifest with mcp transports and require", () => {
+    const raw = JSON.stringify({
+      mcp: {
+        transport: "stdio",
+        command: "docker",
+        require: { bins: ["docker"], min_versions: { docker: "20.0.0" } },
+        hooks: { post_install: [{ command: "npx", args: ["playwright", "install"], description: "Install browser" }] },
+        transports: [
+          { id: "remote", label: "Remote", transport: "streamable-http", url: "https://api.example.com/mcp/" },
+        ],
+      },
+    });
+    const result = parseManifest(raw);
+    expect(result!.mcp!.require!.bins).toEqual(["docker"]);
+    expect(result!.mcp!.hooks!.post_install).toHaveLength(1);
+    expect(result!.mcp!.hooks!.post_install![0].command).toBe("npx");
+    expect(result!.mcp!.transports).toHaveLength(1);
+    expect(result!.mcp!.transports![0].id).toBe("remote");
+    expect(result!.mcp!.transports![0].url).toBe("https://api.example.com/mcp/");
+  });
 });
 
 describe("type interfaces compile correctly", () => {

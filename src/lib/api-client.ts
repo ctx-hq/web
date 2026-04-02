@@ -260,6 +260,27 @@ export class ApiClient {
     return this.post(`/v1/orgs/${encodeURIComponent(orgName)}/dissolve`, body, token);
   }
 
+  // --- Submissions ---
+
+  async submitPackage(body: { source_url: string; reason?: string }, token?: string | null): Promise<void> {
+    const url = `${this.baseUrl}/v1/submissions`;
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+      Accept: "application/json",
+    };
+    if (token) headers.Authorization = `Bearer ${token}`;
+    const resp = await fetch(url, {
+      method: "POST",
+      headers,
+      body: JSON.stringify(body),
+      signal: AbortSignal.timeout(10_000),
+    });
+    if (!resp.ok) {
+      const text = await resp.text().catch(() => "");
+      throw new ApiError(resp.status, text || `API error: ${resp.status}`);
+    }
+  }
+
   // --- HTTP helpers ---
 
   private async get<T>(path: string, token?: string | null): Promise<T> {

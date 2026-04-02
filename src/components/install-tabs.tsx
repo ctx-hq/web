@@ -13,9 +13,17 @@ export const InstallTabs: FC<{
   const installCmd = `ctx install ${fullName}`;
 
   // Type-specific human install hint
+  const isReference = !!manifest?.upstream;
   let humanHint = "";
   if (pkgType === "mcp") {
-    humanHint = "Installs and registers the MCP server with your agents";
+    if (isReference) {
+      const upstreamLabel = manifest?.upstream?.npm ?? manifest?.upstream?.github ?? manifest?.upstream?.docker ?? "";
+      humanHint = upstreamLabel
+        ? `Configures ${upstreamLabel} MCP server for all your agents (runtime fetched on first use)`
+        : "Configures the MCP server for your agents (no bundled files — runtime fetched on first use)";
+    } else {
+      humanHint = "Installs and registers the MCP server with your agents";
+    }
   } else if (pkgType === "cli" || manifest?.cli?.binary) {
     const binary = manifest?.cli?.binary;
     humanHint = binary

@@ -13,6 +13,7 @@ import { MCPAgentConfigs } from "../components/mcp-agent-configs";
 import { MCPToolsList } from "../components/mcp-tools-list";
 import { MCPEnvVars } from "../components/mcp-env-vars";
 import { MCPCompatibility } from "../components/mcp-compatibility";
+import { UpstreamBadge } from "../components/upstream-badge";
 import { formatNumber, formatDate } from "../lib/format";
 import { safeRepoUrl, buildMetadataRows } from "../lib/package-helpers";
 import { TRUST_TIERS, MCP_TRANSPORT_LABELS } from "../lib/constants";
@@ -144,6 +145,34 @@ export const PackageDetailPage: FC<{
                 shortName={pkg.full_name.split("/").pop() ?? pkg.full_name}
                 manifest={manifest}
               />
+            )}
+            {/* Upstream source badge */}
+            {manifest?.upstream && (
+              <div class="mt-3">
+                <UpstreamBadge upstream={manifest.upstream} />
+              </div>
+            )}
+            {/* Prerequisites */}
+            {manifest?.mcp?.require?.bins && manifest.mcp.require.bins.length > 0 && (
+              <div class="mt-3 text-xs text-muted-foreground">
+                <span class="font-medium">Requires:</span>{" "}
+                {manifest.mcp.require.bins.map((bin, i) => {
+                  const minVer = manifest.mcp?.require?.min_versions?.[bin];
+                  return (
+                    <span>
+                      {i > 0 && ", "}
+                      {bin}{minVer ? ` ${minVer}+` : ""}
+                    </span>
+                  );
+                })}
+              </div>
+            )}
+            {/* Post-install hooks */}
+            {manifest?.mcp?.hooks?.post_install && manifest.mcp.hooks.post_install.length > 0 && (
+              <div class="mt-2 text-xs text-muted-foreground">
+                <span class="font-medium">After install:</span>{" "}
+                {manifest.mcp.hooks.post_install.map((h) => h.description ?? `${h.command} ${(h.args ?? []).join(" ")}`).join("; ")}
+              </div>
             )}
           </div>
 

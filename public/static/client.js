@@ -48,6 +48,25 @@ document.addEventListener('click',function(e){
   });
 });
 
+/* --- Transport tabs (MCP agent configs) --- */
+document.addEventListener('click',function(e){
+  var btn=e.target&&e.target.closest?e.target.closest('[data-transport-tab]'):null;
+  if(!btn)return;
+  var id=btn.dataset.transportTab;
+  var tablist=btn.closest('.install-tabs');
+  if(!tablist)return;
+  tablist.querySelectorAll('[data-transport-tab]').forEach(function(b){
+    var isActive=b.dataset.transportTab===id;
+    b.classList.toggle('cn-install-tab-active',isActive);
+    if(b.hasAttribute('role'))b.setAttribute('aria-selected',String(isActive));
+  });
+  var scope=tablist.closest('.mt-6')||tablist.parentElement.parentElement;
+  if(!scope)return;
+  scope.querySelectorAll('[data-transport-panel]').forEach(function(p){
+    p.classList.toggle('hidden',p.dataset.transportPanel!==id);
+  });
+});
+
 /* --- OS detection + toggle --- */
 (function(){
   var os=/Win/.test(navigator.platform)?'windows':'unix';

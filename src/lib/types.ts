@@ -81,9 +81,27 @@ export interface ManifestInfo {
     tools?: string[];
     resources?: string[];
     env?: Array<{ name: string; required?: boolean; default?: string; description?: string }>;
+    require?: { bins?: string[]; min_versions?: Record<string, string> };
+    hooks?: { post_install?: Array<{ command: string; args?: string[]; description?: string }> };
+    transports?: Array<{
+      id: string;
+      label?: string;
+      transport: string;
+      command?: string;
+      args?: string[];
+      url?: string;
+      env?: Array<{ name: string; required?: boolean; default?: string; description?: string }>;
+      require?: { bins?: string[] };
+    }>;
   };
   cli?: { binary?: string; verify?: string; compatible?: string };
   install?: { brew?: string; npm?: string; pip?: string; cargo?: string };
+  upstream?: {
+    npm?: string;
+    github?: string;
+    docker?: string;
+    tracking?: string;
+  };
 }
 
 /** Try to parse manifest JSON into ManifestInfo. Returns null on failure. */

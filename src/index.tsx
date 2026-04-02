@@ -25,6 +25,7 @@ import { DeviceLoginPage } from "./pages/device-login";
 import { CreateOrgPage, validateOrgName } from "./pages/create-org";
 import { OrgSettingsPage } from "./pages/org-settings";
 import { MCPHubPage } from "./pages/mcp-hub";
+import { SubmitPage } from "./pages/submit";
 
 type Env = {
   Bindings: {
@@ -147,11 +148,26 @@ function sanitizeUrl(href: string): string {
   return "";
 }
 
-/** Marked instance with raw HTML escaped and dangerous URL schemes stripped. */
+/**
+ * HTML tag allowlist for README rendering.
+ * Only structurally safe tags are permitted — no script, iframe, form, etc.
+ */
+const ALLOWED_HTML_RE = /^<\/?(details|summary|br|hr|kbd|sup|sub|abbr|mark|del|ins|small|picture|source|video|audio|figcaption|figure|dl|dt|dd|table|thead|tbody|tfoot|tr|th|td|caption|colgroup|col)(\s[^>]*)?\s*\/?>$/i;
+const HTML_COMMENT_RE = /^<!--[\s\S]*?-->$/;
+
+/** Marked instance with raw HTML filtered and dangerous URL schemes stripped. */
 const safeMarked = new Marked();
 safeMarked.use({
   renderer: {
     html(token) {
+      const text = token.text.trim();
+      // Strip HTML comments entirely
+      if (HTML_COMMENT_RE.test(text)) return "";
+      // Allow safe structural HTML tags
+      if (ALLOWED_HTML_RE.test(text)) return token.text;
+      // Multi-tag lines: allow if every tag in the line is safe
+      const tags = text.match(/<\/?[a-z][^>]*>/gi);
+      if (tags && tags.every(t => ALLOWED_HTML_RE.test(t.trim()))) return token.text;
       return escapeHtml(token.text);
     },
     link(token) {
@@ -1188,6 +1204,51 @@ app.get("/mcp", async (c) => {
       />
     </Layout>
   );
+});
+
+// Submit page — package request form
+app.get("/submit", async (c) => {
+  const meta = { ...defaultMeta(), title: `Submit a Package — ${SITE_NAME}` };
+  return c.html(
+    <Layout meta={meta} currentPath="/submit" user={c.get("user")}>
+      <SubmitPage />
+    </Layout>
+  );
+});
+
+app.post("/submit", async (c) => {
+  const meta = { ...defaultMeta(), title: `Submit a Package — ${SITE_NAME}` };
+  const user = c.get("user");
+  const token = c.get("token");
+  const body = await c.req.parseBody();
+  const sourceUrl = (body.source_url as string)?.trim();
+
+  if (!sourceUrl) {
+    return c.html(
+      <Layout meta={meta} currentPath="/submit" user={user}>
+        <SubmitPage error="Source URL is required" />
+      </Layout>
+    );
+  }
+
+  try {
+    await api(c).submitPackage(
+      { source_url: sourceUrl, reason: (body.reason as string)?.trim() ?? "" },
+      token,
+    );
+    return c.html(
+      <Layout meta={meta} currentPath="/submit" user={user}>
+        <SubmitPage success />
+      </Layout>
+    );
+  } catch (err) {
+    const msg = err instanceof ApiError ? err.message : "Failed to submit request";
+    return c.html(
+      <Layout meta={meta} currentPath="/submit" user={user}>
+        <SubmitPage error={msg} />
+      </Layout>
+    );
+  }
 });
 
 // Stats page
