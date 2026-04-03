@@ -15,6 +15,8 @@ export const PackageStatsPage: FC<{
       <ol class="flex flex-wrap items-center gap-1">
         <li><a href="/" class="hover:text-foreground">Home</a></li>
         <li><span aria-hidden="true">/</span></li>
+        <li><a href="/search" class="hover:text-foreground">Packages</a></li>
+        <li><span aria-hidden="true">/</span></li>
         <li><a href={`/package/${fullName}`} class="hover:text-foreground">{fullName}</a></li>
         <li><span aria-hidden="true">/</span></li>
         <li class="text-foreground" aria-current="page">Stats</li>

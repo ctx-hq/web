@@ -10,7 +10,7 @@ import { VisibilityBadge } from "./visibility-badge";
 export const PackageCard: FC<{ pkg: PackageSummary; showSettings?: boolean }> = ({ pkg, showSettings }) => {
   const { scope, shortName } = splitPackageName(pkg.full_name);
   return (
-  <div class="cn-card relative transition-all hover:ring-foreground/25">
+    <div class="cn-card relative transition-all hover:ring-foreground/25">
     <a href={`/package/${pkg.full_name}`} class="block p-5">
       <div class="mb-1 flex items-center justify-between gap-1">
         <span class="min-w-0 truncate text-sm font-heading">
@@ -48,6 +48,6 @@ export const PackageCard: FC<{ pkg: PackageSummary; showSettings?: boolean }> = 
         <Icon name="settings" class="size-3.5" />
       </a>
     )}
-  </div>
+    </div>
   );
 };

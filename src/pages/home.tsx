@@ -58,7 +58,7 @@ export const HomePage: FC<{ trending: PackageSummary[]; apiError?: boolean }> = 
     <GetStarted />
 
     {/* Trending or empty state */}
-    <section class="pb-16">
+    <section class="pb-10">
       <h2 class="mb-4 text-sm font-semibold font-heading">Trending</h2>
       {trending.length > 0 ? (
         <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">

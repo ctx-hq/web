@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { formatNumber, formatDownloads, formatDate } from "../../src/lib/format";
+import { formatNumber, formatDownloads, formatDate, splitPackageName } from "../../src/lib/format";
 
 describe("formatNumber", () => {
   it("formats small numbers without commas", () => {
@@ -47,5 +47,19 @@ describe("formatDate", () => {
 
   it("returns input for invalid dates", () => {
     expect(formatDate("not-a-date")).toBe("not-a-date");
+  });
+});
+
+describe("splitPackageName", () => {
+  it("splits @scope/name into scope and short name", () => {
+    expect(splitPackageName("@test/existing")).toEqual({ scope: "@test", shortName: "existing" });
+  });
+
+  it("splits owner/name without @ prefix", () => {
+    expect(splitPackageName("owner/my-tool")).toEqual({ scope: "owner", shortName: "my-tool" });
+  });
+
+  it("returns empty scope for names without slash", () => {
+    expect(splitPackageName("standalone")).toEqual({ scope: "", shortName: "standalone" });
   });
 });

@@ -105,14 +105,19 @@ describe("package detail routes", () => {
     expect(html).toContain('aria-current="page"');
   });
 
-  it("renders package name as heading", async () => {
+  it("renders package name as heading with scope and short name", async () => {
     mockFetch
       .mockResolvedValueOnce(apiJson(fakePkg))
       .mockResolvedValueOnce(apiJson(fakeVersion));
 
     const res = await req("/package/@test/existing");
     const html = await res.text();
-    expect(html).toContain("@test/existing");
+    // h1 contains scope (dimmed) + short name in separate spans
+    const h1Match = html.match(/<h1[^>]*>([\s\S]*?)<\/h1>/);
+    expect(h1Match).not.toBeNull();
+    const h1Content = h1Match![1];
+    expect(h1Content).toContain("@test/");
+    expect(h1Content).toContain("existing");
   });
 
   it("renders package type badge", async () => {
@@ -500,6 +505,26 @@ describe(".ctx endpoint", () => {
       (call) => typeof call[0] === "string" && call[0].includes("/v1/me"),
     );
     expect(meCall).toBeDefined();
+  });
+});
+
+describe("package stats route", () => {
+  const fakeStats = {
+    downloads: { total: 100, weekly: 10, daily: [] },
+    agents: { total_installs: 5, breakdown: [] },
+  };
+
+  it("renders breadcrumb with link back to package detail", async () => {
+    mockFetch.mockResolvedValueOnce(apiJson(fakeStats));
+
+    const res = await req("/package/@test/existing/stats");
+    expect(res.status).toBe(200);
+    const html = await res.text();
+    expect(html).toContain('aria-label="Breadcrumb"');
+    expect(html).toContain('href="/search"');
+    expect(html).toContain("Packages");
+    expect(html).toContain('href="/package/@test/existing"');
+    expect(html).toContain('aria-current="page"');
   });
 });
 
