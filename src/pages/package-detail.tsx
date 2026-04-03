@@ -221,7 +221,7 @@ export const PackageDetailPage: FC<{
           {/* README */}
           {readmeHtml ? (
             <div
-              class="prose"
+              class="prose max-w-full"
               dangerouslySetInnerHTML={{ __html: readmeHtml }}
             />
           ) : (
