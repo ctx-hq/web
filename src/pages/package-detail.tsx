@@ -14,7 +14,7 @@ import { MCPToolsList } from "../components/mcp-tools-list";
 import { MCPEnvVars } from "../components/mcp-env-vars";
 import { MCPCompatibility } from "../components/mcp-compatibility";
 import { UpstreamBadge } from "../components/upstream-badge";
-import { formatNumber, formatDate } from "../lib/format";
+import { formatNumber, formatDate, splitPackageName } from "../lib/format";
 import { safeRepoUrl, buildMetadataRows } from "../lib/package-helpers";
 import { TRUST_TIERS, MCP_TRANSPORT_LABELS } from "../lib/constants";
 
@@ -45,26 +45,30 @@ export const PackageDetailPage: FC<{
 }> = ({ pkg, readmeHtml, manifest, mcpDetail, isLoggedIn, canManage }) => {
   const repoUrl = safeRepoUrl(pkg.repository);
   const rows = buildMetadataRows(pkg, formatNumber, formatDate);
+  const { scope, shortName } = splitPackageName(pkg.full_name);
   const isAdapter = !!manifest?.source?.github;
   const sourceGithub = manifest?.source?.github;
   const sourceRef = manifest?.source?.ref;
 
   return (
     <Container class="py-10">
-      {/* Back navigation */}
-      <a
-        href="/search"
-        class="mb-4 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
-      >
-        <Icon name="arrow-right" class="size-3 rotate-180" />
-        Back to search
-      </a>
+      {/* Breadcrumb navigation */}
+      <nav class="mb-4 text-sm text-muted-foreground" aria-label="Breadcrumb">
+        <ol class="flex flex-wrap items-center gap-1">
+          <li><a href="/" class="hover:text-foreground">Home</a></li>
+          <li><span aria-hidden="true">/</span></li>
+          <li><a href="/search" class="hover:text-foreground">Packages</a></li>
+          <li><span aria-hidden="true">/</span></li>
+          <li class="min-w-0 truncate text-foreground" aria-current="page">{pkg.full_name}</li>
+        </ol>
+      </nav>
 
       {/* Package header */}
       <div class="mb-6">
         <div class="mb-2 flex flex-wrap items-center gap-2">
-          <h1 class="break-all text-xl font-semibold font-heading">
-            {pkg.full_name}
+          <h1 class="break-all text-xl font-heading">
+            {scope && <span class="font-normal text-muted-foreground">{scope}/</span>}
+            <span class="font-semibold">{shortName}</span>
           </h1>
           <Badge type={pkg.type} />
           {isAdapter && (
@@ -217,7 +221,7 @@ export const PackageDetailPage: FC<{
           {/* README */}
           {readmeHtml ? (
             <div
-              class="prose"
+              class="prose max-w-prose"
               dangerouslySetInnerHTML={{ __html: readmeHtml }}
             />
           ) : (

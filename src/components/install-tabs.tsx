@@ -3,6 +3,7 @@ import type { PackageType, ManifestInfo } from "../lib/types";
 import { Button } from "./ui/button";
 import { Icon } from "./ui/icon";
 import { agentPromptPackage } from "../lib/get-started";
+import { splitPackageName } from "../lib/format";
 
 export const InstallTabs: FC<{
   fullName: string;
@@ -11,6 +12,7 @@ export const InstallTabs: FC<{
 }> = ({ fullName, pkgType, manifest }) => {
   const agentCmd = agentPromptPackage(fullName);
   const installCmd = `ctx install ${fullName}`;
+  const { shortName } = splitPackageName(fullName);
 
   // Type-specific human install hint
   const isReference = !!manifest?.upstream;
@@ -82,7 +84,7 @@ export const InstallTabs: FC<{
           </Button>
         </div>
         <p class="mt-2 text-sm text-muted-foreground">
-          Send this to your Agent to use {fullName}
+          Send this to your Agent to use {shortName}
         </p>
       </div>
       {/* Human panel */}

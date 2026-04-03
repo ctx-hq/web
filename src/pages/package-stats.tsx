@@ -10,14 +10,16 @@ export const PackageStatsPage: FC<{
   stats: PackageStats;
 }> = ({ fullName, stats }) => (
   <Container class="py-10">
-    {/* Back navigation */}
-    <a
-      href={`/@${fullName}`}
-      class="mb-4 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
-    >
-      <Icon name="arrow-right" class="size-3 rotate-180" />
-      Back to {fullName}
-    </a>
+    {/* Breadcrumb navigation */}
+    <nav class="mb-4 text-sm text-muted-foreground" aria-label="Breadcrumb">
+      <ol class="flex flex-wrap items-center gap-1">
+        <li><a href="/" class="hover:text-foreground">Home</a></li>
+        <li><span aria-hidden="true">/</span></li>
+        <li><a href={`/package/${fullName}`} class="hover:text-foreground">{fullName}</a></li>
+        <li><span aria-hidden="true">/</span></li>
+        <li class="text-foreground" aria-current="page">Stats</li>
+      </ol>
+    </nav>
 
     <h1 class="mb-6 text-xl font-semibold font-heading">{fullName} &mdash; Stats</h1>
 

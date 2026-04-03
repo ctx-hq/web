@@ -15,7 +15,7 @@ export const GetStarted: FC = () => {
   const examples = usageExamples();
 
   return (
-    <section class="mb-12">
+    <section class="mb-10">
       <div class="install-tabs cn-card mx-auto max-w-xl">
         {/* Tab bar — Agent default */}
         <nav class="flex gap-4 border-b border-input px-3" role="tablist" aria-label="Getting started method">
@@ -55,7 +55,7 @@ export const GetStarted: FC = () => {
             </Button>
           </div>
           <p class="mt-2 text-sm text-muted-foreground">
-            Send this to your Agent to get started with ctx
+            Paste this into Claude Code, Cursor, or your AI agent's chat
           </p>
         </div>
 

@@ -1,17 +1,22 @@
 import type { FC } from "hono/jsx";
 import type { PackageSummary } from "../lib/types";
-import { formatDownloads } from "../lib/format";
+import { formatDownloads, splitPackageName } from "../lib/format";
 import { Badge } from "./badge";
 import { Card } from "./ui/card";
 import { Icon } from "./ui/icon";
 import { TrustBadge } from "./trust-badge";
 import { VisibilityBadge } from "./visibility-badge";
 
-export const PackageCard: FC<{ pkg: PackageSummary; showSettings?: boolean }> = ({ pkg, showSettings }) => (
+export const PackageCard: FC<{ pkg: PackageSummary; showSettings?: boolean }> = ({ pkg, showSettings }) => {
+  const { scope, shortName } = splitPackageName(pkg.full_name);
+  return (
   <div class="cn-card relative transition-all hover:ring-foreground/25">
     <a href={`/package/${pkg.full_name}`} class="block p-5">
       <div class="mb-1 flex items-center justify-between gap-1">
-        <span class="min-w-0 truncate text-sm font-medium font-heading">{pkg.full_name}</span>
+        <span class="min-w-0 truncate text-sm font-heading">
+          {scope && <span class="font-normal text-muted-foreground">{scope}/</span>}
+          <span class="font-medium">{shortName}</span>
+        </span>
         <div class="flex shrink-0 items-center gap-1">
           <VisibilityBadge visibility={pkg.visibility} />
           <Badge type={pkg.type} />
@@ -44,4 +49,5 @@ export const PackageCard: FC<{ pkg: PackageSummary; showSettings?: boolean }> = 
       </a>
     )}
   </div>
-);
+  );
+};

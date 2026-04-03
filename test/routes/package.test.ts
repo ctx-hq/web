@@ -92,15 +92,17 @@ describe("package detail routes", () => {
 
   // === Layout structure ===
 
-  it("renders back link with href to /search", async () => {
+  it("renders breadcrumb navigation", async () => {
     mockFetch
       .mockResolvedValueOnce(apiJson(fakePkg))
       .mockResolvedValueOnce(apiJson(fakeVersion));
 
     const res = await req("/package/@test/existing");
     const html = await res.text();
+    expect(html).toContain('aria-label="Breadcrumb"');
     expect(html).toContain('href="/search"');
-    expect(html).toContain("Back to search");
+    expect(html).toContain("Packages");
+    expect(html).toContain('aria-current="page"');
   });
 
   it("renders package name as heading", async () => {
@@ -196,7 +198,7 @@ describe("package detail routes", () => {
 
     const res = await req("/package/@test/existing");
     const html = await res.text();
-    expect(html).toContain("class=\"prose\"");
+    expect(html).toContain("class=\"prose max-w-prose\"");
     expect(html).toContain("Hello");
   });
 

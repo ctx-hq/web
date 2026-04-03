@@ -1,5 +1,5 @@
 export const SITE_NAME = "getctx.org";
-export const SITE_TAGLINE = "Universal package manager for LLM context";
+export const SITE_TAGLINE = "One command to extend your AI agent";
 export const SITE_DESCRIPTION =
   "Discover, install, and manage skills, MCP servers, and CLI tools for AI agents.";
 export const SITE_URL = "https://getctx.org";

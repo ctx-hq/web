@@ -120,7 +120,7 @@ export const Header: FC<{ currentPath?: string; user?: SessionUser | null; notif
             </div>
           </div>
         ) : (
-          <Button variant="default" size="sm" href="/login">
+          <Button variant="outline" size="sm" href="/login">
             Sign in
           </Button>
         )}

@@ -11,14 +11,14 @@ import { GetStarted } from "../components/get-started";
 export const HomePage: FC<{ trending: PackageSummary[]; apiError?: boolean }> = ({ trending, apiError }) => (
   <Container>
     {/* Hero */}
-    <section class="py-24 text-center">
+    <section class="pt-16 pb-10 text-center sm:pt-20 sm:pb-12">
       <div class="mb-5">
         <Icon name="package" class="mx-auto size-16 text-muted-foreground" />
       </div>
       <h1 class="mb-3 text-3xl font-bold font-heading tracking-tight sm:text-4xl">
         {SITE_TAGLINE}
       </h1>
-      <p class="mx-auto mb-12 max-w-lg text-base text-muted-foreground">
+      <p class="mx-auto mb-8 max-w-lg text-base text-muted-foreground">
         {SITE_DESCRIPTION}
       </p>
       <div class="mx-auto max-w-xl">
@@ -58,7 +58,7 @@ export const HomePage: FC<{ trending: PackageSummary[]; apiError?: boolean }> = 
     <GetStarted />
 
     {/* Trending or empty state */}
-    <section class="mb-20">
+    <section class="pb-16">
       <h2 class="mb-4 text-sm font-semibold font-heading">Trending</h2>
       {trending.length > 0 ? (
         <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
