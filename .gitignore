@@ -70,3 +70,4 @@ coverage/
 # ===== Temp =====
 tmp/
 !tmp/.gitkeep
+CLAUDE.md

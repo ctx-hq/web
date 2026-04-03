@@ -42,9 +42,13 @@ export const Layout: FC<LayoutProps> = ({ meta, currentPath, user, notificationC
         <script src="/static/theme-init.js" />
       </head>
       <body class="bg-background text-foreground font-sans text-sm antialiased">
+        {/* WCAG 2.4.1: Skip to main content link */}
+        <a href="#main-content" class="skip-to-main">Skip to main content</a>
         <Header currentPath={currentPath} user={user} notificationCount={notificationCount} />
-        <main class="min-h-[calc(100vh-3.5rem)]">{children}</main>
+        <main id="main-content" tabindex={-1} class="min-h-[calc(100vh-3.5rem)] outline-none">{children}</main>
         <Footer />
+        {/* WCAG 4.1.3: aria-live region for dynamic status messages */}
+        <div id="live-region" aria-live="polite" aria-atomic="true" class="sr-only" />
         <ClientScript />
       </body>
     </html>

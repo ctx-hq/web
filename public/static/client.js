@@ -11,9 +11,17 @@ document.querySelectorAll('img[data-avatar-fallback]').forEach(function(img){
   img.addEventListener('error',function(){img.style.display='none'});
 });
 
+/* --- Live-region announce helper (for screen readers) --- */
+function announceLive(msg){var lr=document.getElementById('live-region');if(lr){lr.textContent='';setTimeout(function(){lr.textContent=msg},50);}}
+
 /* --- Mobile nav --- */
 document.getElementById('mobile-nav-toggle')?.addEventListener('click',function(){
-  document.getElementById('mobile-nav')?.classList.toggle('hidden');
+  var nav=document.getElementById('mobile-nav');
+  if(!nav)return;
+  nav.classList.toggle('hidden');
+  var isExpanded=!nav.classList.contains('hidden');
+  this.setAttribute('aria-expanded',String(isExpanded));
+  this.setAttribute('aria-label',isExpanded?'Close menu':'Open menu');
 });
 
 /* --- User dropdown --- */
@@ -79,6 +87,7 @@ document.addEventListener('click',function(e){
         if(btn.childNodes[i].nodeType===3){label=btn.childNodes[i];break;}
       }
       if(label){var o=label.textContent;label.textContent='Copied!';setTimeout(function(){label.textContent=o},1500);}
+      announceLive('Copied to clipboard');
     }).catch(function(){});
   }
 });
@@ -327,6 +336,7 @@ document.querySelectorAll('.prose pre').forEach(function(pre){
     if(navigator.clipboard&&navigator.clipboard.writeText){
       navigator.clipboard.writeText(text||'').then(function(){
         btn.textContent='Copied!';
+        announceLive('Copied to clipboard');
         setTimeout(function(){btn.textContent='Copy'},1500);
       }).catch(function(){});
     }

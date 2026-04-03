@@ -367,3 +367,48 @@ html:not(.dark) .light-hidden { display: none; }
 .prose table { @apply mb-4 w-full border-collapse; }
 .prose th { @apply border border-border bg-muted px-3 py-1.5 text-left text-sm font-medium; }
 .prose td { @apply border border-border px-3 py-1.5 text-sm; }
+
+/* ================================================================
+   WCAG Accessibility
+   ================================================================ */
+
+/* Skip to main content link (WCAG 2.4.1 Bypass Blocks) */
+.skip-to-main {
+  position: fixed;
+  top: 0;
+  left: 0;
+  transform: translateY(-100%);
+  padding: 0.75rem 1.5rem;
+  background: var(--color-background);
+  color: var(--color-foreground);
+  border: 2px solid var(--color-primary);
+  font-size: 1rem;
+  z-index: 9999;
+}
+
+.skip-to-main:focus {
+  transform: translateY(0);
+}
+
+/* Focus indicators for keyboard navigation (WCAG 2.4.7)
+   Only applies to elements without their own focus styles (e.g. .cn-button uses ring). */
+:focus-visible:not(.cn-button, .cn-input, .cn-dropdown-item) {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* Reduced motion support (WCAG 2.3.3) */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

@@ -133,6 +133,8 @@ export const Header: FC<{ currentPath?: string; user?: SessionUser | null; notif
           size="icon-xs"
           id="mobile-nav-toggle"
           aria-label="Open menu"
+          aria-expanded="false"
+          aria-controls="mobile-nav"
         >
           <Icon name="list" class="size-4" />
         </Button>
