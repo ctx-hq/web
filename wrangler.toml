@@ -4,5 +4,5 @@ compatibility_flags = ["nodejs_compat"]
 pages_build_output_dir = "dist"
 
 [vars]
-API_BASE_URL = "https://api.getctx.org"
+API_BASE_URL = "https://registry.getctx.org"
 # GITHUB_CLIENT_ID and GITHUB_CLIENT_SECRET go in .dev.vars (local) or Pages env (production)

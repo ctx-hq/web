@@ -97,7 +97,7 @@ install:
 const ApiReference: FC = () => (
   <>
     <h2>API Reference</h2>
-    <p>Base URL: <code>https://api.getctx.org</code></p>
+    <p>Base URL: <code>https://registry.getctx.org</code></p>
     <h3>Search</h3>
     <pre><code>GET /v1/search?q=query&amp;type=mcp&amp;limit=20</code></pre>
     <h3>Package detail</h3>
