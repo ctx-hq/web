@@ -1,4 +1,4 @@
-import { Marked } from "marked";
+import { Marked, type Token } from "marked";
 import { escapeHtml } from "./seo";
 
 /** Only allow safe URL schemes in markdown links/images. */
@@ -37,9 +37,18 @@ safeMarked.use({
     link(token) {
       const href = sanitizeUrl(token.href);
       const title = token.title ? ` title="${escapeHtml(token.title)}"` : "";
+      const inner = this.parser.parseInline(token.tokens);
       return href
-        ? `<a href="${escapeHtml(href)}"${title}>${token.text}</a>`
-        : escapeHtml(token.text);
+        ? `<a href="${escapeHtml(href)}"${title}>${inner}</a>`
+        : inner;
+    },
+    table(token) {
+      const align = (a: string | null) => a ? ` style="text-align:${a}"` : "";
+      const ths = token.header.map((c: { tokens: Token[]; align: string | null }) =>
+        `<th${align(c.align)}>${this.parser.parseInline(c.tokens)}</th>`).join("");
+      const rows = token.rows.map((row: { tokens: Token[]; align: string | null }[]) =>
+        `<tr>${row.map((c) => `<td${align(c.align)}>${this.parser.parseInline(c.tokens)}</td>`).join("")}</tr>`).join("\n");
+      return `<div class="table-wrapper"><table><thead><tr>${ths}</tr></thead><tbody>${rows}</tbody></table></div>`;
     },
     image(token) {
       const src = sanitizeUrl(token.href);

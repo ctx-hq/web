@@ -1,49 +1,7 @@
 import { describe, it, expect } from "vitest";
-import { Marked } from "marked";
-import { escapeHtml } from "../../src/lib/seo";
-
-/** Only allow safe URL schemes in markdown links/images — mirrors src/index.tsx. */
-function sanitizeUrl(href: string): string {
-  try {
-    const url = new URL(href, "https://placeholder.invalid");
-    if (url.protocol === "https:" || url.protocol === "http:" || url.protocol === "mailto:") {
-      return href;
-    }
-  } catch { /* invalid URL */ }
-  return "";
-}
-
-/** Same sanitized Marked config as src/index.tsx */
-function createSafeMarked() {
-  const m = new Marked();
-  m.use({
-    renderer: {
-      html(token) {
-        return escapeHtml(token.text);
-      },
-      link(token) {
-        const href = sanitizeUrl(token.href);
-        const title = token.title ? ` title="${escapeHtml(token.title)}"` : "";
-        return href
-          ? `<a href="${escapeHtml(href)}"${title}>${token.text}</a>`
-          : escapeHtml(token.text);
-      },
-      image(token) {
-        const src = sanitizeUrl(token.href);
-        const alt = escapeHtml(token.text);
-        const title = token.title ? ` title="${escapeHtml(token.title)}"` : "";
-        return src
-          ? `<img src="${escapeHtml(src)}" alt="${alt}"${title} />`
-          : alt;
-      },
-    },
-  });
-  return m;
-}
+import { safeMarked } from "../../src/lib/markdown";
 
 describe("markdown XSS prevention", () => {
-  const safeMarked = createSafeMarked();
-
   it("escapes script tags in README markdown", async () => {
     const html = await safeMarked.parse('<script>alert("xss")</script>');
     expect(html).not.toContain("<script>");
@@ -105,5 +63,24 @@ describe("markdown XSS prevention", () => {
     const html = await safeMarked.parse("```js\nconsole.log('hello');\n```");
     expect(html).toContain("<pre><code");
     expect(html).toContain("console.log");
+  });
+
+  it("renders badge images inside links", async () => {
+    const html = await safeMarked.parse('[![badge](https://img.shields.io/badge/test-blue)](https://example.com)');
+    expect(html).toContain("<img");
+    expect(html).toContain('src="https://img.shields.io/badge/test-blue"');
+    expect(html).toContain('href="https://example.com"');
+  });
+
+  it("preserves inline formatting in unsafe links", async () => {
+    const html = await safeMarked.parse('[**bold**](javascript:alert(1))');
+    expect(html).not.toContain("javascript:");
+    expect(html).toContain("<strong>bold</strong>");
+  });
+
+  it("wraps tables in scrollable container", async () => {
+    const html = await safeMarked.parse('| A | B |\n|---|---|\n| 1 | 2 |');
+    expect(html).toContain('class="table-wrapper"');
+    expect(html).toContain("<table>");
   });
 });

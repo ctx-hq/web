@@ -349,7 +349,7 @@ html:not(.dark) .light-hidden { display: none; }
 
 /* --- Prose for README rendering --- */
 .prose {
-  @apply text-sm leading-relaxed text-foreground;
+  @apply text-sm leading-relaxed text-foreground overflow-x-auto;
 }
 .prose h1 { @apply mb-4 mt-8 text-xl font-semibold font-heading; }
 .prose h2 { @apply mb-3 mt-6 text-lg font-semibold font-heading; }
@@ -364,7 +364,9 @@ html:not(.dark) .light-hidden { display: none; }
 .prose li { @apply mb-1; }
 .prose blockquote { @apply mb-4 border-l-2 border-border pl-4 text-muted-foreground; }
 .prose img { @apply max-w-full; }
-.prose table { @apply mb-4 w-full border-collapse; }
+.prose .table-wrapper { @apply mb-4 overflow-x-auto; }
+.prose > table { @apply mb-4; }
+.prose table { @apply w-full border-collapse; }
 .prose th { @apply border border-border bg-muted px-3 py-1.5 text-left text-sm font-medium; }
 .prose td { @apply border border-border px-3 py-1.5 text-sm; }
 
