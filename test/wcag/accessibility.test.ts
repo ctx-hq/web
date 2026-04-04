@@ -142,3 +142,29 @@ describe("WCAG 2.3.3: Reduced motion", () => {
     expect(css).toContain("transition-duration: 0.01ms");
   });
 });
+
+describe("WCAG 1.4.1: Status uses semantic tokens, not color alone", () => {
+  it("alert variants pair color with border (not color-only differentiation)", () => {
+    const css = readFileSync(
+      resolve(__dirname, "../../src/styles/globals.css"),
+      "utf-8",
+    );
+    for (const variant of ["destructive", "success", "warning", "info"]) {
+      const match = css.match(new RegExp(`\\.cn-alert-${variant}\\s*\\{[^}]+\\}`));
+      expect(match, `.cn-alert-${variant} not defined`).not.toBeNull();
+      expect(match![0]).toContain("border-");
+      expect(match![0]).toContain("bg-");
+      expect(match![0]).toContain("text-");
+    }
+  });
+
+  it("dialog destructive title uses semantic destructive token", () => {
+    const css = readFileSync(
+      resolve(__dirname, "../../src/styles/globals.css"),
+      "utf-8",
+    );
+    const match = css.match(/\.cn-dialog-title-destructive\s*\{[^}]+\}/);
+    expect(match).not.toBeNull();
+    expect(match![0]).toContain("destructive");
+  });
+});

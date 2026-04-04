@@ -4,7 +4,6 @@ import type {
   OrgInvitation, PackageAccessEntry,
   AgentRanking, RegistryOverview, SyncProfileMeta, SyncPackageEntry,
   TransferRequest, AppNotification, RenameResult,
-  MCPHubEntry, MCPCategoryCount,
   CategoryInfo, KeywordInfo, StarredPackage,
 } from "./types";
 
@@ -65,25 +64,6 @@ export class ApiClient {
 
   async getAgentDetail(agent: string): Promise<{ agent: string; total_installs: number; top_packages: PackageSummary[] }> {
     return this.get(`/v1/stats/agents/${encodeURIComponent(agent)}`);
-  }
-
-  // --- MCP Hub APIs ---
-
-  async getMCPHub(opts?: { category?: string; sort?: string; limit?: number; offset?: number }): Promise<{ servers: MCPHubEntry[]; total: number; categories: MCPCategoryCount[] }> {
-    const params = new URLSearchParams();
-    if (opts?.category) params.set("category", opts.category);
-    if (opts?.sort) params.set("sort", opts.sort);
-    if (opts?.limit) params.set("limit", String(opts.limit));
-    if (opts?.offset) params.set("offset", String(opts.offset));
-    return this.get(`/v1/mcp/hub?${params}`);
-  }
-
-  async getMCPFeatured(): Promise<{ servers: MCPHubEntry[] }> {
-    return this.get("/v1/mcp/featured");
-  }
-
-  async getMCPCategories(): Promise<{ categories: MCPCategoryCount[] }> {
-    return this.get("/v1/mcp/categories");
   }
 
   // --- Profile APIs ---

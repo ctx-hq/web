@@ -26,8 +26,8 @@ export const OrgSettingsPage: FC<{
       </div>
     )}
     {success && (
-      <div class="cn-card mb-6 border-green-600/50 bg-green-600/5 p-4">
-        <p class="text-sm text-green-700">{success}</p>
+      <div class="cn-alert cn-alert-success mb-6">
+        <p>{success}</p>
       </div>
     )}
 
@@ -46,7 +46,7 @@ export const OrgSettingsPage: FC<{
                   type="text"
                   required
                   placeholder="github-username"
-                  class="cn-input-size-default w-full border border-border bg-background px-3 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  class="cn-input cn-input-size-default w-full"
                 />
               </div>
               <div class="w-full sm:w-36">
@@ -54,7 +54,7 @@ export const OrgSettingsPage: FC<{
                 <select
                   id="role"
                   name="role"
-                  class="cn-input-size-default w-full border border-border bg-background px-3 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  class="cn-input cn-input-size-default w-full"
                 >
                   <option value="member">Member</option>
                   <option value="admin">Admin</option>
@@ -63,7 +63,7 @@ export const OrgSettingsPage: FC<{
               </div>
               <button
                 type="submit"
-                class="cn-button-size-default bg-primary px-4 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+                class="cn-button cn-button-variant-default cn-button-size-default"
               >
                 Send Invite
               </button>
@@ -92,7 +92,7 @@ export const OrgSettingsPage: FC<{
                   <form method="post" action={`/org/${org.name}/invitations/${inv.id}/cancel`}>
                     <button
                       type="submit"
-                      class="cn-button-size-xs border border-border bg-background px-2 text-xs text-muted-foreground hover:bg-muted"
+                      class="cn-button cn-button-variant-outline cn-button-size-xs"
                     >
                       Cancel
                     </button>
@@ -132,7 +132,7 @@ export const OrgSettingsPage: FC<{
                     />
                     <button
                       type="submit"
-                      class="cn-button-size-xs border border-border bg-background px-2 text-xs text-muted-foreground hover:bg-muted"
+                      class="cn-button cn-button-variant-outline cn-button-size-xs"
                     >
                       {member.visibility === "public" ? "Make Private" : "Make Public"}
                     </button>
@@ -144,7 +144,7 @@ export const OrgSettingsPage: FC<{
                     <form method="post" action={`/org/${org.name}/members/${member.username}/remove`}>
                       <button
                         type="submit"
-                        class="cn-button-size-xs border border-destructive/50 bg-background px-2 text-xs text-destructive hover:bg-destructive/10"
+                        class="cn-button cn-button-variant-destructive cn-button-size-xs"
                       >
                         Remove
                       </button>
@@ -176,7 +176,7 @@ export const OrgSettingsPage: FC<{
               <form method="post" action={`/org/${org.name}/settings/${org.archived ? "unarchive" : "archive"}`}>
                 <button
                   type="submit"
-                  class="cn-button-size-xs border border-destructive/50 bg-background px-3 text-xs text-destructive hover:bg-destructive/10"
+                  class="cn-button cn-button-variant-destructive cn-button-size-xs"
                 >
                   {org.archived ? "Unarchive" : "Archive"}
                 </button>
@@ -194,7 +194,7 @@ export const OrgSettingsPage: FC<{
               <form method="post" action={`/org/${org.name}/settings/leave`}>
                 <button
                   type="submit"
-                  class="cn-button-size-xs border border-destructive/50 bg-background px-3 text-xs text-destructive hover:bg-destructive/10"
+                  class="cn-button cn-button-variant-destructive cn-button-size-xs"
                 >
                   Leave
                 </button>
@@ -217,11 +217,11 @@ export const OrgSettingsPage: FC<{
                   type="text"
                   required
                   placeholder={`Type "${org.name}" to confirm`}
-                  class="cn-input-size-default flex-1 border border-destructive/50 bg-background px-3 text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-destructive/50"
+                  class="cn-input cn-input-size-default flex-1"
                 />
                 <button
                   type="submit"
-                  class="cn-button-size-xs border border-destructive/50 bg-background px-3 text-xs text-destructive hover:bg-destructive/10"
+                  class="cn-button cn-button-variant-destructive cn-button-size-xs"
                 >
                   Delete
                 </button>

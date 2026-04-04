@@ -27,16 +27,16 @@ export const SettingsTokensSection: FC<{
       </div>
     )}
     {success && (
-      <div class="cn-card mb-6 border-green-600/50 bg-green-600/5 p-4">
-        <p class="text-sm text-green-700">{success}</p>
+      <div class="cn-alert cn-alert-success mb-6">
+        <p>{success}</p>
       </div>
     )}
 
     {newToken && (
-      <div class="cn-card mb-6 border-green-600/50 bg-green-600/5 p-4" role="alert">
-        <p class="mb-2 text-sm font-medium text-green-700">Token created successfully</p>
-        <div class="flex items-center gap-2">
-          <code class="block flex-1 rounded bg-green-50 p-3 font-mono text-sm break-all dark:bg-green-900/20">
+      <div class="cn-alert cn-alert-success mb-6 items-start flex-col" role="alert">
+        <p class="mb-2 font-medium">Token created successfully</p>
+        <div class="flex items-center gap-2 w-full">
+          <code class="block flex-1 rounded-none bg-success/10 p-3 font-mono text-sm break-all">
             {newToken}
           </code>
           <Button variant="outline" size="sm" type="button" data-copy={newToken} class="shrink-0">
@@ -154,10 +154,10 @@ export const SettingsTokensSection: FC<{
                 <tr class="border-b" key={t.id}>
                   <td class="py-3 pr-4 font-medium">{t.name}</td>
                   <td class="py-3 pr-4">
-                    <span class={`inline-block rounded px-1.5 py-0.5 text-xs ${
+                    <span class={`cn-badge ${
                       t.token_type === "deploy"
-                        ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300"
-                        : "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400"
+                        ? "cn-badge-variant-info"
+                        : "cn-badge-variant-secondary"
                     }`}>
                       {t.token_type || "personal"}
                     </span>

@@ -250,24 +250,7 @@ export interface AppNotification {
 
 // --- Rename types ---
 
-// --- MCP Hub types ---
-
-export interface MCPHubEntry {
-  full_name: string;
-  description: string;
-  transport: string;
-  tools_count: number;
-  downloads: number;
-  owner_slug?: string;
-  category: string;
-  version?: string;
-}
-
-export interface MCPCategoryCount {
-  slug: string;
-  name: string;
-  count: number;
-}
+// --- MCP types ---
 
 export interface MCPDetail {
   transport: string;

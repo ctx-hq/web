@@ -22,7 +22,7 @@ export const OrgPage: FC<{
         {(userRole === "owner" || userRole === "admin") && (
           <a
             href={`/org/${org.name}/settings`}
-            class="cn-button-size-xs border border-border bg-background px-2 text-xs font-medium hover:bg-muted"
+            class="cn-button cn-button-variant-outline cn-button-size-xs"
           >
             Settings
           </a>

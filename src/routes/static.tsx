@@ -4,65 +4,13 @@ import { api } from "../lib/api-helpers";
 import type { AppEnv } from "../lib/api-helpers";
 import { ApiError } from "../lib/api-client";
 import { defaultMeta } from "../lib/seo";
-import { SITE_NAME, SITE_URL, DEFAULT_OG_IMAGE } from "../lib/constants";
+import { SITE_NAME } from "../lib/constants";
 import type { PackageSummary, AgentRanking, RegistryOverview } from "../lib/types";
 import { StatsPage } from "../pages/stats";
 import { PrivacyPage } from "../pages/privacy";
-import { MCPHubPage } from "../pages/mcp-hub";
 import { SubmitPage } from "../pages/submit";
 
 const route = new Hono<AppEnv>();
-
-// MCP Hub page
-route.get("/mcp", async (c) => {
-  const apiClient = api(c);
-  const category = c.req.query("category") ?? "";
-  const sort = c.req.query("sort") ?? "downloads";
-  const page = Math.max(1, parseInt(c.req.query("page") ?? "1", 10));
-  const limit = 18;
-  const offset = (page - 1) * limit;
-
-  let servers: import("../lib/types").MCPHubEntry[] = [];
-  let featured: import("../lib/types").MCPHubEntry[] | null = null;
-  let categories: import("../lib/types").MCPCategoryCount[] = [];
-  let total = 0;
-
-  try {
-    const [hubResult, featuredResult] = await Promise.all([
-      apiClient.getMCPHub({ category, sort, limit, offset }),
-      page === 1 && !category ? apiClient.getMCPFeatured() : Promise.resolve(null),
-    ]);
-    servers = hubResult.servers;
-    total = hubResult.total;
-    categories = hubResult.categories;
-    if (featuredResult) featured = featuredResult.servers;
-  } catch (err) {
-    console.error("MCP Hub fetch failed:", err);
-  }
-
-  const meta = {
-    title: "MCP Hub — Discover MCP Servers | getctx.org",
-    description: "Browse and install MCP (Model Context Protocol) servers for AI agents. Categorized directory with one-command installation.",
-    url: `${SITE_URL}/mcp`,
-    ogImage: DEFAULT_OG_IMAGE,
-    type: "website",
-  };
-
-  return c.html(
-    <Layout meta={meta} currentPath="/mcp" user={c.get("user")}>
-      <MCPHubPage
-        servers={servers}
-        featured={featured}
-        categories={categories}
-        total={total}
-        category={category}
-        sort={sort}
-        page={page}
-        limit={limit}
-      />
-    </Layout>
-  );
-});
 
 // Submit page — package request form
 route.get("/submit", async (c) => {

@@ -57,10 +57,10 @@ export const PackageSettingsPage: FC<{
       <p class="mb-6 text-sm text-muted-foreground">Package settings</p>
 
       {error && (
-        <div class="cn-form-banner-error mb-6" role="alert">{error}</div>
+        <div class="cn-alert cn-alert-destructive mb-6" role="alert">{error}</div>
       )}
       {success && (
-        <div class="cn-form-banner-success mb-6" role="alert">{success}</div>
+        <div class="cn-alert cn-alert-success mb-6" role="alert">{success}</div>
       )}
 
       {!canManage ? (
@@ -260,7 +260,7 @@ const VersionsTab: FC<{
                     <td class="py-2 font-mono text-xs">{v.version}</td>
                     <td class="py-2 text-xs">
                       {v.yanked ? (
-                        <span class="inline-flex items-center rounded-none bg-amber-100 px-1.5 py-0.5 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400">yanked</span>
+                        <span class="cn-badge cn-badge-variant-warning">yanked</span>
                       ) : (
                         <span class="text-muted-foreground">active</span>
                       )}
@@ -274,7 +274,7 @@ const VersionsTab: FC<{
                           </form>
                         ) : (
                           <form method="post" action={`/package/${fullName}/settings/versions/${encodeURIComponent(v.version)}/yank`}>
-                            <button type="submit" class="cn-button cn-button-variant-ghost cn-button-size-xs text-xs text-amber-600 dark:text-amber-400" aria-label={`Yank version ${v.version}`}>Yank</button>
+                            <button type="submit" class="cn-button cn-button-variant-ghost cn-button-size-xs text-xs text-warning" aria-label={`Yank version ${v.version}`}>Yank</button>
                           </form>
                         )}
                         <button
@@ -505,9 +505,9 @@ const DangerTab: FC<{
           </div>
           <button type="button" class="cn-button cn-button-variant-destructive cn-button-size-sm" data-modal-open="rename-pkg-modal">Rename</button>
         </div>
-        <dialog id="rename-pkg-modal" class="m-auto max-w-md rounded-none border border-border bg-background p-0 shadow-lg backdrop:bg-black/50" aria-labelledby="rename-modal-title">
-          <div class="p-6">
-            <h3 id="rename-modal-title" class="text-base font-semibold font-heading text-red-600 dark:text-red-400">Rename package</h3>
+        <dialog id="rename-pkg-modal" class="cn-dialog" aria-labelledby="rename-modal-title">
+          <div class="cn-dialog-body">
+            <h3 id="rename-modal-title" class="cn-dialog-title-destructive">Rename package</h3>
             <p class="mt-2 text-sm text-foreground/70">The old name will automatically redirect. This cannot be easily undone.</p>
             <form method="post" action={`/package/${fullName}/settings/rename`} class="mt-4 space-y-3">
               <div>
@@ -539,9 +539,9 @@ const DangerTab: FC<{
           </div>
           <button type="button" class="cn-button cn-button-variant-destructive cn-button-size-sm" data-modal-open="transfer-pkg-modal">Transfer</button>
         </div>
-        <dialog id="transfer-pkg-modal" class="m-auto max-w-md rounded-none border border-border bg-background p-0 shadow-lg backdrop:bg-black/50" aria-labelledby="transfer-modal-title">
-          <div class="p-6">
-            <h3 id="transfer-modal-title" class="text-base font-semibold font-heading text-red-600 dark:text-red-400">Transfer package</h3>
+        <dialog id="transfer-pkg-modal" class="cn-dialog" aria-labelledby="transfer-modal-title">
+          <div class="cn-dialog-body">
+            <h3 id="transfer-modal-title" class="cn-dialog-title-destructive">Transfer package</h3>
             <p class="mt-2 text-sm text-foreground/70">The target user or organization must accept the transfer. The old name will redirect automatically.</p>
             <form method="post" action={`/package/${fullName}/settings/transfer`} class="mt-4 space-y-3">
               <div>

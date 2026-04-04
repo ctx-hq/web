@@ -72,7 +72,7 @@ const ProfileSection: FC<{
       </div>
     )}
     {success && (
-      <div class="cn-form-banner-success mb-6">{success}</div>
+      <div class="cn-alert cn-alert-success mb-6">{success}</div>
     )}
 
     <div class="cn-card p-6">
@@ -139,7 +139,7 @@ const AccountSection: FC<{
       </div>
     )}
     {success && (
-      <div class="cn-form-banner-success mb-6">{success}</div>
+      <div class="cn-alert cn-alert-success mb-6">{success}</div>
     )}
 
     {/* Rename Account */}

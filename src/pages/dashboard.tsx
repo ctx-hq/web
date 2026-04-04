@@ -228,7 +228,7 @@ export const DashboardPage: FC<{
                     <form method="post" action={`/invitations/${inv.id}/accept`}>
                       <button
                         type="submit"
-                        class="cn-button-size-xs bg-primary px-3 text-xs font-medium text-primary-foreground hover:bg-primary/90"
+                        class="cn-button cn-button-variant-default cn-button-size-xs"
                       >
                         Accept
                       </button>
@@ -236,7 +236,7 @@ export const DashboardPage: FC<{
                     <form method="post" action={`/invitations/${inv.id}/decline`}>
                       <button
                         type="submit"
-                        class="cn-button-size-xs border border-border bg-background px-3 text-xs text-muted-foreground hover:bg-muted"
+                        class="cn-button cn-button-variant-outline cn-button-size-xs"
                       >
                         Decline
                       </button>
@@ -310,7 +310,7 @@ export const DashboardPage: FC<{
                     <form method="post" action={`/transfers/${t.id}/accept`}>
                       <button
                         type="submit"
-                        class="cn-button-size-xs bg-primary px-3 text-xs font-medium text-primary-foreground hover:bg-primary/90"
+                        class="cn-button cn-button-variant-default cn-button-size-xs"
                       >
                         Accept
                       </button>
@@ -318,7 +318,7 @@ export const DashboardPage: FC<{
                     <form method="post" action={`/transfers/${t.id}/decline`}>
                       <button
                         type="submit"
-                        class="cn-button-size-xs border border-border bg-background px-3 text-xs text-muted-foreground hover:bg-muted"
+                        class="cn-button cn-button-variant-outline cn-button-size-xs"
                       >
                         Decline
                       </button>

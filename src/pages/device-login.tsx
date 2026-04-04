@@ -46,10 +46,10 @@ export const DeviceLoginPage: FC<{ code?: string }> = ({ code }) => (
           <p data-device-msg="loading" class="hidden text-muted-foreground">
             Authorizing...
           </p>
-          <p data-device-msg="success" class="hidden text-green-600 dark:text-green-400">
+          <p data-device-msg="success" class="hidden text-success">
             Device authorized. You can close this tab and return to your terminal.
           </p>
-          <p data-device-msg="error" class="hidden text-red-600 dark:text-red-400">
+          <p data-device-msg="error" class="hidden text-destructive">
             {/* Error text set by JS */}
           </p>
         </div>

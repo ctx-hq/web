@@ -27,7 +27,7 @@ export const MCPCompatibility: FC<{ transport: string }> = ({ transport }) => {
       <div class="flex flex-wrap gap-1.5">
         {agents.map((agent) => (
           <span class="inline-flex items-center gap-1 border border-border px-2 py-0.5 text-xs">
-            <Icon name="check" class="size-3 text-green-600 dark:text-green-400" />
+            <Icon name="check" class="size-3 text-success" />
             {AGENT_DISPLAY_NAMES[agent] ?? agent}
           </span>
         ))}

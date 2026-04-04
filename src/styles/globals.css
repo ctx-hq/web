@@ -54,6 +54,24 @@
   --color-input: oklch(0.922 0.005 34.3);
   --color-ring: oklch(0.714 0.014 41.2);
 
+  /* --- Semantic status --- */
+  --color-success: oklch(0.45 0.18 145);
+  --color-success-foreground: oklch(0.25 0.08 145);
+  --color-warning: oklch(0.48 0.16 85);
+  --color-warning-foreground: oklch(0.30 0.10 85);
+  --color-info: oklch(0.49 0.19 260);
+  --color-info-foreground: oklch(0.25 0.08 260);
+
+  /* --- Trust tier --- */
+  --color-trust-structural: oklch(0.48 0.16 85);
+  --color-trust-source-linked: oklch(0.49 0.19 260);
+  --color-trust-reviewed: oklch(0.45 0.18 145);
+  --color-trust-verified: oklch(0.45 0.18 160);
+
+  /* --- Interactive states --- */
+  --color-star: oklch(0.48 0.16 85);
+  --color-border-hover: oklch(0.80 0.005 34.3);
+
   /* --- Package type colors (getctx-specific) --- */
   --color-type-skill: oklch(0.623 0.214 259.815);
   --color-type-skill-bg: oklch(0.97 0.014 254.604);
@@ -90,6 +108,21 @@
   --color-border: oklch(1 0 0 / 10%);
   --color-input: oklch(1 0 0 / 15%);
   --color-ring: oklch(0.547 0.021 43.1);
+
+  --color-success: oklch(0.70 0.17 145);
+  --color-success-foreground: oklch(0.90 0.05 145);
+  --color-warning: oklch(0.75 0.15 85);
+  --color-warning-foreground: oklch(0.90 0.05 85);
+  --color-info: oklch(0.70 0.16 260);
+  --color-info-foreground: oklch(0.90 0.05 260);
+
+  --color-trust-structural: oklch(0.75 0.15 85);
+  --color-trust-source-linked: oklch(0.70 0.16 260);
+  --color-trust-reviewed: oklch(0.70 0.17 145);
+  --color-trust-verified: oklch(0.70 0.17 160);
+
+  --color-star: oklch(0.75 0.15 85);
+  --color-border-hover: oklch(1 0 0 / 20%);
 
   --color-type-skill-bg: oklch(0.25 0.06 254.604);
   --color-type-mcp-bg: oklch(0.25 0.06 308.299);
@@ -184,6 +217,14 @@ html:not(.dark) .light-hidden { display: none; }
   @apply bg-destructive/10 text-destructive dark:bg-destructive/20;
 }
 
+.cn-badge-variant-warning {
+  @apply bg-warning/10 text-warning border-warning/20;
+}
+
+.cn-badge-variant-info {
+  @apply bg-info/10 text-info border-info/20;
+}
+
 .cn-badge-variant-type-skill {
   @apply bg-type-skill-bg text-type-skill border-type-skill/20;
 }
@@ -272,12 +313,50 @@ html:not(.dark) .light-hidden { display: none; }
   @apply text-xs text-destructive;
 }
 
-.cn-form-banner-error {
-  @apply flex items-center gap-2 border border-destructive/30 bg-destructive/5 px-3 py-2.5 text-sm text-destructive;
+/* --- Alert --- */
+.cn-alert {
+  @apply flex items-center gap-2 border px-3 py-2.5 text-sm;
 }
 
-.cn-form-banner-success {
-  @apply flex items-center gap-2 border border-green-600/30 bg-green-600/5 px-3 py-2.5 text-sm text-green-700;
+.cn-alert-destructive {
+  @apply border-destructive/30 bg-destructive/5 text-destructive;
+}
+
+.cn-alert-success {
+  @apply border-success/30 bg-success/5 text-success-foreground;
+}
+
+.cn-alert-warning {
+  @apply border-warning/30 bg-warning/5 text-warning-foreground;
+}
+
+.cn-alert-info {
+  @apply border-info/30 bg-info/5 text-info-foreground;
+}
+
+/* --- Dialog --- */
+.cn-dialog {
+  @apply m-auto max-w-md rounded-none border border-border bg-background p-0 shadow-lg backdrop:bg-black/50;
+}
+
+.cn-dialog-body {
+  @apply p-6;
+}
+
+.cn-dialog-title {
+  @apply text-base font-semibold font-heading;
+}
+
+.cn-dialog-title-destructive {
+  @apply text-base font-semibold font-heading text-destructive;
+}
+
+.cn-dialog-description {
+  @apply mt-2 text-sm text-foreground/70;
+}
+
+.cn-dialog-actions {
+  @apply mt-4 flex justify-end gap-3;
 }
 
 /* --- Dropdown Menu --- */

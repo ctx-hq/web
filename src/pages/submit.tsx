@@ -18,13 +18,13 @@ export const SubmitPage: FC<{ error?: string; success?: boolean }> = ({ error, s
         </p>
 
         {success ? (
-          <div class="mb-6 border border-green-200 bg-green-50 p-4 text-sm text-green-800 dark:border-green-900 dark:bg-green-950 dark:text-green-200" role="alert">
+          <div class="cn-alert cn-alert-success mb-6" role="alert">
             <strong>Submitted!</strong> We'll review your request and notify you when the package is available.
           </div>
         ) : (
           <>
         {error && (
-          <div class="mb-6 border border-red-200 bg-red-50 p-4 text-sm text-red-800 dark:border-red-900 dark:bg-red-950 dark:text-red-200" role="alert">
+          <div class="cn-alert cn-alert-destructive mb-6" role="alert">
             {error}
           </div>
         )}
@@ -32,7 +32,7 @@ export const SubmitPage: FC<{ error?: string; success?: boolean }> = ({ error, s
         <form method="post" action="/submit" class="space-y-5">
           <div>
             <label for="source_url" class="block text-sm font-medium mb-1.5">
-              Source URL <span class="text-red-500">*</span>
+              Source URL <span class="text-destructive">*</span>
             </label>
             <input
               id="source_url"
@@ -40,7 +40,7 @@ export const SubmitPage: FC<{ error?: string; success?: boolean }> = ({ error, s
               type="text"
               required
               placeholder="npm:@playwright/mcp or github:github/github-mcp-server"
-              class="w-full border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+              class="cn-input w-full"
               aria-describedby="source_url_hint"
             />
             <p id="source_url_hint" class="mt-1 text-xs text-muted-foreground">
@@ -57,7 +57,7 @@ export const SubmitPage: FC<{ error?: string; success?: boolean }> = ({ error, s
               name="reason"
               rows={3}
               placeholder="Official GitHub MCP server, widely used in AI workflows"
-              class="w-full border border-input bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-y"
+              class="cn-input w-full resize-y"
             />
           </div>
 

@@ -25,28 +25,37 @@ describe("trust-badge", () => {
     expect(result).not.toBeNull();
     expect(result!.label).toBe("Structural");
     expect(result!.icon).toBe("✓");
-    expect(result!.color).toContain("yellow");
+    expect(result!.color).toBe("text-trust-structural");
   });
 
   it("renders source_linked tier correctly", () => {
     const result = resolveBadge("source_linked");
     expect(result).not.toBeNull();
     expect(result!.label).toBe("Source Linked");
-    expect(result!.color).toContain("blue");
+    expect(result!.color).toBe("text-trust-source-linked");
   });
 
   it("renders reviewed tier correctly", () => {
     const result = resolveBadge("reviewed");
     expect(result).not.toBeNull();
     expect(result!.label).toBe("Reviewed");
-    expect(result!.color).toContain("green");
+    expect(result!.color).toBe("text-trust-reviewed");
   });
 
   it("renders verified tier correctly", () => {
     const result = resolveBadge("verified");
     expect(result).not.toBeNull();
     expect(result!.label).toBe("Verified");
-    expect(result!.color).toContain("emerald");
+    expect(result!.color).toBe("text-trust-verified");
+  });
+
+  it("all trust tier colors use design tokens (no hardcoded Tailwind colors)", () => {
+    const tiers: TrustTier[] = ["structural", "source_linked", "reviewed", "verified"];
+    for (const tier of tiers) {
+      const result = resolveBadge(tier);
+      expect(result!.color).toMatch(/^text-trust-/);
+      expect(result!.color).not.toMatch(/text-(green|blue|yellow|emerald|red)-/);
+    }
   });
 
   it("all 5 tiers are defined in TRUST_TIERS", () => {

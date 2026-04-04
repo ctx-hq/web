@@ -339,7 +339,7 @@ document.querySelectorAll('.prose pre').forEach(function(pre){
   btn.textContent='Copy';
   btn.className='absolute top-2 right-2 px-2 py-0.5 text-xs bg-background border border-border text-muted-foreground hover:text-foreground';
   btn.setAttribute('data-copy-btn','');
-  btn.onclick=function(){
+  btn.addEventListener('click',function(){
     var text=code?code.textContent:pre.textContent||'';
     if(navigator.clipboard&&navigator.clipboard.writeText){
       navigator.clipboard.writeText(text||'').then(function(){
@@ -348,7 +348,7 @@ document.querySelectorAll('.prose pre').forEach(function(pre){
         setTimeout(function(){btn.textContent='Copy'},1500);
       }).catch(function(){});
     }
-  };
+  });
   pre.style.position='relative';
   pre.appendChild(btn);
 });

@@ -239,11 +239,11 @@ export const PackageDetailPage: FC<{
                   <button
                     type="submit"
                     class={`cn-button cn-button-variant-outline cn-button-size-xs inline-flex items-center gap-1.5 ${
-                      pkg.is_starred ? "text-yellow-600" : ""
+                      pkg.is_starred ? "text-star" : ""
                     }`}
                     aria-label={pkg.is_starred ? `Unstar ${pkg.full_name}` : `Star ${pkg.full_name}`}
                   >
-                    <Icon name="star" class={`size-4 ${pkg.is_starred ? "text-yellow-500" : ""}`} />
+                    <Icon name="star" class={`size-4 ${pkg.is_starred ? "text-star" : ""}`} />
                     {pkg.is_starred ? "Starred" : "Star"}
                   </button>
                 </form>

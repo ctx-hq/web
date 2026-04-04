@@ -32,7 +32,7 @@ export const CreateOrgPage: FC<{
       <h1 class="mb-6 text-xl font-semibold font-heading">Create Organization</h1>
 
       {error && (
-        <div class="cn-form-banner-error mb-6" role="alert">
+        <div class="cn-alert cn-alert-destructive mb-6" role="alert">
           <Icon name="warning" class="size-4 shrink-0" />
           <span>{error}</span>
         </div>
