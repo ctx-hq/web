@@ -363,7 +363,7 @@ html:not(.dark) .light-hidden { display: none; }
 .prose ol { @apply mb-4 list-decimal pl-5; }
 .prose li { @apply mb-1; }
 .prose blockquote { @apply mb-4 border-l-2 border-border pl-4 text-muted-foreground; }
-.prose img { @apply max-w-full; }
+.prose img { @apply inline max-w-full; }
 .prose .table-wrapper { @apply mb-4 overflow-x-auto; }
 .prose > table { @apply mb-4; }
 .prose table { @apply w-full border-collapse; }
