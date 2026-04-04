@@ -55,6 +55,8 @@ export const Layout: FC<LayoutProps> = ({ meta, currentPath, user, notificationC
   );
 };
 
+const CLIENT_JS_VERSION = "3";
+
 const ClientScript: FC = () => (
-  <script src="/static/client.js" defer />
+  <script src={`/static/client.js?v=${CLIENT_JS_VERSION}`} defer />
 );

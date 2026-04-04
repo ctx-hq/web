@@ -15,7 +15,7 @@ import { Button } from "./ui/button";
  *     buttonLabel="Delete"
  *   />
  *
- * Trigger it from a button: <button onclick="document.getElementById('delete-org').showModal()">
+ * Trigger it from a button: <button data-modal-open="delete-org">
  */
 export const ConfirmModal: FC<{
   id: string;
@@ -42,9 +42,9 @@ export const ConfirmModal: FC<{
   >
     <div class="p-6">
       <h3 class="text-base font-semibold font-heading text-red-600 dark:text-red-400">{title}</h3>
-      <p class="mt-2 text-sm text-muted-foreground">{description}</p>
-      <p class="mt-3 text-sm">
-        Type <code class="rounded-none bg-muted px-1.5 py-0.5 text-xs font-mono">{confirmText}</code> to confirm:
+      <p class="mt-2 text-sm text-foreground/70">{description}</p>
+      <p class="mt-3 text-sm text-foreground">
+        Type <code class="rounded-none bg-muted px-1.5 py-0.5 text-xs font-mono text-foreground">{confirmText}</code> to confirm:
       </p>
       <form method={method as any} action={action} class="mt-3">
         <input
@@ -60,8 +60,8 @@ export const ConfirmModal: FC<{
             variant="ghost"
             size="sm"
             type="button"
-            // @ts-expect-error onclick is valid HTML
-            onclick={`document.getElementById('${id}').close()`}
+            class="text-foreground/70"
+            data-modal-close
           >
             Cancel
           </Button>

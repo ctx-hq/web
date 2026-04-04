@@ -324,6 +324,14 @@ document.addEventListener('click',function(e){
   });
 })();
 
+/* --- Dialog open/close (CSP-safe alternative to inline onclick) --- */
+document.addEventListener('click',function(e){
+  var open=e.target&&e.target.closest?e.target.closest('[data-modal-open]'):null;
+  if(open){var d=document.getElementById(open.dataset.modalOpen);if(d&&d.showModal)d.showModal();return}
+  var close=e.target&&e.target.closest?e.target.closest('[data-modal-close]'):null;
+  if(close){var dlg=close.closest('dialog');if(dlg&&dlg.close)dlg.close();}
+});
+
 /* --- Copy code blocks in prose (read from <code>, not <pre>) --- */
 document.querySelectorAll('.prose pre').forEach(function(pre){
   var code=pre.querySelector('code');

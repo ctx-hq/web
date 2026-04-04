@@ -196,7 +196,7 @@ const AccountSection: FC<{
       <button
         type="button"
         class="cn-button cn-button-variant-destructive cn-button-size-sm inline-flex items-center gap-2"
-        onclick="document.getElementById('delete-account-modal').showModal()"
+        data-modal-open="delete-account-modal"
       >
         <Icon name="trash" class="size-4" />
         Delete account

@@ -16,6 +16,8 @@ export const Button: FC<
     "aria-disabled"?: boolean | string;
     "data-copy"?: string;
     "data-tab"?: string;
+    "data-modal-open"?: string;
+    "data-modal-close"?: boolean;
   }>
 > = ({
   variant = "default",

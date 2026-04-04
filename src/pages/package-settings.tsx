@@ -281,7 +281,7 @@ const VersionsTab: FC<{
                           type="button"
                           class="cn-button cn-button-variant-ghost cn-button-size-icon-xs text-muted-foreground hover:text-destructive"
                           aria-label={`Delete version ${v.version}`}
-                          onclick={`document.getElementById('delete-ver-${v.version.replace(/\\./g, "-")}').showModal()`}
+                          data-modal-open={`delete-ver-${v.version.replace(/\./g, "-")}`}
                         >
                           <Icon name="trash" class="size-3.5" />
                         </button>
@@ -503,26 +503,26 @@ const DangerTab: FC<{
             <p class="text-sm font-medium">Rename this package</p>
             <p class="text-xs text-muted-foreground">The old name will redirect to the new one. Only the name changes; the scope stays the same.</p>
           </div>
-          <button type="button" class="cn-button cn-button-variant-destructive cn-button-size-sm" onclick={`document.getElementById('rename-pkg-modal').showModal()`}>Rename</button>
+          <button type="button" class="cn-button cn-button-variant-destructive cn-button-size-sm" data-modal-open="rename-pkg-modal">Rename</button>
         </div>
         <dialog id="rename-pkg-modal" class="m-auto max-w-md rounded-none border border-border bg-background p-0 shadow-lg backdrop:bg-black/50" aria-labelledby="rename-modal-title">
           <div class="p-6">
             <h3 id="rename-modal-title" class="text-base font-semibold font-heading text-red-600 dark:text-red-400">Rename package</h3>
-            <p class="mt-2 text-sm text-muted-foreground">The old name will automatically redirect. This cannot be easily undone.</p>
+            <p class="mt-2 text-sm text-foreground/70">The old name will automatically redirect. This cannot be easily undone.</p>
             <form method="post" action={`/package/${fullName}/settings/rename`} class="mt-4 space-y-3">
               <div>
-                <label for="rename-new-name" class="mb-1 block text-xs text-muted-foreground">New name</label>
+                <label for="rename-new-name" class="mb-1 block text-xs text-foreground/70">New name</label>
                 <div class="flex items-center gap-1">
-                  <span class="text-sm text-muted-foreground">@{scope}/</span>
+                  <span class="text-sm text-foreground/70">@{scope}/</span>
                   <input type="text" id="rename-new-name" name="new_name" placeholder={name} required class="cn-input text-sm flex-1" />
                 </div>
               </div>
               <div>
-                <p class="mb-1 text-sm">Type <code class="rounded-none bg-muted px-1.5 py-0.5 text-xs font-mono">{fullName}</code> to confirm:</p>
+                <p class="mb-1 text-sm text-foreground">Type <code class="rounded-none bg-muted px-1.5 py-0.5 text-xs font-mono text-foreground">{fullName}</code> to confirm:</p>
                 <input type="text" name="confirm" required autocomplete="off" placeholder={fullName} class="cn-input w-full text-sm" />
               </div>
               <div class="mt-4 flex justify-end gap-3">
-                <button type="button" class="cn-button cn-button-variant-ghost cn-button-size-sm" onclick="document.getElementById('rename-pkg-modal').close()">Cancel</button>
+                <button type="button" class="cn-button cn-button-variant-ghost cn-button-size-sm text-foreground/70" data-modal-close>Cancel</button>
                 <Button variant="destructive" size="sm" type="submit">Rename package</Button>
               </div>
             </form>
@@ -537,27 +537,27 @@ const DangerTab: FC<{
             <p class="text-sm font-medium">Transfer this package</p>
             <p class="text-xs text-muted-foreground">Transfer ownership to another user or organization. The target must accept the request.</p>
           </div>
-          <button type="button" class="cn-button cn-button-variant-destructive cn-button-size-sm" onclick={`document.getElementById('transfer-pkg-modal').showModal()`}>Transfer</button>
+          <button type="button" class="cn-button cn-button-variant-destructive cn-button-size-sm" data-modal-open="transfer-pkg-modal">Transfer</button>
         </div>
         <dialog id="transfer-pkg-modal" class="m-auto max-w-md rounded-none border border-border bg-background p-0 shadow-lg backdrop:bg-black/50" aria-labelledby="transfer-modal-title">
           <div class="p-6">
             <h3 id="transfer-modal-title" class="text-base font-semibold font-heading text-red-600 dark:text-red-400">Transfer package</h3>
-            <p class="mt-2 text-sm text-muted-foreground">The target user or organization must accept the transfer. The old name will redirect automatically.</p>
+            <p class="mt-2 text-sm text-foreground/70">The target user or organization must accept the transfer. The old name will redirect automatically.</p>
             <form method="post" action={`/package/${fullName}/settings/transfer`} class="mt-4 space-y-3">
               <div>
-                <label for="transfer-to" class="mb-1 block text-xs text-muted-foreground">Target scope</label>
+                <label for="transfer-to" class="mb-1 block text-xs text-foreground/70">Target scope</label>
                 <input type="text" id="transfer-to" name="to" placeholder="@orgname" required class="cn-input w-full text-sm" />
               </div>
               <div>
-                <label for="transfer-message" class="mb-1 block text-xs text-muted-foreground">Message (optional)</label>
+                <label for="transfer-message" class="mb-1 block text-xs text-foreground/70">Message (optional)</label>
                 <input type="text" id="transfer-message" name="message" placeholder="Reason for transfer" class="cn-input w-full text-sm" />
               </div>
               <div>
-                <p class="mb-1 text-sm">Type <code class="rounded-none bg-muted px-1.5 py-0.5 text-xs font-mono">{fullName}</code> to confirm:</p>
+                <p class="mb-1 text-sm text-foreground">Type <code class="rounded-none bg-muted px-1.5 py-0.5 text-xs font-mono text-foreground">{fullName}</code> to confirm:</p>
                 <input type="text" name="confirm" required autocomplete="off" placeholder={fullName} class="cn-input w-full text-sm" />
               </div>
               <div class="mt-4 flex justify-end gap-3">
-                <button type="button" class="cn-button cn-button-variant-ghost cn-button-size-sm" onclick="document.getElementById('transfer-pkg-modal').close()">Cancel</button>
+                <button type="button" class="cn-button cn-button-variant-ghost cn-button-size-sm text-foreground/70" data-modal-close>Cancel</button>
                 <Button variant="destructive" size="sm" type="submit">Transfer package</Button>
               </div>
             </form>
@@ -572,7 +572,7 @@ const DangerTab: FC<{
             <p class="text-sm font-medium">Delete this package</p>
             <p class="text-xs text-muted-foreground">Permanently delete this package and all its versions. This action cannot be undone.</p>
           </div>
-          <button type="button" class="cn-button cn-button-variant-destructive cn-button-size-sm inline-flex items-center gap-2" onclick={`document.getElementById('delete-pkg-modal').showModal()`}>
+          <button type="button" class="cn-button cn-button-variant-destructive cn-button-size-sm inline-flex items-center gap-2" data-modal-open="delete-pkg-modal">
             <Icon name="trash" class="size-4" />
             Delete
           </button>
