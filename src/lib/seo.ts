@@ -75,6 +75,27 @@ export function docsMeta(section?: string): SeoMeta {
   };
 }
 
+export function keywordsMeta(): SeoMeta {
+  return {
+    title: `Keywords — ${SITE_NAME}`,
+    description: `Popular package keywords on ${SITE_NAME}`,
+    url: `${SITE_URL}/keywords`,
+    ogImage: DEFAULT_OG_IMAGE,
+    type: "website",
+  };
+}
+
+export function keywordDetailMeta(slug: string, count: number): SeoMeta {
+  const safe = escapeHtml(slug);
+  return {
+    title: `"${safe}" packages — ${SITE_NAME}`,
+    description: `${count} package${count !== 1 ? "s" : ""} tagged with "${safe}" on ${SITE_NAME}`,
+    url: `${SITE_URL}/keywords/${encodeURIComponent(slug)}`,
+    ogImage: DEFAULT_OG_IMAGE,
+    type: "website",
+  };
+}
+
 /** Escape HTML special characters to prevent XSS in meta tags. */
 export function escapeHtml(str: string): string {
   return str

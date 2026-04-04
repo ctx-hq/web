@@ -3,7 +3,7 @@ import { api } from "../lib/api-helpers";
 import type { AppEnv } from "../lib/api-helpers";
 import { escapeHtml } from "../lib/seo";
 import { SITE_URL } from "../lib/constants";
-import type { PackageSummary } from "../lib/types";
+import type { KeywordInfo, PackageSummary } from "../lib/types";
 import { proxyInstallScript } from "../lib/install-proxy";
 
 const route = new Hono<AppEnv>();
@@ -23,19 +23,28 @@ route.get("/api/search-suggest", async (c) => {
 // Sitemap
 route.get("/sitemap.xml", async (c) => {
   let packages: PackageSummary[] = [];
+  let keywords: KeywordInfo[] = [];
   try {
-    const result = await api(c).listPackages({ limit: 1000 });
-    packages = result.packages;
+    const [pkgResult, kwResult] = await Promise.all([
+      api(c).listPackages({ limit: 1000 }),
+      api(c).getKeywords(200),
+    ]);
+    packages = pkgResult.packages;
+    keywords = kwResult.keywords ?? [];
   } catch {
-    // API unavailable
+    // API unavailable — emit static URLs only
   }
 
   const urls = [
     `<url><loc>${SITE_URL}/</loc><priority>1.0</priority></url>`,
     `<url><loc>${SITE_URL}/search</loc><priority>0.8</priority></url>`,
     `<url><loc>${SITE_URL}/docs</loc><priority>0.8</priority></url>`,
+    `<url><loc>${SITE_URL}/keywords</loc><priority>0.7</priority></url>`,
     ...packages.map(
       (p) => `<url><loc>${SITE_URL}/package/${escapeHtml(p.full_name)}</loc><priority>0.6</priority></url>`
+    ),
+    ...keywords.map(
+      (kw) => `<url><loc>${SITE_URL}/keywords/${escapeHtml(encodeURIComponent(kw.slug))}</loc><priority>0.5</priority></url>`
     ),
   ];
 

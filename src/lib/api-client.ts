@@ -363,6 +363,18 @@ export class ApiClient {
     return this.get(`/v1/keywords${qs ? `?${qs}` : ""}`);
   }
 
+  async getKeyword(slug: string, opts?: { limit?: number; offset?: number }): Promise<{
+    keyword: KeywordInfo;
+    packages: PackageSummary[];
+    total: number;
+  }> {
+    const params = new URLSearchParams();
+    if (opts?.limit != null) params.set("limit", String(opts.limit));
+    if (opts?.offset != null) params.set("offset", String(opts.offset));
+    const qs = params.toString();
+    return this.get(`/v1/keywords/${encodeURIComponent(slug)}${qs ? `?${qs}` : ""}`);
+  }
+
   async starPackage(fullName: string, token: string): Promise<void> {
     return this.put(`/v1/packages/${encodeURIComponent(fullName)}/star`, {}, token);
   }

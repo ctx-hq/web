@@ -14,6 +14,7 @@ import authRoute from "./routes/auth";
 import dashboardRoute from "./routes/dashboard";
 import docsRoute from "./routes/docs";
 import orgsRoute from "./routes/orgs";
+import keywordsRoute from "./routes/keywords";
 import staticRoute from "./routes/static";
 import apiRoute from "./routes/api";
 
@@ -133,6 +134,7 @@ app.route("/", packageRoute);
 app.route("/", authRoute);
 app.route("/", dashboardRoute);
 app.route("/", docsRoute);
+app.route("/", keywordsRoute);
 app.route("/", staticRoute);
 app.route("/", apiRoute);
 app.route("/", orgsRoute); // Must be last — contains /:slug{@[^/]+} catch-all

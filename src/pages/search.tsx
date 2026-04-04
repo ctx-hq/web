@@ -233,7 +233,7 @@ export const SearchPage: FC<{
             {keywords.map((kw) => (
               <Badge
                 variant="secondary"
-                href={`/search?q=${encodeURIComponent(kw.slug)}`}
+                href={`/keywords/${encodeURIComponent(kw.slug)}`}
               >
                 {kw.slug}
                 <span class="ml-1 text-xs tabular-nums text-muted-foreground">({kw.usage_count})</span>

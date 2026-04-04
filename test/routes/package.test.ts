@@ -300,8 +300,8 @@ describe("package detail routes", () => {
 
     const res = await req("/package/@test/existing");
     const html = await res.text();
-    expect(html).toContain("/search?q=testing");
-    expect(html).toContain("/search?q=automation");
+    expect(html).toContain("/keywords/testing");
+    expect(html).toContain("/keywords/automation");
   });
 
   it("does not render keywords section when empty", async () => {

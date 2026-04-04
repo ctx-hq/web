@@ -375,7 +375,7 @@ export const PackageDetailPage: FC<{
                 {pkg.keywords.map((kw) => (
                   <Badge
                     variant="secondary"
-                    href={`/search?q=${encodeURIComponent(kw)}`}
+                    href={`/keywords/${encodeURIComponent(kw)}`}
                   >
                     {kw}
                   </Badge>
